@@ -71,7 +71,9 @@ def main():
     try:
         data=kb.request(0xFE,0x81)
         if data[:3]!=bytes([0xFE,0x81,1]) or data[24:32]!=b'RDBLFS01' or tuple(data[3:6])<tuple(mapping['minimum_firmware']):
-            raise RuntimeError('Flash RedBlade+ 0.7.0 or newer before installing its Fn bindings')
+            edition='OpenRGB Core' if args.edition=='core' else 'RedBlade+'
+            minimum='.'.join(map(str,mapping['minimum_firmware']))
+            raise RuntimeError(f'Flash {edition} {minimum} or newer before installing its Fn bindings')
         if bool(data[19]&128)!=(args.edition=='core'): raise RuntimeError('The selected Fn map does not match the installed firmware edition')
         apply(kb,bindings,args.backup)
     finally: kb.close()
