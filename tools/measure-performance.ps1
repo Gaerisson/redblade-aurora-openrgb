@@ -47,7 +47,7 @@ try {
             elseif($command.StartsWith($exe,[StringComparison]::OrdinalIgnoreCase)) { $arguments=$command.Substring($exe.Length).TrimStart() }
             else { throw 'Cannot safely preserve the RGB application arguments.' }
             # Keep original arguments in memory; never include them in the report.
-            $restart+=@{Exe=$exe;Arguments=$arguments}
+            $restart+=@{Name=$process.ProcessName;Exe=$exe;Arguments=$arguments}
         }
         $stopped=$true
         if($serviceWasRunning) { Stop-Service OpenRGB }
@@ -71,7 +71,22 @@ try {
         if($serviceWasRunning) {
             try { Start-Service OpenRGB } catch { $failed=$true; Write-Warning 'OpenRGB service could not be restarted.' }
         }
-        foreach($app in $restart) {
+        # Get-Process sorts by name, so AuroraRgb was captured before OpenRGB.
+        # Aurora connects to the OpenRGB SDK once at startup: restart OpenRGB
+        # first and wait for its SDK port before starting Aurora again.
+        $openRgb=@($restart | Where-Object { $_.Name -eq 'OpenRGB' })
+        $others=@($restart | Where-Object { $_.Name -ne 'OpenRGB' })
+        foreach($app in @($openRgb + $others)) {
+            if($app -eq $others[0] -and ($serviceWasRunning -or $openRgb.Count)) {
+                $port=6742
+                foreach($candidate in $openRgb) { if($candidate.Arguments -match '--server-port\s+(\d+)') { $port=[int]$Matches[1] } }
+                $listening=$false
+                for($attempt=0;$attempt -lt 60;$attempt++) {
+                    $client=[Net.Sockets.TcpClient]::new()
+                    try { $client.Connect('127.0.0.1',$port); $listening=$true; break } catch { Start-Sleep -Milliseconds 500 } finally { $client.Dispose() }
+                }
+                if(-not $listening) { Write-Warning "OpenRGB SDK is not listening on port $port; Aurora may need a manual restart." }
+            }
             try {
                 $start=@{FilePath=$app.Exe;WindowStyle='Hidden'}
                 if($app.Arguments) { $start.ArgumentList=$app.Arguments }
