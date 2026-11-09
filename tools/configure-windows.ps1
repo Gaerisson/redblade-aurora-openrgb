@@ -38,7 +38,24 @@ if ($service -and (Test-Path -LiteralPath $openRgbUserFile)) {
 
 # Remember what was running so a failed run can return to that state.
 $serviceWasRunning = $service -and $service.Status -eq 'Running'
-$wasRunning = @(Get-Process -Name AuroraRgb,OpenRGB -ErrorAction SilentlyContinue | Select-Object -ExpandProperty ProcessName -Unique)
+$runningProcesses = @(Get-Process -Name AuroraRgb,OpenRGB -ErrorAction SilentlyContinue)
+$wasRunning = @($runningProcesses | Select-Object -ExpandProperty ProcessName -Unique)
+$previousApps = @{}
+$previousSdkPort = 6742
+foreach ($process in $runningProcesses) {
+    if ($process.ProcessName -eq 'OpenRGB' -and $serviceWasRunning) { continue }
+    $exe = $process.Path
+    $command = (Get-CimInstance Win32_Process -Filter ('ProcessId='+$process.Id)).CommandLine
+    if (-not $exe -or -not $command) { throw 'Cannot preserve an RGB application startup command; no applications have been stopped.' }
+    if ($command.StartsWith('"')) { $arguments = $command.Substring($command.IndexOf('"',1)+1).TrimStart() }
+    elseif ($command.StartsWith($exe,[StringComparison]::OrdinalIgnoreCase)) { $arguments = $command.Substring($exe.Length).TrimStart() }
+    else { throw 'Cannot safely preserve RGB application arguments; no applications have been stopped.' }
+    # Keep original commands in memory, never in logs or configuration backups.
+    $previousApps[$process.ProcessName] = @{ Exe=$exe; Arguments=$arguments }
+    if ($process.ProcessName -eq 'OpenRGB' -and $arguments -match '--server-port(?:\s+|=)"?(\d+)"?(?:\s|$)') {
+        $previousSdkPort = [int]$Matches[1]
+    }
+}
 $appsStopped = $false
 $configsDirty = $false
 try {
@@ -84,7 +101,6 @@ try {
     $aurora['UpdateDelay']=34
     $aurora['Fps']=1000.0/34.0
     $aurora | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $auroraFile -Encoding utf8NoBOM
-    $configsDirty = $false
 
     if (-not $NoAutostart) {
         $startup=[Environment]::GetFolderPath('Startup')
@@ -108,7 +124,6 @@ try {
         }
     }
 
-    $appsStopped = $false
     if ($service) {
         Start-Service -Name OpenRGB
     } else {
@@ -121,37 +136,62 @@ try {
     }
     if (-not $listening) { throw "Configuration saved and backed up at $backup; OpenRGB SDK did not start." }
     Start-Process -FilePath $auroraExe -ArgumentList '-silent' -WindowStyle Hidden
+    $configsDirty = $false
+    $appsStopped = $false
     if ($directConfigured) {
         Write-Output "Configured. Backup: $backup. OpenRGB SDK is listening on loopback; keyboard Direct RGB is saved."
     } else {
         Write-Output "Configured. Backup: $backup. OpenRGB SDK is listening on loopback. Keyboard RGB still requires the prepared firmware."
     }
 } catch {
+    $configurationError = $_
     # A failure between stopping and restarting the applications must not
     # leave half-written configuration files or the RGB stack switched off.
     if ($configsDirty) {
-        Copy-Item -LiteralPath (Join-Path $backup 'OpenRGB.json') -Destination $openRgbFile -Force
-        Copy-Item -LiteralPath (Join-Path $backup 'DeviceConfig.json') -Destination $deviceFile -Force
-        Copy-Item -LiteralPath (Join-Path $backup 'AuroraConfig.json') -Destination $auroraFile -Force
-        Write-Warning "Configuration restored from $backup."
+        # A restart may have partially succeeded. Stop those instances before
+        # restoring their files so they cannot overwrite the rollback on exit.
+        if ($service) {
+            try { Stop-Service -Name OpenRGB }
+            catch { Write-Warning ('Could not stop OpenRGB for rollback: ' + $_.Exception.Message) -WarningAction Continue }
+        }
+        try { Get-Process -Name AuroraRgb,AuroraDeviceManager,OpenRGB -ErrorAction SilentlyContinue | Stop-Process }
+        catch { Write-Warning ('Could not stop RGB applications for rollback: ' + $_.Exception.Message) -WarningAction Continue }
+        foreach ($config in @(
+            @{ Backup='OpenRGB.json'; Destination=$openRgbFile },
+            @{ Backup='DeviceConfig.json'; Destination=$deviceFile },
+            @{ Backup='AuroraConfig.json'; Destination=$auroraFile }
+        )) {
+            try { Copy-Item -LiteralPath (Join-Path $backup $config.Backup) -Destination $config.Destination -Force }
+            catch { Write-Warning ('Could not restore ' + $config.Backup + ': ' + $_.Exception.Message) -WarningAction Continue }
+        }
+        Write-Warning "Configuration recovery attempted from $backup." -WarningAction Continue
     }
     if ($appsStopped) {
         try {
-            if ($serviceWasRunning) { Start-Service -Name OpenRGB }
-            elseif ($wasRunning -contains 'OpenRGB') {
-                Start-Process -FilePath $openRgbExe -ArgumentList @('--server','--server-host','127.0.0.1','--server-port','6742','--startminimized') -WindowStyle Hidden
+            if ($serviceWasRunning) {
+                if ((Get-Service -Name OpenRGB).Status -ne 'Running') { Start-Service -Name OpenRGB }
+            } elseif ($wasRunning -contains 'OpenRGB' -and -not (Get-Process -Name OpenRGB -ErrorAction SilentlyContinue)) {
+                $previous = $previousApps['OpenRGB']
+                $start = @{ FilePath=$previous.Exe; WindowStyle='Hidden' }
+                if ($previous.Arguments) { $start.ArgumentList=$previous.Arguments }
+                Start-Process @start
             }
-            if ($wasRunning -contains 'AuroraRgb') {
+        } catch { Write-Warning ('Could not restart OpenRGB: ' + $_.Exception.Message) -WarningAction Continue }
+        try {
+            if ($wasRunning -contains 'AuroraRgb' -and -not (Get-Process -Name AuroraRgb -ErrorAction SilentlyContinue)) {
                 # Aurora connects to the OpenRGB SDK once at startup.
                 if ($serviceWasRunning -or $wasRunning -contains 'OpenRGB') {
                     for ($attempt=0; $attempt -lt 60; $attempt++) {
                         $client=[Net.Sockets.TcpClient]::new()
-                        try { $client.Connect('127.0.0.1',6742); break } catch { Start-Sleep -Milliseconds 500 } finally { $client.Dispose() }
+                        try { $client.Connect('127.0.0.1',$previousSdkPort); break } catch { Start-Sleep -Milliseconds 500 } finally { $client.Dispose() }
                     }
                 }
-                Start-Process -FilePath $auroraExe -ArgumentList '-silent' -WindowStyle Hidden
+                $previous = $previousApps['AuroraRgb']
+                $start = @{ FilePath=$previous.Exe; WindowStyle='Hidden' }
+                if ($previous.Arguments) { $start.ArgumentList=$previous.Arguments }
+                Start-Process @start
             }
-        } catch { Write-Warning ('Could not restart the RGB applications: ' + $_.Exception.Message) }
+        } catch { Write-Warning ('Could not restart the RGB applications: ' + $_.Exception.Message) -WarningAction Continue }
     }
-    throw
+    throw $configurationError
 }

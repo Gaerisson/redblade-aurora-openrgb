@@ -2,6 +2,14 @@
 
 All new release notes are written in English. Version 0.x is experimental; hardware validation is recorded separately from build and host-test results.
 
+## Unreleased — Windows tooling recovery
+
+### Fixed
+- Restart standalone OpenRGB before Aurora after HID measurements, waiting for the SDK on the original server port (PR #1).
+- Roll back configuration and recover the previous RGB applications/service when Windows setup fails (PR #1). Recovery now also covers failed restarts, individual rollback-copy failures and callers that escalate warnings; the original error is preserved and standalone application commands are retained.
+- Report the selected firmware edition and its actual minimum version when installing Fn bindings: Full 0.7.0, OpenRGB Core 0.8.0 (PR #2).
+- Add nine simulated Windows recovery/restart scenarios to CI and two installer version regressions. Firmware and published BINs are unchanged.
+
 ## 0.8.1 — Dedicated Windows-lock status
 
 ### Fixed

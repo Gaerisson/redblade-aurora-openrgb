@@ -21,6 +21,25 @@ installer=importlib.util.module_from_spec(spec);spec.loader.exec_module(installe
 
 
 class ToolTests(unittest.TestCase):
+    def test_installer_reports_core_minimum_and_closes_rejected_device(self):
+        info=bytearray(32);info[:6]=bytes([0xFE,0x81,1,0,7,0]);info[19]=128;info[24:]=b'RDBLFS01'
+        kb=MagicMock();kb.request.return_value=bytes(info)
+        with patch.object(sys,'argv',['install-fn-layer.py','--edition','core','--apply','--backup','unused-private.json']), \
+             patch.object(installer,'Keyboard',return_value=kb),patch.object(installer,'apply') as install:
+            with self.assertRaisesRegex(RuntimeError,r'OpenRGB Core 0\.8\.0 or newer'):
+                installer.main()
+        install.assert_not_called()
+        kb.close.assert_called_once()
+
+    def test_installer_accepts_full_at_its_own_minimum_version(self):
+        info=bytearray(32);info[:6]=bytes([0xFE,0x81,1,0,7,0]);info[24:]=b'RDBLFS01'
+        kb=MagicMock();kb.request.return_value=bytes(info)
+        with patch.object(sys,'argv',['install-fn-layer.py','--edition','full','--apply','--backup','unused-private.json']), \
+             patch.object(installer,'Keyboard',return_value=kb),patch.object(installer,'apply') as install:
+            self.assertEqual(installer.main(),0)
+        install.assert_called_once()
+        kb.close.assert_called_once()
+
     def test_either_manifest_update_order_preserves_both_binary_checksums(self):
         with tempfile.TemporaryDirectory(dir=ROOT) as d:
             root=Path(d)

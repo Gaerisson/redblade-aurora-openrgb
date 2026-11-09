@@ -3,6 +3,13 @@ on: [push, pull_request, workflow_dispatch]
 permissions:
   contents: read
 jobs:
+  windows-tools:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test Windows configuration rollback and RGB restart order
+        shell: pwsh
+        run: ./tests/windows_tools_test.ps1
   protocol:
     runs-on: ubuntu-latest
     steps:
