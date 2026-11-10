@@ -24,6 +24,19 @@ internal static class SelfTests
             Reject(() => ProfileFile.Load(Encoding.UTF8.GetBytes("{\"$type\":\"unsafe\"}")), "unknown profile properties");
             Reject(() => ProfileFile.Load(Encoding.UTF8.GetBytes("{}")), "missing schema and required fields");
             Reject(() => ProfileFile.Load(new byte[ProfileFile.MaximumBytes + 1]), "profile size bound");
+            string fileTest=Path.Combine(Path.GetTempPath(),"RedBladePlus-file-test-"+Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(fileTest);
+            try
+            {
+                string current=Path.Combine(fileTest,"result.json");
+                HardwareJobs.WriteResult(fileTest,new JobResult{Message="old"});
+                using var snapshot=BoundedFile.OpenSnapshot(current);
+                HardwareJobs.WriteResult(fileTest,new JobResult{Message="new"});
+                using var reader=new StreamReader(snapshot);
+                var latest=System.Text.Json.JsonSerializer.Deserialize<JobResult>(BoundedFile.Read(current,16384));
+                Check(reader.ReadToEnd().Contains("old")&&latest?.Message=="new","UI polling retains its snapshot without blocking atomic worker results");
+            }
+            finally{Directory.Delete(fileTest,true);}
             var fake = new FakeHid(); var protocol = new ConfigProtocol(fake);
             await protocol.Save(config, uint.MaxValue, null, CancellationToken.None);
             Check(fake.Generation == 0 && fake.Writes == 71 && fake.Aborts == 0, "aligned save and generation wrap");

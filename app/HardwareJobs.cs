@@ -80,12 +80,14 @@ internal static class HardwareJobs
     internal static JobResult? Poll(string id)
     {
         Folder(id);string path=Path.Combine(ProtectedStaging.JobPath(id),"result.json");if(!File.Exists(path))return null;
-        try{return JsonSerializer.Deserialize<JobResult>(BoundedFile.Read(path,16384),Json);}catch(Exception error) when(error is IOException or JsonException or UnauthorizedAccessException){return null;}
+        try{return JsonSerializer.Deserialize<JobResult>(BoundedFile.Read(path,16384,snapshot:true),Json);}catch(Exception error) when(error is IOException or JsonException or UnauthorizedAccessException){return null;}
     }
     internal static void Cancel(string id)=>File.WriteAllText(Path.Combine(Folder(id),"cancel"),"");
-    static void WriteResult(string directory,JobResult result)
+    internal static void WriteResult(string directory,JobResult result)
     {
-        string temporary=Path.Combine(directory,"result.tmp");File.WriteAllBytes(temporary,JsonSerializer.SerializeToUtf8Bytes(result,Json));File.Move(temporary,Path.Combine(directory,"result.json"),true);
+        string temporary=Path.Combine(directory,"result.tmp"),target=Path.Combine(directory,"result.json");
+        File.WriteAllBytes(temporary,JsonSerializer.SerializeToUtf8Bytes(result,Json));
+        if(File.Exists(target))File.Replace(temporary,target,null);else File.Move(temporary,target);
     }
     internal static async Task<int> RunWorker(string id,string inputDirectoryPath)
     {

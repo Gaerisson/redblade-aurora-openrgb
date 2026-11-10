@@ -101,9 +101,11 @@ internal static class ProfileFile
 }
 internal static class BoundedFile
 {
-    internal static byte[] Read(string path,int maximum)
+    // Readers retain a stable file handle while the worker atomically replaces its result.
+    internal static FileStream OpenSnapshot(string path)=>new(path,FileMode.Open,FileAccess.Read,FileShare.ReadWrite|FileShare.Delete);
+    internal static byte[] Read(string path,int maximum,bool snapshot=false)
     {
-        using var stream=new FileStream(path,FileMode.Open,FileAccess.Read,FileShare.Read);
+        using var stream=snapshot?OpenSnapshot(path):new FileStream(path,FileMode.Open,FileAccess.Read,FileShare.Read);
         if(stream.Length>maximum)throw new InvalidDataException("File exceeds the allowed size.");
         var bytes=new byte[checked((int)stream.Length)];stream.ReadExactly(bytes);return bytes;
     }
