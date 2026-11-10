@@ -15,6 +15,8 @@ bool redblade_rgb_key_lit(uint8_t index);
 enum redblade_profile { RB_PROFILE_HOST, RB_PROFILE_WHITE, RB_PROFILE_RED, RB_PROFILE_OFF };
 enum redblade_setting { RB_SETTING_ANIMATION = 1, RB_SETTING_MEDIA = 2, RB_SETTING_IDLE_WHITE = 4 };
 void redblade_rgb_profile(uint8_t profile);
+void redblade_rgb_runtime(uint8_t profile, uint8_t master, uint8_t flags);
+void redblade_rgb_apply_config(void);
 void redblade_rgb_cycle(int8_t direction);
 void redblade_rgb_toggle(void);
 void redblade_rgb_brightness_step(int8_t direction);

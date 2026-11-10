@@ -125,7 +125,7 @@ int main(void) {
 
     redblade_rgb_defaults(); now+=2000; frame(0,200);
     hsv_t indicator;
-    assert(!redblade_controls_indicator(15,true,&indicator));
+    assert(redblade_controls_indicator(15,true,&indicator) && indicator.v>0);
     assert(redblade_controls_indicator(18,true,&indicator));
     assert(!redblade_controls_indicator(18,false,&indicator));
     press(RB_GAME); assert(redblade_controls_indicator(RB_LED_LGUI,false,&indicator) && indicator.h==0);

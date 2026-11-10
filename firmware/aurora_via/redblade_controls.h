@@ -16,6 +16,7 @@ enum redblade_keycodes {
 enum redblade_game_leds { RB_LED_W = 43, RB_LED_E = 44, RB_LED_R = 45, RB_LED_T = 46, RB_LED_F = 65, RB_LED_SPACE = 99, RB_LED_FN = 102, RB_LED_MINUS = 40, RB_LED_PLUS = 60, RB_LED_LGUI = 97, RB_LED_RGUI = 101, RB_LED_CAPS = 61, RB_LED_LSHIFT = 78, RB_LED_RSHIFT = 90, RB_LED_NUM = 37, RB_LED_SCROLL = 14 };
 
 void redblade_controls_init(void);
+void redblade_controls_apply_config(void);
 bool redblade_controls_process(uint16_t keycode, keyrecord_t *record);
 void redblade_controls_task(bool fn_active);
 void redblade_controls_suspend(void);

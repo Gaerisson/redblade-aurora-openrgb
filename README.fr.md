@@ -16,6 +16,14 @@ Contrôle OpenRGB touche par touche, raccourcis Fn et fonctions de jeu pour le *
 
 ![Fonctions du firmware](docs/assets/features.fr.png)
 
+## Studio 0.9.0 — aperçu
+
+RedBlade+ Studio est une application portable Windows x64 pour Full 0.9.0. Elle permet de modifier quatre profils enregistrés sur le clavier : 109 couleurs par touche, 24 couleurs d’effets et dix modules intégrés activables. Interface française ou anglaise et légendes AZERTY ou QWERTY. Maintenir Fn éteint les touches sans raccourci. Les enregistrements Recorder restent temporaires ; Turbo et Recorder sont conservés. Le flash guidé propose les firmwares Full et Core intégrés. Core ne possède pas l’API de configuration Full. Voir [Studio](app/README.md) et le [protocole](docs/CONFIG_PROTOCOL.md).
+
+**La version 0.9.0 est un aperçu, en attente de validation physique.** [Télécharger Studio et les deux éditions du firmware](https://github.com/Gaerisson/redblade-aurora-openrgb/releases/tag/v0.9.0). La dernière version Full validée sur ce clavier est la 0.8.1. Sauvegardez VIA et les réglages personnalisés avant flash : une image complète peut effacer les profils du clavier.
+
+![Éditeur de clavier Studio](docs/assets/studio-keyboard.fr.png)
+
 ## Deux éditions
 
 | Édition | Pour qui | Firmware |

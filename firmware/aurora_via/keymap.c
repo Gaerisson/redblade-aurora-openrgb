@@ -18,6 +18,7 @@
 #include "redblade_rgb.h"
 #include "redblade_controls.h"
 #include "redblade_recorder.h"
+#include "redblade_store.h"
 #include "usb_device_state.h"
 #include "color.h"
 
@@ -68,6 +69,7 @@ void keyboard_pre_init_user(void) {
 }
 
 void keyboard_post_init_user(void) {
+    redblade_store_init();
     redblade_controls_init();
     const bool active = usb_device_state_get_configure_state() == USB_DEVICE_STATE_CONFIGURED;
     redblade_rgb_init(active);
@@ -99,6 +101,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
 void housekeeping_task_user(void) {
     redblade_controls_task(layer_state_is(1));
+    redblade_store_task();
 }
 
 bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {

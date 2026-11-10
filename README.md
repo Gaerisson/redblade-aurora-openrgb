@@ -16,6 +16,14 @@ Per-key OpenRGB lighting, useful Fn shortcuts and game helpers for the **Designe
 
 ![Firmware features](docs/assets/features.png)
 
+## Studio 0.9.0 — preview
+
+RedBlade+ Studio is a portable Windows x64 application for Full 0.9.0. Edit four onboard profiles with 109 per-key colors, 24 effect colors and ten built-in module switches; English/French and AZERTY/QWERTY legends are available. Fn focus darkens unrelated keys while Fn is held. Recorder slots remain temporary; the existing Turbo and Recorder functions are retained. Studio offers guided flashing of bundled Full and Core images. Core does not expose the Full configuration API. See [Studio](app/README.md) and the [configuration protocol](docs/CONFIG_PROTOCOL.md).
+
+**0.9.0 is a preview, with physical validation pending.** [Download Studio and both firmware editions](https://github.com/Gaerisson/redblade-aurora-openrgb/releases/tag/v0.9.0). The last keyboard-validated Full version is 0.8.1. Back up VIA and custom settings before flashing; a full-image flash can erase onboard profiles.
+
+![Studio keyboard editor](docs/assets/studio-keyboard.png)
+
 ## Choose your edition
 
 | Edition | Included | Firmware |

@@ -4,6 +4,8 @@
 #include "redblade_rgb.h"
 #include "redblade_controls.h"
 #include "redblade_recorder.h"
+#include "redblade_config.h"
+#include "redblade_store.h"
 #include "raw_hid.h"
 #include <string.h>
 
@@ -31,20 +33,31 @@ bool redblade_rgb_key_lit(uint8_t index) {
     return index < RGB_MATRIX_LED_COUNT && ((typing_ttl[index / 2] >> ((index & 1) * 4)) & 15);
 }
 void redblade_rgb_key_flash(uint8_t index) {
-    if (index >= RGB_MATRIX_LED_COUNT || !redblade_rgb_fallback_active() || !rgb_matrix_get_val()) return;
+    if (index >= RGB_MATRIX_LED_COUNT || !redblade_config_feature(RB_MODULE_REACTIVE) || !redblade_rgb_fallback_active() || !rgb_matrix_get_val()) return;
     const uint8_t shift = (index & 1) * 4;
     if (!((typing_ttl[index / 2] >> shift) & 15)) ++typing_count;
-    typing_ttl[index / 2] |= 15 << shift;
+    typing_ttl[index / 2] = (typing_ttl[index / 2] & ~(15 << shift)) | (redblade_config_byte(7,15) << shift);
 }
 void redblade_rgb_replay_key(uint8_t keycode) {
     if (keycode < 128) redblade_rgb_key_flash(pgm_read_byte(&replay_leds[keycode]));
 }
 static hsv_t typing_color(uint8_t index, uint8_t white) {
     const uint8_t shift = (index & 1) * 4, ttl = (typing_ttl[index / 2] >> shift) & 15;
-    if (!ttl) return (hsv_t){0,0,white};
+    hsv_t base=redblade_config_key_color(index,(hsv_t){0,0,white});
+    if (base.v>rgb_matrix_get_val()) base.v=rgb_matrix_get_val();
+    if (!ttl) return base;
     typing_ttl[index / 2] -= 1 << shift;
     if (ttl == 1) --typing_count;
-    return (hsv_t){0,ttl * 17,white + (uint16_t)ttl * (rgb_matrix_get_val() - white) / 15};
+    const uint8_t duration=redblade_config_byte(7,15);
+    hsv_t peak=redblade_config_effect(RB_COLOR_REACTIVE,(hsv_t){0,255,rgb_matrix_get_val()});
+    if (peak.v>rgb_matrix_get_val()) peak.v=rgb_matrix_get_val();
+    int16_t delta=(int16_t)peak.h-base.h;
+    if (delta>127) delta-=256;
+    if (delta<-128) delta+=256;
+    base.h+=delta*ttl/duration;
+    base.s+=((int16_t)peak.s-base.s)*ttl/duration;
+    base.v+=((int16_t)peak.v-base.v)*ttl/duration;
+    return base;
 }
 
 uint8_t redblade_rgb_profile_get(void) { return local_profile; }
@@ -59,6 +72,17 @@ void redblade_rgb_profile(uint8_t profile) {
     boot_active = false;
     rgb_matrix_enable_noeeprom();
     rgb_matrix_mode_noeeprom(RGB_MATRIX_CUSTOM_REDBLADE_DIRECT);
+}
+void redblade_rgb_runtime(uint8_t profile,uint8_t master,uint8_t flags) {
+    if (profile>RB_PROFILE_OFF || flags>7) return;
+    const uint8_t restore_profile=previous_profile;
+    master_brightness=master;settings=flags;redblade_rgb_profile(profile);
+    previous_profile=restore_profile;
+}
+void redblade_rgb_apply_config(void) {
+    rgb_matrix_sethsv_noeeprom(rgb_matrix_get_hue(),rgb_matrix_get_sat(),RGB_MATRIX_MAXIMUM_BRIGHTNESS);
+    redblade_rgb_runtime(redblade_config_byte(3,0),redblade_config_byte(2,255),redblade_config_byte(0,7)&7);
+    previous_profile=local_profile==RB_PROFILE_OFF ? RB_PROFILE_HOST : local_profile;
 }
 
 void redblade_rgb_cycle(int8_t direction) {
@@ -89,6 +113,7 @@ void redblade_rgb_defaults(void) {
 }
 
 bool redblade_rgb_save(void) {
+    if (redblade_store_valid()) return redblade_store_save_lighting(local_profile,master_brightness,settings);
     // Dedicated QMK user word. Only the explicit Fn+F9 action writes it.
     // Game mode, VIA layers/macros and streaming colors are never stored here.
     const uint32_t word = 0x010000A7UL | ((uint32_t)local_profile << 19) | ((uint32_t)settings << 16) | ((uint32_t)master_brightness << 8);
@@ -147,7 +172,13 @@ void redblade_rgb_init(bool usb_active) {
     master_brightness = 255;
     settings = 7;
     const uint32_t word = eeconfig_read_user();
-    if ((word & 0xFFE000FFUL) == 0x010000A7UL) {
+    if (redblade_store_valid()) {
+        local_profile=redblade_config_byte(3,0);
+        previous_profile=local_profile==RB_PROFILE_OFF ? RB_PROFILE_HOST : local_profile;
+        master_brightness=redblade_config_byte(2,255);settings=redblade_config_byte(0,7)&7;
+        rgb_matrix_enable_noeeprom();rgb_matrix_mode_noeeprom(RGB_MATRIX_CUSTOM_REDBLADE_DIRECT);
+        rgb_matrix_sethsv_noeeprom(rgb_matrix_get_hue(),rgb_matrix_get_sat(),RGB_MATRIX_MAXIMUM_BRIGHTNESS);
+    } else if ((word & 0xFFE000FFUL) == 0x010000A7UL) {
         local_profile = (word >> 19) & 3;
         previous_profile = local_profile == RB_PROFILE_OFF ? RB_PROFILE_HOST : local_profile;
         settings = (word >> 16) & 7;
@@ -194,7 +225,7 @@ void redblade_rgb_begin_frame(void) {
     boot_brightness = brightness < REDBLADE_BOOT_BRIGHTNESS ? brightness : REDBLADE_BOOT_BRIGHTNESS;
     fallback_brightness = brightness < REDBLADE_FALLBACK_BRIGHTNESS ? brightness : REDBLADE_FALLBACK_BRIGHTNESS;
     media_brightness = brightness < REDBLADE_MEDIA_BRIGHTNESS ? brightness : REDBLADE_MEDIA_BRIGHTNESS;
-    if (!idle_fallback && now - last_packet_at >= REDBLADE_RGB_TIMEOUT_MS) {
+    if (!idle_fallback && now - last_packet_at >= redblade_config_timeout()) {
         forget_stream();
         idle_fallback = true;
     }
@@ -220,13 +251,17 @@ static hsv_t target_color(uint8_t index, uint8_t kind) {
     hsv_t color = {0, 0, 0};
     if (kind == RENDER_OFF) return color;
     if (kind == RENDER_WHITE || kind == RENDER_LOCAL_WHITE) return typing_color(index, fallback_brightness);
-    if (kind == RENDER_RED) { color.s = 255; color.v = manual_brightness; return color; }
+    if (kind == RENDER_RED) {
+        color=redblade_config_effect(RB_COLOR_ACCENT,(hsv_t){0,255,manual_brightness});
+        if (color.v>manual_brightness) color.v=manual_brightness;
+        return color;
+    }
     if (kind == RENDER_DIRECT) color = incoming[index];
     // Manufacturer LED indices 16..19: Calc, Mute, Volume-, Volume+.
     // A black host color is the fallback sentinel for these four keys only.
     if ((settings & RB_SETTING_MEDIA) && color.v == 0 && index >= 16 && index <= 19) {
-        color.h = color.s = 0;
-        color.v = media_brightness;
+        color=redblade_config_effect(RB_COLOR_MEDIA,(hsv_t){0,0,media_brightness});
+        if (color.v>rgb_matrix_get_val()) color.v=rgb_matrix_get_val();
     }
     return color;
 }
@@ -235,16 +270,17 @@ hsv_t redblade_rgb_color(uint8_t index) {
     if (render_kind != RENDER_BOOT) return redblade_rgb_apply_brightness(target_color(index, render_kind));
     hsv_t color = {0, 0, 0};
     if (render_kind == RENDER_BOOT) {
+        const hsv_t wave=redblade_config_effect(RB_COLOR_WAVE,(hsv_t){0,255,255});
+        const uint8_t peak=boot_brightness<wave.v ? boot_brightness : wave.v;
         // Curved wavefront: each row offsets the crest; trailing edge fades
         // over 112 units while the front edge is crisp (32 units).
         const int16_t crest = (int16_t)boot_position - 64 - ((int16_t)g_led_config.point[index].y - 32) * ((int16_t)g_led_config.point[index].y - 32) / 96;
         const int16_t behind = crest - g_led_config.point[index].x;
-        color.h = 0; color.s = 255; // deep red bed, matching Red Blade
-        color.v = boot_brightness / 12;
+        color.h = wave.h; color.s = wave.s;
+        color.v = peak / 12;
         if (behind >= -32 && behind < 112) {
             const uint8_t strength = behind < 0 ? (behind + 32) * 4 : (112 - behind) * 128 / 112;
-            color.h = 0; color.s = 255; // Pure red; gradient is intensity only.
-            color.v = color.v + strength * (boot_brightness - color.v) / 128;
+            color.v = color.v + strength * (peak - color.v) / 128;
         }
         if (boot_blend) {
             const hsv_t target = target_color(index, render_target);
@@ -282,6 +318,7 @@ static uint16_t current_mode(void) {
 // request. All standard VIA commands continue through upstream QMK.
 bool via_command_kb(uint8_t *data, uint8_t length) {
     if (length != REDBLADE_REPORT_SIZE) return false;
+    if (data[0]==0xFE && data[1]==0x90) return redblade_store_command(data,length);
 
     if (data[0] == 0xFE && data[1] == 0x00) {
         // Vial discovery envelope required by OpenRGB, RGB capability only.
@@ -302,12 +339,12 @@ bool via_command_kb(uint8_t *data, uint8_t length) {
         memset(data + 2, 0, length - 2);
         data[2] = 1; // diagnostics format
         data[3] = REDBLADE_VERSION_MAJOR; data[4] = REDBLADE_VERSION_MINOR; data[5] = REDBLADE_VERSION_PATCH;
-        data[6] = (have_stream && age < REDBLADE_RGB_TIMEOUT_MS && !suspended ? 1 : 0) |
+        data[6] = (have_stream && age < redblade_config_timeout() && !suspended ? 1 : 0) |
                   (boot_active && now - boot_started_at < REDBLADE_BOOT_ANIMATION_MS ? 2 : 0) |
                   (suspended ? 4 : 0) | (rgb_matrix_is_enabled() ? 8 : 0);
         data[7] = current_mode();
         write32(data + 8, age);
-        write32(data + 12, REDBLADE_RGB_TIMEOUT_MS);
+        write32(data + 12, redblade_config_timeout());
         write32(data + 16, received_packets);
         write32(data + 20, REDBLADE_BOOT_ANIMATION_MS);
         memcpy(data + 24, "RDBLFS01", 8);
@@ -322,7 +359,7 @@ bool via_command_kb(uint8_t *data, uint8_t length) {
         data[6] = redblade_game_mode();
         data[7] = local_profile; data[8] = master_brightness; data[9] = settings;
         write16(data + 10, REDBLADE_BOOT_HOLD_MS);
-        write32(data + 12, REDBLADE_RGB_TIMEOUT_MS);
+        write32(data + 12, redblade_config_timeout());
         data[16] = redblade_turbo_key(); data[17] = redblade_turbo_rate(); data[18] = redblade_auto_w();
         data[19] = (redblade_turbo_selecting() ? 1 : 0) | (redblade_guide_active() ? 2 : 0) | (redblade_recorder_active() ? 4 : 0) | (redblade_recorder_rate_context() ? 8 : 0);
         write32(data + 20, REDBLADE_BOOT_ANIMATION_MS);

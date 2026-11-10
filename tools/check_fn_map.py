@@ -53,6 +53,16 @@ def check(root=ROOT):
     for name,key in semantic.items():
         index=int(re.search(r'RB_LED_'+name+r'\s*=\s*(\d+)',header).group(1))
         assert layers[0][index]==key, f'{name} status is on the wrong physical key'
+    # This is a contract between the light mask, public VIA bindings and board
+    # geometry; a remapped/default shortcut must not silently stay hidden.
+    controls=(root/'firmware/aurora_via/redblade_controls.c').read_text(encoding='utf-8')
+    mask_text=re.search(r'fn_shortcut_led_mask\[\]\s*=\s*\{(.*?)\}',controls,re.S).group(1)
+    mask=bytes(int(n,16) for n in re.findall(r'0x[0-9A-Fa-f]+',mask_text))
+    assert len(mask)==14
+    fn_index=int(re.search(r'RB_LED_FN\s*=\s*(\d+)',header).group(1))
+    expected_leds={positions.index(pos) for pos in actual}|{fn_index}
+    lit_leds={i for i in range(112) if mask[i//8]&(1<<(i%8))}
+    assert lit_leds==expected_leds, 'Fn focus mask differs from the published shortcuts'
     return doc
 
 

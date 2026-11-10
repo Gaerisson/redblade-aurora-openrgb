@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>RedBladePlus-Studio</AssemblyName>
+    <RootNamespace>RedBladePlus.Studio</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Version>0.9.0</Version>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <PublishTrimmed>false</PublishTrimmed>
+    <DebugType>embedded</DebugType>
+    <PathMap>$(MSBuildProjectDirectory)=/_/studio</PathMap>
+    <HelperDirectory Condition="'$(HelperDirectory)' == ''">$(MSBuildProjectDirectory)/../../../work/sonixflasher-3.1.0</HelperDirectory>
+  </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources/keyboard-layout.json" LogicalName="layout.json" />
+    <EmbeddedResource Include="../assets/redblade-plus.png" LogicalName="brand.png" />
+    <EmbeddedResource Include="../dist/manifest.json" LogicalName="full.manifest.json" />
+    <EmbeddedResource Include="../dist/manifest-core.json" LogicalName="core.manifest.json" />
+    <EmbeddedResource Include="../dist/redblade-fs-aurora-via.bin" LogicalName="full.bin" />
+    <EmbeddedResource Include="../dist/redblade-fs-openrgb-core.bin" LogicalName="core.bin" />
+    <EmbeddedResource Include="$(HelperDirectory)/sonixflasher.exe" LogicalName="sonixflasher.exe" Condition="Exists('$(HelperDirectory)/sonixflasher.exe')" />
+    <EmbeddedResource Include="$(HelperDirectory)/libusb-1.0.dll" LogicalName="libusb-1.0.dll" Condition="Exists('$(HelperDirectory)/libusb-1.0.dll')" />
+  </ItemGroup>
+</Project>

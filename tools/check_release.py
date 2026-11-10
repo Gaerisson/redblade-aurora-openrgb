@@ -11,7 +11,16 @@ from check_fn_map import check as check_fn
 ROOT=Path(__file__).resolve().parents[1]
 
 
-def validate(root=ROOT, elf=None, size_tool='arm-none-eabi-size', compiler='arm-none-eabi-gcc', update=False):
+def ram_usage(elf, nm_tool='arm-none-eabi-nm'):
+    report=subprocess.check_output([str(nm_tool),'-n',str(elf)],text=True)
+    symbols={name:int(address,16) for address,name in re.findall(r'^([0-9a-fA-F]+)\s+\w\s+(\S+)',report,re.M)}
+    base,end=symbols['__heap_base__'],symbols['__heap_end__']
+    remaining=end-base
+    assert 0x20000000<=base<=end==0x20002000 and remaining>=64, 'Less than 64 usable bytes of unassigned SRAM; heap alignment and reserved stacks are counted separately'
+    return dict(ram_bytes_including_reserved_stacks=base-0x20000000,ram_remaining_bytes=remaining)
+
+
+def validate(root=ROOT, elf=None, size_tool='arm-none-eabi-size', compiler='arm-none-eabi-gcc', update=False, nm_tool='arm-none-eabi-nm'):
     check_fn(root)
     config=(root/'firmware/aurora_via/config.h').read_text(encoding='utf-8')
     version='v'+'.'.join(re.search(r'#define REDBLADE_VERSION_'+part+r'\s+(\d+)',config).group(1) for part in ('MAJOR','MINOR','PATCH'))
@@ -22,12 +31,7 @@ def validate(root=ROOT, elf=None, size_tool='arm-none-eabi-size', compiler='arm-
     assert 0x20000000<stack<=0x20002000 and reset&1 and reset<65532, 'Unexpected ARM vector table'
     values=dict(release=version,binary_bytes=len(binary),sha256=hashlib.sha256(binary).hexdigest())
     if elf:
-        report=subprocess.check_output([str(size_tool),'-A',str(elf)],text=True)
-        sections={name:(int(size),int(address)) for name,size,address in re.findall(r'^(\.[\w.]+)\s+(\d+)\s+(\d+)',report,re.M)}
-        remaining,address=sections['.heap']
-        used=address-0x20000000
-        assert used+remaining==8192 and remaining>=64, 'Less than 64 bytes of unassigned SRAM; reserved stacks are counted separately'
-        values.update(ram_bytes_including_reserved_stacks=used,ram_remaining_bytes=remaining)
+        values.update(ram_usage(elf,nm_tool))
     if update:
         manifest.update(values)
         native=root/'dist/redblade-plus-benchmark-windows.exe'
@@ -52,9 +56,10 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--elf',type=Path)
     parser.add_argument('--size-tool',default='arm-none-eabi-size')
+    parser.add_argument('--nm-tool',default='arm-none-eabi-nm')
     parser.add_argument('--compiler',default='arm-none-eabi-gcc')
     parser.add_argument('--update',action='store_true')
     args=parser.parse_args()
     if args.update and not args.elf: parser.error('--update requires the compiled --elf')
-    result=validate(elf=args.elf,size_tool=args.size_tool,compiler=args.compiler,update=args.update)
+    result=validate(elf=args.elf,size_tool=args.size_tool,compiler=args.compiler,update=args.update,nm_tool=args.nm_tool)
     print(json.dumps({key:result[key] for key in ('release','sha256','binary_bytes','ram_remaining_bytes')}))

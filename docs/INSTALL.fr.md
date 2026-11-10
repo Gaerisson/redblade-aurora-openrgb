@@ -1,5 +1,7 @@
 # Installation et référence technique
 
+**État de la version 0.9.0 en développement :** Studio propose un flash guidé Full/Core avec sauvegarde privée VIA/réglages et vérification après reconnexion. Une image complète peut effacer les profils ; exportez-les au préalable. Le flash et la persistance 0.9.0 ne sont pas validés sur matériel. La version publique/installée reste 0.8.1. Voir [Studio](../app/README.md).
+
 [English](INSTALL.md) · **Français** · [Projet](../README.fr.md) · [Raccourcis](SHORTCUTS.md)
 
 

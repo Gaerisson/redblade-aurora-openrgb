@@ -2,6 +2,7 @@
 #include "redblade_recorder.h"
 #include "redblade_controls.h"
 #include "redblade_rgb.h"
+#include "redblade_config.h"
 #include "report.h"
 #include <string.h>
 
@@ -70,13 +71,17 @@ void redblade_recorder_stop(bool save_recording) {
     } else if (state == RB_REC_PLAYING) release_owned();
     state = RB_REC_IDLE; loop_mode = loop_boundary = pending_record = pending_gui_locked = modifier_cancel = false;
 }
-void redblade_recorder_speed_reset(void) { speed_index = 2; speed_factor = 256; update_wait(); }
+void redblade_recorder_speed_configure(uint8_t index) {
+    speed_index=index<=9 ? index : 2;
+    const uint8_t quarter=redblade_recorder_speed_quarters();
+    speed_factor=quarter ? (1024+quarter/2)/quarter : 0;
+    update_wait();
+}
+void redblade_recorder_speed_reset(void) { redblade_recorder_speed_configure(2); }
 void redblade_recorder_speed_step(int8_t direction) {
     if (direction > 0 && speed_index < 9) ++speed_index;
     if (direction < 0 && speed_index > 0) --speed_index;
-    const uint8_t quarter = redblade_recorder_speed_quarters();
-    speed_factor = quarter ? (1024 + quarter / 2) / quarter : 0; // Only on a control action.
-    update_wait();
+    redblade_recorder_speed_configure(speed_index); // Only on a control action.
 }
 void redblade_recorder_init(void) {
     redblade_recorder_stop(false);
@@ -203,9 +208,12 @@ bool redblade_recorder_indicator(uint8_t index, bool fn_active, hsv_t *color) {
     if (state != RB_REC_IDLE && (!slot_key || state == RB_REC_ARMED || index == 21 + selected)) {
         const uint16_t phase = (timer_read32() / 3) % 512;
         const uint8_t value = 24 + (phase < 256 ? phase : 511 - phase) * 104 / 255;
-        *color = (hsv_t){state == RB_REC_RECORDING ? 0 : state == RB_REC_PLAYING ? (loop_mode ? 128 : 85) : 32,255,value};
+        const uint8_t effect=state==RB_REC_RECORDING ? RB_COLOR_RECORDING : state==RB_REC_PLAYING ? (loop_mode ? RB_COLOR_LOOP : RB_COLOR_ONE_SHOT) : RB_COLOR_SELECTION;
+        *color=redblade_config_effect_scaled(effect,(hsv_t){state==RB_REC_RECORDING ? 0 : state==RB_REC_PLAYING ? (loop_mode ? 128 : 85) : 32,255,value},128);
         return true;
     }
-    if (slot_key && fn_active) { *color = (hsv_t){85,lengths[index-21] ? 255 : 0,lengths[index-21] ? 72 : 8}; return true; }
+    if (slot_key && fn_active) {
+        *color=lengths[index-21] ? redblade_config_effect_scaled(RB_COLOR_ONE_SHOT,(hsv_t){85,255,72},128) : (hsv_t){85,0,8};return true;
+    }
     return false;
 }

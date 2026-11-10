@@ -24,10 +24,11 @@
   "host_tests": "passed",
   "hardware_validation": null,
   "physical_key_latency_measured": false,
-  "release": "v0.8.1",
-  "sha256": "ea33a05e46bf784cbd85595b51339c307bed82024d01e3efbb10cc28bc9ab1d6",
+  "release": "v0.9.0",
+  "sha256": "70b91840206ec7ee6c8df4840db1aa1b8d676c34c878221b345dcd193b6ce43c",
   "binary_bytes": 65536,
   "ram_bytes_including_reserved_stacks": 7648,
   "ram_remaining_bytes": 544,
-  "dedicated_windows_indicator": "off; Core has no added Windows-lock feature"
+  "dedicated_windows_indicator": "off; Core has no added Windows-lock feature",
+  "ram_measurement": "__heap_end__ minus aligned __heap_base__; includes all reserved stacks and alignment"
 }

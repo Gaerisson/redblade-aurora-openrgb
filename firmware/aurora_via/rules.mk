@@ -6,5 +6,8 @@ LTO_ENABLE = yes
 # Minimal button-only HID output; no cursor/acceleration engine or extra task.
 MOUSE_ENABLE = yes
 MOUSE_SHARED_EP = yes
-SRC += redblade_rgb.c redblade_controls.c redblade_recorder.c
+SRC += redblade_rgb.c redblade_controls.c redblade_recorder.c redblade_config.c redblade_store.c redblade_store_flash.c
+override LDSCRIPT = $(KEYMAP_PATH)/redblade_store.ld
+# Group aligned LTO sections to avoid wasting the small remaining SRAM on padding.
+EXTRALDFLAGS += -Wl,--sort-section=alignment
 

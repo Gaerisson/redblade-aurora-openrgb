@@ -13,6 +13,7 @@ void redblade_recorder_task(bool fn_active);
 void redblade_recorder_stop(bool save_recording);
 void redblade_recorder_speed_step(int8_t direction);
 void redblade_recorder_speed_reset(void);
+void redblade_recorder_speed_configure(uint8_t index);
 uint8_t redblade_recorder_state(void);
 uint8_t redblade_recorder_selected(void);
 uint8_t redblade_recorder_speed_quarters(void);

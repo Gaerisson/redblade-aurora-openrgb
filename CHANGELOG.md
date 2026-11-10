@@ -2,6 +2,14 @@
 
 All new release notes are written in English. Version 0.x is experimental; hardware validation is recorded separately from build and host-test results.
 
+## 0.9.0 preview — Studio and Full firmware
+
+- Portable Windows x64 Studio: English/French, AZERTY/QWERTY legends, offline editing, guided Full/Core flash and explicit configuration jobs.
+- Full: four persistent profiles, each with 109 HSV key colors, 24 effect colors and ten module enables; independent two-bank flash storage preserves the existing VIA EEPROM allocation.
+- Fn focus hides unrelated keys while Fn is held; disabled module shortcuts are hidden. Existing Turbo and temporary Recorder slots remain available.
+- 0.9.0 physical persistence, power-cycle and flash validation has **not** been performed. Last keyboard-validated Full release: 0.8.1.
+- Studio uses the project's logo, crimson/charcoal/white styling and a physical 109-key editor. Guided flash verifies a normal-to-bootloader transition on the same USB port and uses protected staging; RGB recovery respects GUI-only OpenRGB setups.
+
 ## Unreleased — Windows tooling recovery
 
 ### Fixed

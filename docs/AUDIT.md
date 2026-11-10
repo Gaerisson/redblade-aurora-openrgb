@@ -1,5 +1,14 @@
 # RedBlade+ 0.8.1 — code review and validation
 
+The 0.9.0 Studio integration received a consolidated source review with Sol 6.1. Its two flash blockers (user-writable privileged staging and accepting an unrelated bootloader) were corrected with protected atomic staging/IPC and a required same-port normal-to-bootloader transition. OpenRGB GUI-only restoration was corrected too. Follow-up checks cover inherited owner rights, cross-account request paths and strict SIDs. Studio builds without warnings/errors and passes 118 hardware-free assertions. The UAC/ACL and USB-location paths still require real-world validation; no 0.9.0 flash, power-cycle persistence or physical latency result is claimed.
+
+**0.9.0 status:** The observations below concern earlier versions unless explicitly identified otherwise. Studio 0.9.0 storage, persistence, power-cycle and flashing have not been validated on physical hardware.
+
+## 0.9.0 development verification
+
+The Full and Core ARM builds succeeded. The Full image uses 44,992 program bytes and has 104 bytes of unassigned SRAM after aligned heap and reserved stacks; Core has 544 bytes. Native host verification passed nine Full and two Core suites, fourteen Python checks and nine Windows recovery scenarios. The four-profile store tests simulate interrupted writes, recovery and validation; they are not hardware tests. The physical keyboard remains on public 0.8.1. Persistence through power loss, 0.9.0 flashing, reconnect and real-device behavior remain unvalidated.
+
+
 Review date: **2026-11-04**. Scope: actual protocol, controls, Recorder, keymap/rendering, Windows tools, migration, source packaging and documentation. Build/host results and on-device checks are recorded separately.
 
 ## Changes and evidence

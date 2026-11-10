@@ -50,7 +50,7 @@ class ToolTests(unittest.TestCase):
             for name in ['fn-shortcuts.json','led-map.json']:shutil.copy2(ROOT/name,root/name)
             for name in ['manifest.json','manifest-core.json','redblade-fs-aurora-via.bin','redblade-fs-openrgb-core.bin','SHA256SUMS']:shutil.copy2(ROOT/'dist'/name,root/'dist'/name)
             def output(args,**kw):
-                return '.heap 72 536879032\n' if '-A' in args else 'test compiler\n'
+                return '20001fb8 B __heap_base__\n20002000 B __heap_end__\n' if '-n' in args else 'test compiler\n'
             with patch.object(check_release.subprocess,'check_output',side_effect=output),patch.object(check_core_release,'ROOT',root):
                 check_core_release.validate('dummy.elf',update=True)
                 check_release.validate(root,elf='dummy.elf',update=True)
@@ -58,6 +58,12 @@ class ToolTests(unittest.TestCase):
                 check_release.validate(root,elf='dummy.elf',update=True)
                 check_core_release.validate('dummy.elf',update=True)
                 check_release.validate(root)
+
+    def test_ram_guard_uses_aligned_heap_symbols(self):
+        with patch.object(check_release.subprocess,'check_output',return_value='20001fc8 B __heap_base__\n20002000 B __heap_end__\n'):
+            with self.assertRaisesRegex(AssertionError,'64 usable bytes'):check_release.ram_usage('dummy.elf')
+        with patch.object(check_release.subprocess,'check_output',return_value='20001fc0 B __heap_base__\n20002000 B __heap_end__\n'):
+            self.assertEqual(check_release.ram_usage('dummy.elf')['ram_remaining_bytes'],64)
 
     def test_core_map_removes_known_helpers_without_changing_unrelated_cells(self):
         core=json.loads((ROOT/'fn-shortcuts-core.json').read_text(encoding='utf-8'))

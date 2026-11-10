@@ -96,6 +96,8 @@ Fn + Pause also stops media playback. Fn/Shift can be released before the media 
 
 ## Dynamic lights and status
 
+Full 0.9 adds **Fn focus**: hold Fn to darken keys with no shipped Fn shortcut. Shortcuts for modules disabled in Studio are hidden too. Releasing Fn restores the host/local frame. Studio can disable Fn focus, customize the 109-key palette and 24 effect colors, and save four complete onboard profiles. The colors below describe factory defaults. Remapped VIA Fn assignments do not automatically change the factory-position light map.
+
 The default **host profile gives Aurora/OpenRGB priority**. After **5 seconds without RGB packets**, it becomes **white with red key trails**: physical typing, Turbo and Recorder replay light the corresponding keys, then fade back over approximately half a second (15 rendered frames, frame rate/load dependent). Fn + F2 selects this reactive white explicitly. Lock indicators retain priority over key trails.
 
 Physical typing follows the actual key position. Recorder replay uses factory base-key positions; if you remap usages with VIA, its replay light follows the original factory key for that usage. Typed characters still follow your host language/layout. No reactive trails are layered over fresh host RGB in the host profile.

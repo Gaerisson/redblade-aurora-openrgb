@@ -96,6 +96,8 @@ Fn + Pause arrête aussi la lecture multimédia. Relâcher Fn/Maj avant la touch
 
 ## Touches dynamiques et couleurs
 
+Full 0.9 ajoute le **focus Fn** : maintenir Fn éteint les touches sans raccourci Fn fourni. Les raccourcis des modules désactivés dans Studio sont aussi masqués. Relâcher Fn rétablit les couleurs du logiciel ou du profil local. Studio permet de désactiver ce focus et d’enregistrer quatre profils avec 109 couleurs par touche et 24 couleurs d’effets. Les couleurs ci-dessous sont celles d’usine. Un raccourci Fn déplacé dans VIA ne déplace pas automatiquement son indicateur lumineux.
+
 Le **profil hôte par défaut donne priorité à Aurora/OpenRGB**. Après **5 secondes sans RGB**, il passe au **blanc avec traînées rouges** : chaque frappe physique, Turbo ou lettre rejouée s’allume, puis revient au blanc en environ une demi-seconde (15 images, durée dépendante de la charge). Fn + F2 choisit ce blanc réactif explicitement. Les indicateurs de verrouillage restent prioritaires.
 
 Une frappe physique éclaire sa position réelle. Le rejeu utilise les positions des touches d’origine : après remappage VIA, la lumière suit la touche d’origine correspondant au code rejoué. Le texte dépend toujours de la disposition du PC. Aucun effet de frappe ne recouvre un flux RGB actif dans le profil hôte.

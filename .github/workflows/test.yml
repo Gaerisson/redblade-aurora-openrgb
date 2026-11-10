@@ -16,17 +16,25 @@ jobs:
       - uses: actions/checkout@v4
       - name: Test firmware and controls with sanitizers
         run: |
-          for suite in protocol controls rendering recorder speed_typing keymap_hooks; do
+          set -e
+          for suite in protocol controls rendering recorder speed_typing keymap_hooks configuration custom_colors; do
             cc -std=c11 -Wall -Wextra -Werror -O1 -g -DUSE_CIE1931_CURVE -fsanitize=address,undefined \
               -I tests/stubs -I tests -I tests/upstream -I firmware/aurora_via \
-              tests/${suite}_test.c tests/qmk_fixture.c tests/upstream/color.c tests/upstream/led_tables.c \
-              firmware/aurora_via/redblade_rgb.c firmware/aurora_via/redblade_controls.c firmware/aurora_via/redblade_recorder.c -o /tmp/${suite}-test
+              tests/${suite}_test.c tests/qmk_fixture.c tests/store_flash_fixture.c tests/upstream/color.c tests/upstream/led_tables.c \
+              firmware/aurora_via/redblade_rgb.c firmware/aurora_via/redblade_controls.c firmware/aurora_via/redblade_recorder.c firmware/aurora_via/redblade_config.c firmware/aurora_via/redblade_store.c -o /tmp/${suite}-test
             /tmp/${suite}-test
           done
+      - name: Test flash journal with sanitizers
+        run: |
+          cc -std=c11 -Wall -Wextra -Werror -O1 -g -fsanitize=address,undefined \
+            -I tests/stubs -I tests -I firmware/aurora_via tests/store_test.c tests/store_flash_fixture.c \
+            tests/store_callbacks_stub.c firmware/aurora_via/redblade_store.c -o /tmp/store-test
+          /tmp/store-test
       - name: Check Python utilities
         run: python3 -m py_compile tools/*.py
       - name: Test standalone OpenRGB Core with sanitizers
         run: |
+          set -e
           for suite in core core_keymap_hooks; do
             cc -std=c11 -Wall -Wextra -Werror -O1 -g -fsanitize=address,undefined \
               -include firmware/openrgb_core/config.h -I tests/stubs -I tests -I firmware/openrgb_core \
@@ -42,7 +50,66 @@ jobs:
         run: |
           cc -std=c11 -Wall -Wextra -Werror -O2 -DUSE_CIE1931_CURVE \
             -I tests/stubs -I tests -I firmware/aurora_via \
-            tests/benchmark.c tests/qmk_fixture.c tests/upstream/color.c tests/upstream/led_tables.c \
-            firmware/aurora_via/redblade_rgb.c firmware/aurora_via/redblade_controls.c firmware/aurora_via/redblade_recorder.c -o /tmp/native-benchmark
+            tests/benchmark.c tests/qmk_fixture.c tests/store_flash_fixture.c tests/upstream/color.c tests/upstream/led_tables.c \
+            firmware/aurora_via/redblade_rgb.c firmware/aurora_via/redblade_controls.c firmware/aurora_via/redblade_recorder.c firmware/aurora_via/redblade_config.c firmware/aurora_via/redblade_store.c -o /tmp/native-benchmark
           /tmp/native-benchmark
 
+  firmware-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ARM and QMK build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-arm-none-eabi binutils-arm-none-eabi libnewlib-arm-none-eabi build-essential git python3-pip
+          python3 -m pip install --user --break-system-packages qmk
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Fetch pinned SonixQMK
+        run: |
+          git clone --no-checkout https://github.com/SonixQMK/qmk_firmware.git "$RUNNER_TEMP/qmk_firmware"
+          git -C "$RUNNER_TEMP/qmk_firmware" checkout 62973ee48a976c6f7cc6d4f7b198bd48a2fdfe60
+          git -C "$RUNNER_TEMP/qmk_firmware" submodule update --init --recursive
+      - name: Build both editions and refresh manifests
+        run: |
+          set -eu
+          qmk_tree="$RUNNER_TEMP/qmk_firmware"
+          python3 tools/prepare_firmware.py "$qmk_tree"
+          python3 tools/prepare_firmware.py "$qmk_tree" --edition core
+          (cd "$qmk_tree" && qmk compile -kb designedbygg/redblade/rbfs -km aurora_via -e SKIP_GIT=yes)
+          (cd "$qmk_tree" && qmk compile -kb designedbygg/redblade/rbfs -km openrgb_core -e SKIP_GIT=yes)
+          cp "$qmk_tree/designedbygg_redblade_rbfs_aurora_via.bin" dist/redblade-fs-aurora-via.bin
+          cp "$qmk_tree/designedbygg_redblade_rbfs_openrgb_core.bin" dist/redblade-fs-openrgb-core.bin
+          python3 tools/check_release.py --update --elf "$qmk_tree/.build/designedbygg_redblade_rbfs_aurora_via.elf"
+          python3 tools/check_core_release.py --update --elf "$qmk_tree/.build/designedbygg_redblade_rbfs_openrgb_core.elf"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rebuilt-firmware
+          path: dist/
+  studio-build:
+    needs: firmware-build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: rebuilt-firmware
+          path: dist
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Verify rebuilt firmware and fetch pinned helper
+        shell: pwsh
+        run: |
+          python tools/check_release.py
+          if ($LASTEXITCODE) { throw 'Full manifest invalid' }
+          python tools/check_core_release.py
+          if ($LASTEXITCODE) { throw 'Core manifest invalid' }
+          $archive = Join-Path $env:RUNNER_TEMP 'sonixflasher.zip'
+          Invoke-WebRequest https://github.com/SonixQMK/SonixFlasherC/releases/download/3.1.0/sonixflasher-windows-x86_64.zip -OutFile $archive
+          if ((Get-FileHash $archive -Algorithm SHA256).Hash -ne '2958CA8DE3021BF96D5C900B6BB5021A2D4C1A528D8DA2516598FD067BBF0619') { throw 'Unexpected helper archive' }
+          Expand-Archive $archive (Join-Path $env:RUNNER_TEMP 'sonixflasher')
+      - name: Publish and run hardware-free Studio self-test
+        shell: pwsh
+        run: |
+          ./app/build.ps1 -HelperDirectory (Join-Path $env:RUNNER_TEMP 'sonixflasher')
+          if ($LASTEXITCODE) { throw 'Studio build or self-test failed' }

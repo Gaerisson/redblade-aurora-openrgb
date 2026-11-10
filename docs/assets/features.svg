@@ -3,7 +3,7 @@
 <rect width="1600" height="1080" fill="#090b10"/><ellipse cx="600" cy="400" rx="1000" ry="520" fill="url(#glow)"/>
 <style>text{font-family:Arial,DejaVu Sans,sans-serif;fill:#f3f4f8}.brand{font-size:64px;font-weight:800;letter-spacing:-2px}.sub{font-size:25px;fill:#b8becb}.label{font-size:18px;font-weight:700;letter-spacing:2px}.card{font-size:28px;font-weight:700}.body{font-size:21px;fill:#b8becb}.key{font-size:12px;font-weight:700;text-anchor:middle}.small{font-size:16px;fill:#858e9f}</style>
 <text x="64" y="88" class="brand">RedBlade+</text>
-<text x="444" y="80" class="label" style="fill:#ff5267">OPENRGB FIRMWARE  /  FULL 0.8.1</text>
+<text x="444" y="80" class="label" style="fill:#ff5267">OPENRGB FIRMWARE  /  STUDIO 0.9.0</text>
 <text x="64" y="141" class="sub">Your keyboard. More capable.</text>
 <text x="64" y="201" class="label" style="fill:#e9eef7">109 PER-KEY LEDS</text>
 <text x="465" y="201" class="label" style="fill:#58cde8">AURORA → OPENRGB</text>
@@ -230,9 +230,9 @@
 <text x="64" y="709" class="small">FEATURE ILLUSTRATION · STATES ARE NOT SIMULTANEOUS</text>
 <rect x="64" y="752" width="352" height="224" rx="12" fill="#141820" stroke="#303641"/>
 <text x="86" y="788" class="label" style="fill:#5ad0e7">01</text>
-<text x="86" y="831" class="card" style="fill:#5ad0e7">RECORDER</text>
-<text x="86" y="878" class="body">3 slots · original rhythm</text>
-<text x="86" y="915" class="body">One-shot or loop</text>
+<text x="86" y="831" class="card" style="fill:#5ad0e7">STUDIO</text>
+<text x="86" y="878" class="body">4 onboard profiles</text>
+<text x="86" y="915" class="body">109 keys · 24 effects</text>
 <rect x="440" y="752" width="352" height="224" rx="12" fill="#141820" stroke="#303641"/>
 <text x="462" y="788" class="label" style="fill:#ffba5a">02</text>
 <text x="462" y="831" class="card" style="fill:#ffba5a">HYPER + TURBO</text>
@@ -245,9 +245,9 @@
 <text x="838" y="915" class="body">Red trails over white</text>
 <rect x="1192" y="752" width="352" height="224" rx="12" fill="#141820" stroke="#303641"/>
 <text x="1214" y="788" class="label" style="fill:#b28af5">04</text>
-<text x="1214" y="831" class="card" style="fill:#b28af5">NATIVE OPENRGB</text>
-<text x="1214" y="878" class="body">Aurora takes priority</text>
-<text x="1214" y="915" class="body">VIA · ISO · full numpad</text>
+<text x="1214" y="831" class="card" style="fill:#b28af5">FN FOCUS</text>
+<text x="1214" y="878" class="body">Shortcuts visible with Fn</text>
+<text x="1214" y="915" class="body">Other keys go dark</text>
 <text x="64" y="1027" class="small">3 shared RAM slots ≈ 48 simple presses · Target speeds depend on USB/application · Esc to stop</text>
 <text x="64" y="1057" class="small">Separate Core edition: OpenRGB + VIA only · Source and BIN available on GitHub</text>
 </svg>

@@ -1,16 +1,16 @@
 {
-  "status": "experimental-basic-hardware-verified",
+  "status": "experimental-host-tested-hardware-validation-pending",
   "board": "Designed by GG Redblade FS ISO",
   "usb_vid": "320f",
   "usb_pid": "5136",
   "mcu": "SN32F248B",
   "led_count": 109,
   "qmk_commit": "62973ee48a976c6f7cc6d4f7b198bd48a2fdfe60",
-  "toolchain": "arm-none-eabi-gcc.exe (crosstool-NG 1.27.0.82_7f9d704 - qmk/qmk_toolchains @ a55a2b0) 15.2.0",
+  "toolchain": "arm-none-eabi-gcc (crosstool-NG 1.27.0.82_7f9d704 - qmk/qmk_toolchains @ a55a2b0) 15.2.0",
   "binary_bytes": 65536,
-  "sha256": "3677dae2c97a12b4e86393d7fd910d1dd08d3f8493ebae3268d78d7e6341f539",
-  "ram_bytes_including_reserved_stacks": 8120,
-  "ram_remaining_bytes": 72,
+  "sha256": "2db627b4889b28992a20cadfad3382e876da3d956fa1c7c1de5ecbed0f0e2caf",
+  "ram_bytes_including_reserved_stacks": 8088,
+  "ram_remaining_bytes": 104,
   "keyboard_usb_poll_interval_ms": 1,
   "shared_timer_clock_hz": 720896,
   "rgb_process_leds_per_task": 8,
@@ -18,47 +18,17 @@
   "via_layers": 3,
   "protocol_host_tests": "passed",
   "hardware_latency_measured": false,
-  "release": "v0.8.1",
-  "hardware_validation": {
-    "date": "2026-11-04",
-    "edition": "full",
-    "flasher": "SonixFlasherC3.1.0",
-    "bootloader": "0c45:7040 SN32F24XB CS0 64KB",
-    "programming_verified": true,
-    "flash_checksum": "0x4f6a",
-    "via_protocol": 13,
-    "vialrgb_protocol": 1,
-    "led_count": 109,
-    "unique_led_positions_verified": true,
-    "fn_bindings_verified": 33,
-    "removed_fn_cells_verified": 3,
-    "base_layer_preserved": true,
-    "third_layer_preserved": true,
-    "macros_preserved": true,
-    "direct_mode_saved": true,
-    "bootloader_shortcut_on_device_tested": true,
-    "dedicated_windows_indicator_user_confirmed": true,
-    "fn_only_indicator_off_user_confirmed": true,
-    "indicator_survives_fn_release_user_confirmed": true,
-    "indicator_independent_of_rgb_off_user_confirmed": true,
-    "unlock_indicator_off_user_confirmed": true,
-    "typing_and_aurora_user_confirmed": true,
-    "openrgb_service_restored": true,
-    "aurora_restarted": true,
-    "hid_read_round_trip_report": "docs/hid-reference.json",
-    "usb_power_cycle_tested": false,
-    "sustained_turbo_rgb_load_tested": false,
-    "physical_key_latency_measured": false
-  },
+  "release": "v0.9.0",
+  "hardware_validation": null,
   "previous_version_hardware_validation": {
-    "release": "v0.8.0",
+    "release": "v0.8.1",
     "validation": {
       "date": "2026-11-04",
       "edition": "full",
-      "flasher": "SonixFlasherC 3.1.0",
-      "bootloader": "0c45:7040 SN32F24XB, CS0, 64 KB",
+      "flasher": "SonixFlasherC3.1.0",
+      "bootloader": "0c45:7040 SN32F24XB CS0 64KB",
       "programming_verified": true,
-      "flash_checksum": "0x34ed",
+      "flash_checksum": "0x4f6a",
       "via_protocol": 13,
       "vialrgb_protocol": 1,
       "led_count": 109,
@@ -70,17 +40,18 @@
       "macros_preserved": true,
       "direct_mode_saved": true,
       "bootloader_shortcut_on_device_tested": true,
-      "reactive_white_user_confirmed": true,
-      "latched_hyper_speed_user_confirmed": true,
-      "mouse_left_right_indicators_stop_user_confirmed": true,
-      "aurora_priority_user_confirmed": true,
-      "usb_power_cycle_tested": false,
-      "sustained_turbo_rgb_load_tested": false,
-      "physical_key_latency_measured": false,
-      "recorded_letter_lights_user_confirmed": true,
+      "dedicated_windows_indicator_user_confirmed": true,
+      "fn_only_indicator_off_user_confirmed": true,
+      "indicator_survives_fn_release_user_confirmed": true,
+      "indicator_independent_of_rgb_off_user_confirmed": true,
+      "unlock_indicator_off_user_confirmed": true,
+      "typing_and_aurora_user_confirmed": true,
       "openrgb_service_restored": true,
       "aurora_restarted": true,
-      "hid_read_round_trip_report": "docs/hid-reference.json"
+      "hid_read_round_trip_report": "docs/hid-reference.json",
+      "usb_power_cycle_tested": false,
+      "sustained_turbo_rgb_load_tested": false,
+      "physical_key_latency_measured": false
     }
   },
   "rgb_data_timeout_ms": 5000,
@@ -105,23 +76,24 @@
   "project": "RedBlade+",
   "fn_bindings": 33,
   "controls_host_tests": "passed",
-  "python_tool_tests": 11,
+  "python_tool_tests": 14,
   "audit": "docs/AUDIT.md",
   "saved_preferences": {
+    "action": "Fn+F9 saves live mode/master/lighting flags in the active profile; Studio saves four complete profiles",
+    "legacy_bytes": 4,
+    "onboard_payload_bytes": 1696,
     "includes": [
-      "lighting profile",
-      "master brightness",
-      "lighting flags"
+      "four profile palettes (109 HSV colors each)",
+      "24 effect colors per profile",
+      "ten module switches per profile",
+      "master/mode/timeout/reactive life/default rates",
+      "active profile"
     ],
-    "bytes": 4,
     "excludes": [
-      "Game Mode",
-      "Turbo",
-      "forward hold",
-      "VIA layers",
-      "macros"
-    ],
-    "action": "Fn+F9"
+      "active Game Mode/Turbo/forward hold",
+      "Recorder recordings",
+      "VIA layers and VIA macros (separate existing EEPROM)"
+    ]
   },
   "game_helpers": {
     "target_rates": {
@@ -157,7 +129,7 @@
   "bootloader_shortcut": "Fn+Esc held for 2000 ms; Shift optional; short press stops helpers/unlocks",
   "native_benchmark": {
     "physical_key_latency_measured": false,
-    "sha256": "8bb85f36357fe8ec59cf7073a6dbbd69f56248bc22cd4aa9669b84903bbfd8a6",
+    "sha256": "b78aa9152232063ac41eb595753f54f920c6ff3fdb05d1b9cf57f0fa6e93b838",
     "file": "redblade-plus-benchmark-windows.exe"
   },
   "fn_rgb_status": {
@@ -186,7 +158,7 @@
     "shift_action": "unlock"
   },
   "dynamic_fallback": {
-    "requires": "Host Direct with no RGB for five seconds and white fallback enabled, or explicit White profile",
+    "requires": "No fresh host RGB for selected timeout (default five seconds), or explicit local palette; fallback module enabled",
     "caps_lock_led": 61,
     "caps_lock_active": "green",
     "shift_keys_unchanged": true,
@@ -195,7 +167,8 @@
     "num_lock_inactive_brightness": 8,
     "scroll_lock_led": 14,
     "scroll_lock_active": "amber",
-    "fresh_host_colors_take_priority": true
+    "fresh_host_colors_take_priority": true,
+    "palette": "configured per-key colors; factory white default"
   },
   "fn_removed_bindings": [
     "Fn+Up",
@@ -245,5 +218,66 @@
     "fn_only_changes_it": false,
     "independent_of_rgb_off": true,
     "reset_suspend": "off with Game Mode cleared"
-  }
+  },
+  "earlier_version_hardware_validation": {
+    "release": "v0.8.0",
+    "validation": {
+      "date": "2026-11-04",
+      "edition": "full",
+      "flasher": "SonixFlasherC 3.1.0",
+      "bootloader": "0c45:7040 SN32F24XB, CS0, 64 KB",
+      "programming_verified": true,
+      "flash_checksum": "0x34ed",
+      "via_protocol": 13,
+      "vialrgb_protocol": 1,
+      "led_count": 109,
+      "unique_led_positions_verified": true,
+      "fn_bindings_verified": 33,
+      "removed_fn_cells_verified": 3,
+      "base_layer_preserved": true,
+      "third_layer_preserved": true,
+      "macros_preserved": true,
+      "direct_mode_saved": true,
+      "bootloader_shortcut_on_device_tested": true,
+      "reactive_white_user_confirmed": true,
+      "latched_hyper_speed_user_confirmed": true,
+      "mouse_left_right_indicators_stop_user_confirmed": true,
+      "aurora_priority_user_confirmed": true,
+      "usb_power_cycle_tested": false,
+      "sustained_turbo_rgb_load_tested": false,
+      "physical_key_latency_measured": false,
+      "recorded_letter_lights_user_confirmed": true,
+      "openrgb_service_restored": true,
+      "aurora_restarted": true,
+      "hid_read_round_trip_report": "docs/hid-reference.json"
+    }
+  },
+  "studio_configuration": {
+    "schema": 1,
+    "profiles": 4,
+    "profile_bytes": 416,
+    "payload_bytes": 1696,
+    "per_key_hsv_colors": 109,
+    "effect_hsv_colors": 24,
+    "module_bits": 10,
+    "bank_addresses": [
+      "0xE780",
+      "0xEF80"
+    ],
+    "bank_bytes": 2048,
+    "eeprom_start_preserved": "0xF780",
+    "transaction_state_sram_bytes": 8,
+    "commit": "dual-bank CRC32 commit-last journal",
+    "color_cache_sram_bytes": 0
+  },
+  "fn_focus": {
+    "default_enabled": true,
+    "shortcut_positions": 33,
+    "fn_led": 102,
+    "unassigned_keys": "off while Fn held",
+    "host_buffer": "retained; restored on release",
+    "module_disabled_shortcuts": "hidden",
+    "mapping": "factory shipped Fn positions"
+  },
+  "ram_measurement": "__heap_end__ minus aligned __heap_base__; includes all reserved stacks and alignment"
 }
