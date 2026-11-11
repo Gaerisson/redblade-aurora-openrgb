@@ -340,15 +340,18 @@ internal static class HardwareJobs
         {
             while(true)
             {
-                deadline.Token.ThrowIfCancellationRequested();IHidTransport? hid=null;
+                deadline.Token.ThrowIfCancellationRequested();IHidTransport? hid=null;KeyboardIdentity? identity=null;
                 try
                 {
-                    hid=open();var identity=await KeyboardProtocol.Identify(hid,deadline.Token);
-                    if(identity.Core!=expectedCore||identity.Version!=expectedVersion)throw new InvalidDataException("Reconnected firmware edition/version does not match the flashed image. Backups retained.");
-                    return(hid,identity);
+                    hid=open();identity=await KeyboardProtocol.Identify(hid,deadline.Token);
                 }
-                catch(IOException error){last=error;hid?.Dispose();}
+                catch(Exception error) when(error is IOException or InvalidDataException){last=error;hid?.Dispose();}
                 catch{hid?.Dispose();throw;}
+                if(identity!=null)
+                {
+                    if(identity.Core!=expectedCore||identity.Version!=expectedVersion){hid!.Dispose();throw new InvalidDataException("Reconnected firmware edition/version does not match the flashed image. Backups retained.");}
+                    return(hid!,identity);
+                }
                 await Task.Delay(delay,deadline.Token);
             }
         }
