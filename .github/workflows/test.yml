@@ -62,17 +62,21 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install ARM and QMK build tools
         run: |
-          # Hosted runner Azure mirrors can fail DNS for several minutes.
-          # Keep official Ubuntu sources and bound each network attempt.
-          if [ -f /etc/apt/apt-mirrors.txt ]; then
-            printf '%s\n' 'https://archive.ubuntu.com/ubuntu/' | sudo tee /etc/apt/apt-mirrors.txt >/dev/null
-          fi
-          if [ -f /etc/apt/apt-security-mirrors.txt ]; then
-            printf '%s\n' 'https://security.ubuntu.com/ubuntu/' | sudo tee /etc/apt/apt-security-mirrors.txt >/dev/null
-          fi
-          sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 update
-          sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y gcc-arm-none-eabi binutils-arm-none-eabi libnewlib-arm-none-eabi build-essential git python3-pip
-          python3 -m pip install --user --break-system-packages qmk
+          # Use QMK's complete GCC/binutils/newlib distribution, matching the
+          # local compiler generation without depending on Ubuntu mirrors.
+          toolchain_archive="$RUNNER_TEMP/qmk-toolchains.tar.zst"
+          toolchain_directory="$RUNNER_TEMP/qmk-toolchains"
+          curl --fail --location --retry 2 --connect-timeout 20 --max-time 300 \
+            https://github.com/qmk/qmk_toolchains/releases/download/v15.2.0-1/qmk_toolchains-gcc15.2.0-host_linuxX64.tar.zst \
+            --output "$toolchain_archive"
+          echo "6b136919e3526f3f373e91f7d011a006e968a3169262d33cf6efa3e6c605c3ca  $toolchain_archive" | sha256sum --check
+          mkdir -p "$toolchain_directory"
+          tar --zstd -xf "$toolchain_archive" -C "$toolchain_directory"
+          arm_gcc="$(find "$toolchain_directory" -name arm-none-eabi-gcc -print -quit)"
+          test -x "$arm_gcc"
+          "$arm_gcc" --version
+          dirname "$arm_gcc" >> "$GITHUB_PATH"
+          python3 -m pip install --user --break-system-packages --timeout 30 --retries 2 qmk
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Fetch pinned SonixQMK
         run: |
