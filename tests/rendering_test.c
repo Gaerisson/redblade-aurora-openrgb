@@ -30,13 +30,18 @@ static void overlay(bool held) {
     for (uint8_t start=0;start<109;start+=8) redblade_controls_render(start,start+8<109?start+8:109,held);
 }
 static void assert_fn_focus(void) {
-    unsigned lit=0;
+    unsigned lit=0,expected_lit=0;
+    const uint8_t target=redblade_turbo_led(),usage=redblade_turbo_key();
+    const bool down=usage>=0xD1 && usage<=0xD3 ? mouse_buttons!=0 : key_down[usage];
     for (unsigned i=0;i<109;++i) {
         const bool on=pixels[i].r || pixels[i].g || pixels[i].b;
-        assert(on==fn_key(i));
+        const bool expected=usage && (i==target || i==RB_LED_FN) ? down : fn_key(i);
+        assert(on==expected);
         lit+=on;
+        expected_lit+=expected;
     }
-    assert(lit==35);
+    assert(lit==expected_lit);
+    if(!usage)assert(lit==35);
 }
 int main(void) {
     redblade_rgb_init(true); redblade_controls_init();
@@ -87,7 +92,8 @@ int main(void) {
     // The mask also overrides Caps/Num/Scroll fallback and reactive white.
     now+=REDBLADE_RGB_TIMEOUT_MS;render();overlay(true);assert_fn_focus();
     assert(!pixels[RB_LED_CAPS].r && !pixels[RB_LED_CAPS].g && !pixels[RB_LED_NUM].g);
-    // An arbitrary running Turbo target is not a Fn shortcut; its Fn status stays.
+    // A running Turbo target is now useful with Fn held. Both cues follow
+    // the sent HID state even if the key has no factory Fn shortcut.
     base_keymap[3][5]=0x0A;
     keyrecord_t choose={.event={.key={.row=2,.col=5},.pressed=true}};
     assert(!redblade_controls_process(RB_TURBO_SELECT,&choose));choose.event.pressed=false;
