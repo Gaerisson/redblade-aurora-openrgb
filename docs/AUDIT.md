@@ -1,6 +1,6 @@
 # RedBlade+ 0.8.1 — code review and validation
 
-**0.12 verification:** Extended reactions reuse the existing packed TTL and boot-only fields; no additional SRAM is allocated. Full retains 88 usable SRAM bytes and uses 46,740 program bytes; Core retains 544. Tests cover continuous typing expiration, retrigger, extended styles, modifier overlay priorities and incompatible downgrades across all profiles. Studio adds 8-second bounded PC reactions, three presets and a virtual interactive Fn reference. No scan/PWM clock or GPIO current setting changes. See [brightness audit](RGB_BRIGHTNESS.md). Hardware acceptance for 0.12 is recorded in release notes separately from these build and host checks.
+**0.12 verification:** Extended reactions reuse the existing packed TTL and boot-only fields; no additional SRAM is allocated. Full retains 88 usable SRAM bytes and uses 46,824 program bytes; Core retains 544. Tests cover continuous typing expiration, retrigger, extended styles, modifier overlay priorities, Fn visibility during Full Off, and incompatible downgrades across all profiles. Studio adds 8-second bounded PC reactions, three presets, a virtual Fn reference and a bilingual setup assistant with a verified OpenRGB download. Native and WebView tests cover identity replies, VIA dimension refusal, archive validation, language messages and UI interactions. No scan/PWM clock or GPIO current setting changes. See [brightness audit](RGB_BRIGHTNESS.md). Hardware acceptance for 0.12 is recorded in release notes separately from these build and host checks.
 
 
 

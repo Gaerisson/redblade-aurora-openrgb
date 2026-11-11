@@ -1,6 +1,6 @@
 # Installation et référence technique
 
-**Studio et firmware 0.11 en aperçu :** le flash Full/Core reste guidé ; aucun flash ni aucune persistance 0.11 n’ont été validés sur matériel. La validation physique précédente couvre Full 0.10 ; sa programmation, sa relecture et la saisie confirmée par le propriétaire sont décrites dans l’[audit](AUDIT.md). Studio nécessite Microsoft Edge WebView2 Runtime. Voir [Studio](../app/README.md).
+**Studio et firmware 0.12 en aperçu :** commencez par la page **Configuration** de Studio pour identifier le clavier, installer le firmware avec l’assistant, préparer OpenRGB et tester les LED. Full/Core 0.12 sont compilés et testés sur PC ; la validation physique 0.12 reste à effectuer. Les précédents essais sur clavier concernent Full 0.11. Studio nécessite Microsoft Edge WebView2 Runtime. Voir [Studio](../app/README.md) et l’[audit](AUDIT.md).
 
 [English](INSTALL.md) · **Français** · [Projet](../README.fr.md) · [Raccourcis](SHORTCUTS.md)
 

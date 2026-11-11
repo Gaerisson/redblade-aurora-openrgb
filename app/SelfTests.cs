@@ -63,6 +63,8 @@ internal static class SelfTests
             Check(FlashVerification.SamePort("PCIROOT(0)#USB(1)",new[]{"pciroot(0)#usb(1)"}),"same physical USB location ignores case");
             Check(!FlashVerification.SamePort("port1",new[]{"port2"})&&!FlashVerification.SamePort("port1",Array.Empty<string>())&&!FlashVerification.SamePort("port1",new[]{"port1","port1"}),"missing, different or ambiguous bootloader locations rejected");
             Check(!RgbSession.ShouldWaitForSdk(false)&&RgbSession.ShouldWaitForSdk(true),"SDK restoration waits only for previously reachable server");
+            Check(RgbSession.ChooseManagedPort(Array.Empty<int>())==6742&&RgbSession.ChooseManagedPort(new[]{6742})==6743&&RgbSession.ChooseManagedPort(new[]{6743})==6742,"managed SDK uses only an originally unoccupied port");
+            bool portsRefused=false;try{RgbSession.ChooseManagedPort(new[]{6742,6743});}catch(IOException){portsRefused=true;}Check(portsRefused,"two occupied SDK ports cannot be taken by managed setup");
             foreach(var reader in new string?[]{null,"S-1-5-21-1-2-3-1001"})
             {
                 var descriptor=new System.Security.AccessControl.RawSecurityDescriptor(ProtectedStaging.SecurityDescriptor(reader));
@@ -89,7 +91,7 @@ internal static class SelfTests
             Check(KeyboardLayout.Legend(layout[43],true)=="Z"&&KeyboardLayout.Legend(layout[43],false)=="W","independent AZERTY/QWERTY legends preserve physical forward key");
             Check(FirmwareImage.Load("full").Bytes.Length==65536&&FirmwareImage.Load("core").Bytes.Length==65536,"bundled firmware SHA/identity/length");
             var helpers=FirmwareImage.ValidateHelpers();Check(helpers.Helper.Length>0&&helpers.Usb.Length>0,"bundled fixed flasher/DLL hashes");
-            await UpdateTests.Run();SoftwareUpdateTests.Run();HardwareDiagnostics.Test();StudioBridgeTests.Run();await EffectsTests.RunAsync();await ReconnectTests.Run();EditorTests.Run();
+            await UpdateTests.Run();SoftwareUpdateTests.Run();HardwareDiagnostics.Test();StudioBridgeTests.Run();StudioTextTests.Run();await EffectsTests.RunAsync();await ReconnectTests.Run();await IdentityTests.Run();await ViaBackupTests.Run();await OpenRgbSetupTests.RunAsync();EditorTests.Run();
             var report = $"PASS {assertions} hardware-free assertions plus update discovery/download/install regression suites. No HID, service or UAC operations were used; update launches were simulated.";
             Console.WriteLine(report); File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "self-test-results.txt"), report + Environment.NewLine); return 0;
         }

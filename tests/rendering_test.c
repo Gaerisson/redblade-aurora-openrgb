@@ -101,7 +101,11 @@ int main(void) {
     value=0;render();overlay(true);
     for(unsigned i=0;i<109;++i) assert(!pixels[i].r && !pixels[i].g && !pixels[i].b);
     value=255;
-    redblade_rgb_profile(RB_PROFILE_OFF); render(); redblade_controls_render(0,109,true);
+    // Off still displays the Fn guide while held, but never during USB suspend.
+    redblade_rgb_profile(RB_PROFILE_OFF); render(); overlay(true); assert_fn_focus();
+    render(); overlay(false);
+    for(unsigned i=0;i<109;++i) assert(!pixels[i].r && !pixels[i].g && !pixels[i].b);
+    redblade_rgb_suspend(); render(); overlay(true);
     for(unsigned i=0;i<109;++i) assert(!pixels[i].r && !pixels[i].g && !pixels[i].b);
     puts("PASS: actual 8-LED effect rendering, zero-field Direct requests, moving red wave, 4 visible media LEDs, linear host brightness, USB off");
 }

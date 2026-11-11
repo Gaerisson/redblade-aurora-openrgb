@@ -60,6 +60,8 @@ Default Turbo rate is 50/s. One Turbo target can coexist with forward hold. Ordi
 
 Turbo selection uses the chosen VIA base-layer basic key, even with Fn held. Fn/layers, modifiers, Esc, system/power/media actions and macros are excluded. Selection expires after 10 seconds. Fn + T while running stops Turbo. E/F/R positions are the same on usual AZERTY/QWERTY layouts; W/Z names identify the same physical forward position. Game Mode blocks standalone Windows keys and simple QMK GUI chords, not arbitrary VIA macros or every advanced modifier action.
 
+Full 0.12: hold Fn to reveal the shortcut lighting even after Fn + F4. Release Fn to return to darkness. USB suspension and globally disabled VialRGB output remain dark.
+
 ## 3. Lighting — F1 to F4
 
 | Shortcut | Action |

@@ -28,9 +28,14 @@ internal sealed class UpdateSession:IDisposable
     internal Dictionary<string,DownloadedFirmware> Firmware{get;}=new();
     internal bool HardwareBusy{get;set;}
     internal bool WizardOpen{get;set;}
+    internal bool NoticeOpen{get;set;}
+    internal bool DeferredUntilRestart{get;private set;}
+    internal void DeferUntilRestart()=>DeferredUntilRestart=true;
     internal bool Busy=>working||applying||HardwareBusy||owner.IsHardwareBusy;
     internal bool Installing=>applying&&!handoffComplete;
-    internal string Status{get;private set;}="";
+    readonly Dictionary<string,string> statusTranslations=new(StringComparer.Ordinal);
+    string status="";
+    internal string Status=>owner.IsFrench&&statusTranslations.TryGetValue(status,out var translated)?translated:status;
     DateTimeOffset lastAttempt=DateTimeOffset.MinValue;
     internal event Action? Changed;
     internal UpdateSession(StudioForm owner,bool testing=false)
@@ -38,13 +43,13 @@ internal sealed class UpdateSession:IDisposable
         this.owner=owner;Testing=testing;Preferences=testing?new():UpdatePreferences.Load();owner.FormClosing+=PreventClosing;timer.Tick+=async(_,_)=>
         {
             if(!disposed&&Preferences.CheckAutomatically&&!Busy&&DateTimeOffset.UtcNow-lastAttempt>TimeSpan.FromMinutes(10))await Refresh(false);
-            if(!disposed&&!automaticInstallFailed&&Preferences.RestartWhenIdle&&Software!=null&&!Busy&&!WizardOpen&&!owner.HasUnsavedChanges&&IdleMilliseconds()>30000)
+            if(!disposed&&!automaticInstallFailed&&!DeferredUntilRestart&&!NoticeOpen&&Preferences.RestartWhenIdle&&Software!=null&&!Busy&&!WizardOpen&&!owner.HasUnsavedChanges&&IdleMilliseconds()>30000)
                 await InstallSoftware();
         };
         if(!testing)timer.Start();
     }
-    string T(string en,string fr)=>owner.IsFrench?fr:en;
-    void State(string text){Status=text;Changed?.Invoke();}
+    string T(string en,string fr){statusTranslations[en]=fr;return en;}
+    void State(string text){status=text;Changed?.Invoke();}
     internal async Task Start(){if(!Testing&&Preferences.CheckAutomatically)await Refresh(false);}
     internal async Task Refresh(bool manual=true)
     {
@@ -68,14 +73,14 @@ internal sealed class UpdateSession:IDisposable
             }
         }
         catch(OperationCanceledException)when(lifetime.IsCancellationRequested){}
-        catch(Exception error){Diagnostics.Record(error,"Update check");State(T("Update check unavailable. Offline editing and bundled firmware remain available. ","Recherche indisponible. L’édition hors ligne et le firmware intégré restent disponibles. ")+error.Message);}
+        catch(Exception error){Diagnostics.Record(error,"Update check");State(T("Update check unavailable. Offline editing and bundled firmware remain available.","Recherche indisponible. L’édition hors ligne et le firmware intégré restent disponibles."));}
         finally{working=false;Changed?.Invoke();}
     }
     internal async Task DownloadSoftware()
     {
         if(Testing||Busy||Check?.Offer==null||!Check.SoftwareNewer)return;working=true;
         try{State(T("Downloading and verifying Studio…","Téléchargement et vérification de Studio…"));Software=await service.DownloadSoftwareAsync(Check.Offer,lifetime.Token);State(T("Update ready to restart.","Mise à jour prête au redémarrage."));}
-        catch(Exception e){Diagnostics.Record(e,"Software download");State(e.Message);}
+        catch(Exception e){Diagnostics.Record(e,"Software download");State(T("Studio download failed. See the local diagnostic log.","Le téléchargement de Studio a échoué. Consultez le rapport local de diagnostic."));}
         finally{working=false;Changed?.Invoke();}
     }
     internal async Task InstallSoftware()
@@ -93,7 +98,7 @@ internal sealed class UpdateSession:IDisposable
         catch(Exception e)
         {
             applying=false;automaticInstallFailed=true;
-            Diagnostics.Record(e,"Software installation");State(e.Message);timer.Start();
+            Diagnostics.Record(e,"Software installation");State(T("Studio installation failed. See the local diagnostic log.","L’installation de Studio a échoué. Consultez le rapport local de diagnostic."));timer.Start();
         }
     }
     void PreventClosing(object? sender,FormClosingEventArgs e){if(Installing)e.Cancel=true;}

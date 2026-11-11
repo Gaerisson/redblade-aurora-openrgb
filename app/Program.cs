@@ -62,7 +62,7 @@ internal static class Program
                 }
                 if(form.Enabled!=original)throw new Exception("Failed handoff did not restore editing.");
             }
-            catch(Exception error){failure=error;}
+            catch(Exception error){failure=error;try{await form.CaptureUiFailure();}catch(Exception captureError){Diagnostics.Record(captureError,"UI failure capture");}}
             finally{form.Close();}
         };
         try{Application.Run(form);}finally{Application.ThreadException-=handler;}

@@ -28,6 +28,7 @@ uint8_t redblade_rgb_profile_get(void);
 uint8_t redblade_rgb_brightness_get(void);
 uint8_t redblade_rgb_settings_get(void);
 bool redblade_rgb_output_active(void);
+bool redblade_rgb_off_fn_available(void);
 bool redblade_rgb_fallback_active(void);
 hsv_t redblade_rgb_apply_brightness(hsv_t color);
 

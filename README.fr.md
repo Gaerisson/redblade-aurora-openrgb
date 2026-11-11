@@ -1,130 +1,62 @@
-# RedBlade+ · OpenRGB Firmware
+# RedBlade+ · Micrologiciel OpenRGB et Studio
 
 [English](README.md) · **Français**
 
-<p align="center"><img src="assets/redblade-plus.png" alt="RedBlade+ — clavier RGB avec quatre touches multimédias et lame rouge" width="360"></p>
+Éclairage touche par touche, profils intégrés et raccourcis pratiques pour le **Designed by GG Red Blade Full Size ISO**. RedBlade+ Studio réunit le clavier, l’éclairage et la configuration dans une application portable pour Windows x64.
 
-<p align="center">
-  <a href="https://github.com/Gaerisson/redblade-aurora-openrgb/releases/latest"><img alt="Release" src="https://img.shields.io/github/v/release/Gaerisson/redblade-aurora-openrgb"></a>
-  <a href="https://github.com/Gaerisson/redblade-aurora-openrgb/actions/workflows/test.yml"><img alt="Tests du firmware" src="https://github.com/Gaerisson/redblade-aurora-openrgb/actions/workflows/test.yml/badge.svg"></a>
-  <a href="LICENSE"><img alt="GPL-2.0-or-later" src="https://img.shields.io/badge/license-GPL--2.0--or--later-blue"></a>
-</p>
+[Télécharger l’aperçu 0.12](https://github.com/Gaerisson/redblade-aurora-openrgb/releases/tag/v0.12.0) · [Installation](docs/INSTALL.fr.md) · [Raccourcis](docs/SHORTCUTS.fr.md) · [Guide Studio](app/README.md) · [Historique des versions](CHANGELOG.md)
 
-Contrôle OpenRGB touche par touche, raccourcis Fn et fonctions de jeu pour le **Designed by GG Red Blade Full Size ISO**.
+<p align="center"><img src="docs/assets/studio-keyboard.fr.png" alt="Éditeur de clavier Color Lab de RedBlade+ Studio" width="900"></p>
 
-[Télécharger](https://github.com/Gaerisson/redblade-aurora-openrgb/releases/latest) · [Raccourcis](docs/SHORTCUTS.fr.md) · [Installation](docs/INSTALL.fr.md) · [Performances](docs/PERFORMANCE.md) · [Changelog](CHANGELOG.md)
+## Votre clavier, vos couleurs
 
-![Fonctions du firmware](docs/assets/features.fr.svg)
+- **Color Lab :** sélectionnez les touches par clic, glissement, cadre ou groupe de positions de jeu. Appliquez une couleur unie ou un dégradé linéaire ou radial, puis annulez ou rétablissez vos modifications. Modifiez le profil Full actif et enregistrez-le dans le clavier.
+- **Éclairage sur le PC :** choisissez parmi 12 effets OpenRGB et des réactions à la frappe durant jusqu’à 8 secondes. Studio restaure vos applications RVB à l’arrêt de son effet.
+- **Éclairage autonome :** Full 0.12 propose cinq styles de réaction durant jusqu’à environ 4 secondes, avec repères Ctrl, Maj et Alt facultatifs. Quatre profils intégrés conservent vos réglages sans effet actif sur le PC.
+- **Raccourcis en un coup d’œil :** l’explorateur Fn présente un aperçu virtuel des combinaisons Fn et Maj ; il ne détecte pas l’appui physique sur Fn. Full inclut aussi le verrouillage Windows, Turbo, Recorder et les commandes multimédias.
 
-## Studio 0.12.0 — aperçu Color Lab
+Studio est disponible en français et en anglais, avec légendes AZERTY et QWERTY. L’aperçu virtuel et les effets logiciels sont distincts des réglages intégrés ; les nouvelles options autonomes nécessitent Full 0.12.
 
-Full 0.12 ajoute une réaction à la frappe jusqu’à environ 4 secondes, une onde en croix, une double impulsion et des repères Ctrl/Maj/Alt optionnels. Studio propose 12 effets PC avec réactions jusqu’à 8 secondes et un explorateur Fn interactif avec variantes Maj. Les couleurs, VIA et le format à quatre profils restent compatibles. Les nouvelles options autonomes nécessitent l’installation guidée Full 0.12. [Audit de luminosité](docs/RGB_BRIGHTNESS.md) : aucun gain caché identifié ; une modification du multiplexage exige des mesures matérielles.
+## Choisir son édition
 
-Cliquez sur la carte des raccourcis pour un lecteur agrandi avec zoom à la molette et déplacement par glissement. **Intensité maximale** éclaircit les couleurs autonomes sélectionnées en conservant leur teinte et les touches éteintes, avec annulation possible. La précédente mise à jour Studio 0.11.1 ne nécessitait pas de flash ; les nouvelles options autonomes de cette version exigent Full 0.12.
-
-RedBlade+ Studio est une application Windows x64 portable qui modifie le profil actif Full. Color Lab sélectionne les 109 touches par clic, glissement, cadre ou groupe ; applique une couleur unie ou un dégradé linéaire ou radial ; et propose un historique borné. À la connexion, choisissez de conserver les modifications locales ou de charger le profil du clavier. Le format à quatre profils reste compatible ; Core ne possède pas l’API de configuration Full. Le français, l’anglais et les légendes AZERTY/QWERTY restent disponibles. Voir [Studio](app/README.md).
-
-Neuf effets PC prennent en charge palettes, zones et superposition réactive via OpenRGB. Les frappes réactives sont filtrées sur le clavier Red Blade et conservées temporairement en mémoire, sans journal de codes de touches ou de frappes. Full 0.11 ajoute trois styles réactifs autonomes ; chaque nouvelle frappe relance l’unique onde. Les vérifications de compilation et l’acceptation physique sont consignées séparément dans l’[audit](docs/AUDIT.md) et les notes de version.
-
-[Télécharger Studio 0.12.0 et les deux firmwares](https://github.com/Gaerisson/redblade-aurora-openrgb/releases/tag/v0.12.0). Full 0.11 a été programmé et identifié sur le clavier de préparation. Après récupération d’une réponse d’identité immédiate malformée, VIA, les macros et les quatre profils d’origine ont été restaurés et relus intégralement. Le propriétaire a confirmé la saisie, le pavé, l’onde et sa couleur sauvegardées, ainsi que la frappe réactive logicielle. La correction de reconnexion en lecture seule est couverte par des tests ; aucun second flash physique n’a été effectué. Consultez le rapport de validation de la release. La persistance après coupure USB et la latence physique ne sont pas mesurées. Sauvegardez VIA et vos réglages avant tout flash.
-
-Full 0.10 ajoute Caps Word (Fn + Verr. Maj, AZERTY/QWERTY) et un délai de sécurité pour les fonctions automatiques, tous deux désactivés par défaut. Studio utilise WebView2 Runtime sous Windows et suspend Aurora pendant ses effets logiciels avant de le rétablir.
-
-Studio peut rechercher et télécharger automatiquement les mises à jour GitHub officielles, puis redémarrer après 30 secondes d’inactivité en l’absence de modifications non enregistrées et d’opération active. L’installation du firmware reste guidée et exige Fn + Échap physiquement ; aucun flash ne démarre au lancement.
-
-![Éditeur de clavier Studio 0.12.0](docs/assets/studio-keyboard.fr.png)
-
-*Interface réelle Color Lab, capturée en aperçu avec accès matériel désactivé.*
-
-## Deux éditions
-
-| Édition | Pour qui | Firmware |
+| | OpenRGB Core | RedBlade+ Full |
 | --- | --- | --- |
-| **OpenRGB Core** | OpenRGB/Aurora par touche + VIA, sans fonctions de jeu, Recorder, effets locaux ou indicateurs ajoutés | `redblade-fs-openrgb-core.bin` |
-| **RedBlade+ Full** | Toutes les fonctions présentées ci-dessous | `redblade-fs-aurora-via.bin` |
+| Usage | OpenRGB/Aurora touche par touche et VIA | Fonctions Core, éclairage autonome et raccourcis |
+| Éclairage sans logiciel | LED éteintes après cinq secondes sans flux RVB | Profils locaux, éclairage réactif et indicateurs |
+| Fonctions de jeu et Recorder | Non inclus | Inclus |
+| Fichier du micrologiciel | `redblade-fs-openrgb-core.bin` | `redblade-fs-aurora-via.bin` |
 
-Chaque édition a son manifeste et un paquet de sources complet distinct. Core s’éteint après 5 s sans RGB et conserve Fn + Échap maintenu 2 s pour flasher. [Choisir/changer d’édition](docs/EDITIONS.md).
+Les deux éditions prennent en charge les affectations et macros VIA ; **Fn + Échap maintenu deux secondes** ouvre le mode de programmation. Full permet de configurer les profils intégrés depuis Studio ; Core ne propose pas cette fonction. Voir les [détails des éditions](docs/EDITIONS.md).
 
-## Les fonctions
+## Configuration guidée
 
-| Fonction | Utilisation |
-| --- | --- |
-| Intégration OpenRGB native | 109 LED indépendantes par VialRGB ; Aurora passe par le SDK OpenRGB |
-| Bloc Fn multimédia | Calculatrice → Recorder avec rythme conservé, Muet → lecture/pause, Volume −/+ → piste précédente/suivante ; Maj ajoute d’autres commandes |
-| Verrouillage Windows | Fn + une touche Windows ; les deux logos Windows deviennent rouges et le voyant Windows en haut à droite s’allume |
-| Turbo au choix | Fn + T, puis une touche ; cadence réglable de 5 à 250/s avec Fn + −/+ du pavé ; préréglages E/F/Espace conservés |
-| Turbo souris | Fn + T, puis Volume −/+ : clic gauche/droit, voyants ambre/violet, cadence partagée |
-| Blanc réactif | Sans flux RGB : les frappes et lettres rejouées laissent une traînée rouge sur fond blanc |
-| Couleurs de Fn | Respiration Recorder ; bleu au repos, cyan Fn enfoncée, rouge Turbo, vert maintien, violet jeu |
-| Maintien pour avancer | Fn + Z en AZERTY / Fn + W en QWERTY ; LED verte |
-| Arrêt immédiat | Échap arrête les fonctions automatiques ; Fn + Échap déverrouille aussi Windows |
-| Profils lumineux locaux | Aurora/OpenRGB, blanc, rouge et éteint ; luminosité applicable aussi aux couleurs du PC |
-| Secours dynamique | Sans flux RGB : Verr. Maj/Num verts, défilement ambre, pavé blanc si actif / blanc très faible sinon |
-| Trois enregistrements temporaires | Fn + Calculatrice, puis Fn + 1/2/3 enregistre ; Fn + slot lit une fois ; Maj lance une boucle ; vitesse 0,5×–8× + Hyper |
-| Éclairage de secours | Blanc optionnel après 5 secondes sans RGB, et secours pour les quatre touches multimédias |
-| Vague rouge de démarrage | Animation courbe visible de 2 secondes et fondu vers les couleurs du PC |
-| Préférences au choix | Fn + F9 enregistre l’éclairage ; commandes ordinaires et flux RGB restent en RAM |
-| VIA | Remappage/macros et outil de mise à jour du calque Fn avec sauvegarde |
+<p align="center"><img src="docs/assets/studio-setup.fr.png" alt="Configuration guidée de RedBlade+ Studio" width="760"></p>
 
-Les fonctions automatiques sont désactivées au départ et arrêtées à la suspension/déconnexion USB. Elles ne redémarrent pas seules. Elles agissent dans l’application active : le firmware ne reconnaît pas le jeu. Un Turbo peut fonctionner avec le maintien pour avancer ; un appui normal sur la touche concernée rend la main à ton doigt.
+1. Utilisez un **Red Blade Full Size ISO** avec pavé numérique : USB `320F:5136`, Sonix SN32F248B et 109 LED. Le Red Blade 75 n’est pas pris en charge.
+2. Téléchargez la version et lisez le [guide d’installation et de sauvegarde](docs/INSTALL.fr.md). Studio guide l’installation Full/Core, sauvegarde les données VIA en privé et demande le passage physique en mode de programmation. Lisez ses indications avant de continuer et conservez vos sauvegardes.
+3. Dans Studio, téléchargez et vérifiez le paquet portable OpenRGB 1.1, démarrez son SDK et testez la détection du clavier à 109 LED. Un essai lumineux de six secondes vérifie le fonctionnement des effets. L’installation gérée ne crée aucun démarrage automatique Windows.
+4. Pour Aurora, sélectionnez son fournisseur OpenRGB/RGB.NET et utilisez le port SDK indiqué par Studio. Si un serveur existant sur 6742 ne détecte pas le RedBlade, Studio peut utiliser 6743 en parallèle ; la configuration d’Aurora n’est pas modifiée automatiquement. OpenRGB fonctionne aussi sans Aurora.
 
-## Les raccourcis pour commencer
+Fermez VIA pendant l’utilisation des applications RVB : elles partagent l’interface Raw HID du clavier. RedBlade+ fournit le sous-ensemble VialRGB nécessaire à OpenRGB, sans l’ensemble de l’interface de configuration Vial. Le [guide d’installation](docs/INSTALL.fr.md) décrit aussi la programmation manuelle et la récupération.
 
-| Raccourci | Action |
-| --- | --- |
-| **Fn + Windows** | Activer/désactiver le mode jeu ; les deux logos deviennent rouges |
-| **Fn + Calculatrice → Fn + 1** | Enregistrer le slot 1 ; Calculatrice à nouveau termine |
-| **Fn + 1 / Maj + Fn + 1** | Lire le slot 1 une fois / en boucle |
-| **Fn + −/+ du pavé** | Ajuster ; maintenir pour monter/descendre ; valeur conservée |
-| **Fn + E** | Démarrer/arrêter le Turbo E |
-| **Échap** | Arrêter Turbo et maintien pour avancer |
-| **Fn + F1** | Rendre le contrôle lumineux à OpenRGB / Aurora |
-| **Fn + F8** | Rétablir les réglages par défaut, arrêter les fonctions automatiques et déverrouiller Windows |
+## Raccourcis et éclairage
 
-Le [guide complet des raccourcis](docs/SHORTCUTS.fr.md) explique les quatre touches, les cadences, les voyants, la sauvegarde et la récupération. À partir de la 0.6.0, **maintenir Fn + Échap pendant 2 secondes** ouvre le bootloader. Un appui court arrête les fonctions de jeu et déverrouille Windows. Les 0.4/0.5 utilisaient Fn + Maj + Échap.
+<p align="center"><a href="docs/assets/shortcuts.fr.png"><img src="docs/assets/shortcuts.fr.png" alt="Carte des raccourcis du clavier RedBlade+ Full" width="760"></a></p>
 
-![Raccourcis et touches dynamiques](docs/assets/shortcuts.fr.png)
+[Ouvrir le guide complet des raccourcis](docs/SHORTCUTS.fr.md) · [Carte en anglais](docs/assets/shortcuts.png)
 
-[Schéma en grand](docs/assets/shortcuts.fr.svg) · [Version anglaise](docs/assets/shortcuts.png)
+**Fn + F1** rend le contrôle lumineux à OpenRGB/Aurora ; **Fn + F4** sélectionne l’extinction. Tant que Fn est maintenue, le guide des raccourcis reste visible dans ce mode. Ce comportement ne s’applique pas nécessairement à la suspension USB ni à une commande globale d’extinction VialRGB. **Échap** arrête les fonctions de jeu ; le [guide](docs/SHORTCUTS.fr.md) explique leur fonctionnement et leurs limites.
 
-## Installation
+## Mises à jour et validation
 
-| Matériel pris en charge | Valeur |
-| --- | --- |
-| Clavier | Red Blade **Full Size ISO**, avec pavé numérique — pas le Red Blade 75 |
-| USB / contrôleur | `320F:5136` · Sonix SN32F248B |
-| Éclairage | 109 LED, dont Calculatrice, Muet, Volume − et Volume + |
+Studio peut rechercher les versions officielles GitHub et proposer une mise à jour logicielle vérifiée. Dans la fenêtre de démarrage, **Plus tard** reporte l’installation automatique au prochain lancement. Le micrologiciel n’est jamais programmé automatiquement : son installation reste guidée et exige le passage physique en mode de programmation.
 
-1. Télécharger le ZIP de la release et lire le [guide de sauvegarde/flash](docs/INSTALL.fr.md).
-2. Sauvegarder VIA en privé, vérifier le bootloader et flasher le `.bin` avec SonixFlasherC.
-3. Si l’ancien calque Fn de VIA a été conservé, utiliser [l’installateur Fn](docs/SHORTCUTS.md#upgrading-an-existing-via-layer) avec les clients RGB arrêtés.
-4. Configurer OpenRGB/Aurora, puis choisir **Fn + F1** :
+**État de la 0.12 :** Studio et Full/Core 0.12 compilent et réussissent les tests sur PC, dont les vérifications de l’interface dans WebView2. La validation physique de Full 0.12 et de la nouvelle installation OpenRGB gérée reste à effectuer sur le PC cible. Full 0.11 a été installé et identifié sur le clavier de préparation ; son propriétaire a confirmé la saisie, le pavé numérique et certains comportements lumineux. Ces observations ne valident ni la 0.12 ni Core. La persistance après coupure et la latence physique n’ont pas été mesurées. Voir l’[audit](docs/AUDIT.md) et les notes de version pour le détail.
 
-```powershell
-pwsh -File tools/configure-windows.ps1 -Apply
-pwsh -File tools/configure-aurora-mapping.ps1 -Apply
-```
+L’[audit de luminosité](docs/RGB_BRIGHTNESS.md) n’a trouvé aucun gain logiciel caché : les canaux atteignent 255 et les multiplicateurs du pilote valent 1 par défaut. Les modifications électriques ou du multiplexage n’ont été ni mesurées ni mises en œuvre ; aucun gain supplémentaire n’est donc annoncé. Le projet conserve une interrogation USB demandée de 1 ms ; les [outils de performance](docs/PERFORMANCE.md) mesurent le côté PC, pas la latence physique des touches.
 
-```text
-Aurora / autre client SDK → OpenRGB → VialRGB → RedBlade+
-```
+## Documentation et sources
 
-OpenRGB fonctionne aussi sans Aurora. VIA et OpenRGB partagent l’interface Raw HID : fermer VIA pendant l’utilisation RGB. Le firmware fournit le sous-ensemble VialRGB nécessaire à OpenRGB, pas toute l’interface Vial.
+[Installation](docs/INSTALL.fr.md) · [Raccourcis](docs/SHORTCUTS.fr.md) · [Éditions](docs/EDITIONS.md) · [Studio](app/README.md) · [Performances](docs/PERFORMANCE.md) · [Audit](docs/AUDIT.md) · [Contribuer](CONTRIBUTING.md)
 
-## Performances et validation
-
-- Polling USB demandé : **1 ms** ; anti-rebond eager d’origine, NKRO et horloge Sonix partagée conservés.
-- Rendu par blocs de huit LED, intervalle minimal de 33 ms, indicateurs bornés et couleur Fn au repos/en activité. Turbo produit au plus une transition par passage, sans rattrapage en rafale ni attente active.
-- Benchmark Windows et mesure USB en lecture seule inclus. [À lancer ce soir](docs/PERFORMANCE.md) ; les mesures du PC ne sont pas une mesure de latence physique des touches.
-
-**La version 0.8.1 reste expérimentale.** Les fonctions de la série 0.8 ont été validées sur le clavier : blanc réactif, rejeu, Hyper conservé, Turbo clics et priorité Aurora. Sur 0.8.1, le voyant Windows, Fn seule éteinte, le maintien après relâchement de Fn, le fonctionnement RGB éteint, le déverrouillage, la saisie et Aurora sont confirmés. Core est compilée et testée sur PC, sans validation matérielle revendiquée. Voir [l’audit](docs/AUDIT.md), le [manifeste](dist/manifest.json) et les [tests](.github/workflows/test.yml).
-
-Le RGB s’éteint lorsque l’USB est suspendu ou non configuré. Si le PC maintient réellement le bus USB actif après son arrêt, le firmware ne peut pas distinguer ce cas d’un logiciel RGB fermé ; cette limite est expliquée dans le [guide technique](docs/INSTALL.fr.md).
-
-## Documentation
-
-- [Installation complète](docs/INSTALL.fr.md) · [Référence anglaise](docs/INSTALL.md)
-- [Tous les raccourcis](docs/SHORTCUTS.fr.md) · [Mesures de performances](docs/PERFORMANCE.md) · [Audit](docs/AUDIT.md)
-- [Changelog en anglais](CHANGELOG.md) · [Contribuer](CONTRIBUTING.md) · [Logo et prompt](assets/LOGO.md)
-
-Basé sur [SonixQMK épinglé](https://github.com/SonixQMK/qmk_firmware/tree/62973ee48a976c6f7cc6d4f7b198bd48a2fdfe60), avec [OpenRGB](https://github.com/CalcProgrammer1/OpenRGB) et [Aurora](https://github.com/Aurora-RGB/Aurora). Code ajouté sous GPL-2.0-or-later ; licences et sources amont conservées. [Licence](LICENSE).
+Les paquets de version contiennent les deux micrologiciels, les sources QMK complètes, les sources de Studio et les outils de mesure. Le projet utilise [SonixQMK épinglé](https://github.com/SonixQMK/qmk_firmware/tree/62973ee48a976c6f7cc6d4f7b198bd48a2fdfe60), [OpenRGB](https://github.com/CalcProgrammer1/OpenRGB) et [Aurora](https://github.com/Aurora-RGB/Aurora). Le code ajouté est sous GPL-2.0-or-later ; les mentions et sources amont sont conservées. [Licence](LICENSE).

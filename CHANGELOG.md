@@ -4,6 +4,11 @@ All new release notes are written in English. Version 0.x is experimental; hardw
 
 ## 0.12.0 preview — Reactive lighting and contextual helpers
 
+- New bilingual Setup page guides identification, Full/Core flashing, verified OpenRGB installation, 109-LED SDK detection and a six-second lighting test. The pinned portable OpenRGB 1.1 download is hash-checked, bounded and installed with protected permissions. Existing RGB applications are restored; a separate local SDK port is reported when an existing server cannot expose the keyboard.
+- Startup update notices coordinate with the native updater. Later and Escape defer automatic installation until the next launch, while firmware installation always remains explicit.
+- Revised English/French labels and hardware messages, technical error details, and clearer shortcut maps. Keyboard colors fill each key uniformly; gaming selection uses exactly four physical positions (ZQSD/WASD). The RGB preview decoration no longer moves independently of its LEDs.
+- Holding Fn reveals its shortcut guide while Full lighting is off with Fn+F4, then returns to darkness on release. USB suspension remains dark; globally disabling the QMK matrix with VialRGB Off still suppresses the guide.
+- Unsupported legacy identity replies are distinguished from verified Full firmware, unrelated replies are rejected, and first-install stock VIA migration requires an explicit acknowledgement. Backups are retained; dimension mismatches report only protocol/layer/size metadata and never trigger an unsafe restoration. Failed installations retain their verified identity, stage and backup location.
 - Full adds reaction timing up to approximately 4 seconds, cross waves and a global double pulse. Smooth geometry is computed once per frame; existing packed trail storage and boot-only fields are reused. Continuous typing does not freeze older trails.
 - Optional Ctrl/Shift/Alt highlights reveal useful factory-position shortcuts. Choose off, autonomous lighting only, or explicit overlays over host RGB. Fn, automation, Off and USB suspension retain their priorities; the shortcut layout follows AZERTY/QWERTY configuration.
 - Studio adds Aurora, Comet and Embers presets, cross/pulse overlays and PC reaction durations up to 8 seconds with at most 32 transient input events. Native and preview formulas match.

@@ -1,130 +1,62 @@
-# RedBlade+ · OpenRGB Firmware
+# RedBlade+ · OpenRGB firmware and Studio
 
 **English** · [Français](README.fr.md)
 
-<p align="center"><img src="assets/redblade-plus.png" alt="RedBlade+ — full-size RGB keyboard with four media keys and a red blade" width="360"></p>
+Per-key lighting, onboard profiles and practical shortcuts for the **Designed by GG Red Blade Full Size ISO**. RedBlade+ Studio brings the keyboard, lighting and setup together in a portable Windows x64 application.
 
-<p align="center">
-  <a href="https://github.com/Gaerisson/redblade-aurora-openrgb/releases/latest"><img alt="Release" src="https://img.shields.io/github/v/release/Gaerisson/redblade-aurora-openrgb"></a>
-  <a href="https://github.com/Gaerisson/redblade-aurora-openrgb/actions/workflows/test.yml"><img alt="Firmware checks" src="https://github.com/Gaerisson/redblade-aurora-openrgb/actions/workflows/test.yml/badge.svg"></a>
-  <a href="LICENSE"><img alt="GPL-2.0-or-later" src="https://img.shields.io/badge/license-GPL--2.0--or--later-blue"></a>
-</p>
+[Download 0.12 preview](https://github.com/Gaerisson/redblade-aurora-openrgb/releases/tag/v0.12.0) · [Installation](docs/INSTALL.md) · [Shortcuts](docs/SHORTCUTS.md) · [Studio guide](app/README.md) · [Changelog](CHANGELOG.md)
 
-Per-key OpenRGB lighting, useful Fn shortcuts and game helpers for the **Designed by GG Red Blade Full Size ISO**.
+<p align="center"><img src="docs/assets/studio-keyboard.png" alt="RedBlade+ Studio Color Lab keyboard editor" width="900"></p>
 
-[Download](https://github.com/Gaerisson/redblade-aurora-openrgb/releases/latest) · [Shortcuts](docs/SHORTCUTS.md) · [Install](docs/INSTALL.md) · [Performance](docs/PERFORMANCE.md) · [Changelog](CHANGELOG.md)
+## Your keyboard, your colors
 
-![Firmware features](docs/assets/features.svg)
+- **Color Lab:** select keys by click, drag, marquee or gaming-position group. Apply solid colors or linear and radial gradients, and undo or redo changes. Edit the active Full profile and save it to the keyboard.
+- **Lighting on the PC:** choose from 12 OpenRGB effects and reactive overlays lasting up to 8 seconds. Studio restores your RGB applications after its effect stops.
+- **Lighting on the keyboard:** Full 0.12 provides five autonomous reactive styles lasting up to approximately 4 seconds, with optional Ctrl, Shift and Alt highlights. Four onboard profiles keep your settings available without a running PC effect.
+- **Shortcuts at a glance:** the interactive Fn explorer shows a virtual preview of Fn and Shift combinations; it does not monitor the physical Fn key. Full also includes Windows lock, Turbo, Recorder and media controls.
 
-## Studio 0.12.0 — Color Lab preview
+Studio is available in English and French with AZERTY and QWERTY legends. Its virtual preview and software effects are separate from the onboard settings; the new autonomous options require Full 0.12.
 
-Full 0.12 adds reactive lighting up to approximately 4 seconds, cross waves, double pulses and optional Ctrl/Shift/Alt shortcut highlights. Studio offers 12 PC effects with reactions up to 8 seconds and an interactive Fn explorer with Shift alternatives. Existing colors, VIA and the four-profile format remain compatible. New autonomous options require the guided Full 0.12 firmware installation. [Brightness audit](docs/RGB_BRIGHTNESS.md): no hidden gain was found; multiplexing changes need hardware measurements.
+## Choose your firmware
 
-Click the shortcut map for a large reader with wheel zoom and drag panning. **Maximize selected colors** brightens selected onboard colors without changing hue or intentional off keys, with undo support. The earlier Studio 0.11.1 map update did not require a flash; new autonomous options in this release require Full 0.12.
-
-RedBlade+ Studio is a portable Windows x64 editor for the active Full profile. Color Lab selects 109 keys by click, drag, marquee or group; applies solid, linear or radial colors; and offers bounded undo/redo. On connection, choose whether to keep local edits or load the keyboard profile. The four-profile wire format remains compatible; Core does not expose the Full configuration API. English/French and AZERTY/QWERTY legends remain available. See [Studio](app/README.md).
-
-Nine PC effects support palettes, zones and a reactive overlay through OpenRGB. Reactive input is filtered to the Red Blade keyboard and kept transiently in memory without scan-code or keystroke logs. Full 0.11 adds three autonomous reactive styles; a new press restarts the single wave. Build checks and physical acceptance are recorded separately in the [audit](docs/AUDIT.md) and release notes.
-
-[Download Studio 0.12.0 and both firmware editions](https://github.com/Gaerisson/redblade-aurora-openrgb/releases/tag/v0.12.0). Full 0.11 has been programmed and identified on the preparation keyboard. After recovery from a malformed immediate identity reply, VIA/macros and all four original profiles were restored with complete readback. The owner confirmed typing, numpad, saved ripple/color and PC reactive typing. The read-only reconnect fix has regression coverage; no second physical flash was performed. See the release validation report. Power-cycle persistence and physical input latency have not been measured. Back up VIA and custom settings before flashing.
-
-Full 0.10 adds optional Caps Word (Fn + Caps, AZERTY/QWERTY) and a configurable automatic timeout for generated helpers; both are off by default. Studio uses WebView2 Runtime on Windows and pauses Aurora while its software effects are active, restoring it afterward.
-
-Studio can check and download official GitHub updates automatically and restart after 30 seconds of inactivity when there are no unsaved changes or active jobs. Firmware installation always requires the guided flow and physical Fn + Esc; it never flashes at startup.
-
-![Studio 0.12.0 Color Lab editor](docs/assets/studio-keyboard.png)
-
-*Actual Color Lab interface, captured in hardware-disabled preview mode.*
-
-## Choose your edition
-
-| Edition | Included | Firmware |
+| | OpenRGB Core | RedBlade+ Full |
 | --- | --- | --- |
-| **OpenRGB Core** | Per-key OpenRGB/Aurora + VIA; no game helpers, Recorder, local effects or added status overlays | `redblade-fs-openrgb-core.bin` |
-| **RedBlade+ Full** | Every feature shown below | `redblade-fs-aurora-via.bin` |
+| Best for | Per-key OpenRGB/Aurora and VIA | Core features plus onboard lighting and shortcuts |
+| Lighting without a host | LEDs turn off after five seconds without RGB | Local profiles, reactive lighting and status indicators |
+| Game helpers and Recorder | Not included | Included |
+| Firmware file | `redblade-fs-openrgb-core.bin` | `redblade-fs-aurora-via.bin` |
 
-Each edition has its own manifest and separate complete-source package. Core turns lights off after 5 s without RGB and retains the guarded Fn + Esc bootloader shortcut. [Choose/switch editions](docs/EDITIONS.md).
+Both editions support VIA remapping and macros, and **Fn + Esc held for two seconds** enters the bootloader. Full provides the Studio onboard-profile configuration; Core does not. See [edition details](docs/EDITIONS.md).
 
-## What you get
+## Guided setup
 
-| Feature | How it works |
-| --- | --- |
-| Native OpenRGB integration | 109 independently controlled LEDs through VialRGB; Aurora connects through the OpenRGB SDK |
-| A useful Fn media deck | Calculator → timed Recorder control, Mute → play/pause, Volume −/+ → previous/next; Shift adds more controls |
-| Windows-key lock | Fn + either Windows key; both Windows logos turn red and the dedicated upper-right Windows indicator turns on while locked |
-| Choose a Turbo key | Fn + T, then a basic key; live 5–250/s adjustment with Fn + numpad −/+; E/F/Space presets retained |
-| Mouse Turbo | Fn + T, then Volume −/+: left/right click, amber/purple indicators, shared cadence |
-| Reactive white | Without host RGB, physical typing and replayed letters leave red trails on white |
-| Fn RGB status | Breathing Recorder colors; blue idle, cyan Fn held, red Turbo, green hold, purple Game Mode |
-| Forward hold | Fn + W on QWERTY / Fn + Z on AZERTY; green active LED |
-| Immediate stop | Esc stops game helpers; Fn + Esc also unlocks Windows |
-| Local lighting profiles | Host, white, red and Off; brightness works with host colors too |
-| Dynamic fallback | Without live RGB: green Caps/Num Lock, amber Scroll Lock, white active numpad / very dim inactive numpad |
-| Three temporary recordings | Fn + Calculator, then Fn + 1/2/3 records; Fn + a slot plays once; Shift loops it; live speed 0.5×–8× + Hyper |
-| White fallback | Optional white after 5 seconds without RGB, plus fallback for all four media keys |
-| Red startup wave | Visible curved 2-second wave and smooth handover to the latest host colors |
-| Preferences you control | Fn + F9 saves lighting settings; regular controls and RGB streaming stay RAM-only |
-| VIA support | Remapping/macros, with a backed-up Fn-layer upgrade tool |
+<p align="center"><img src="docs/assets/studio-setup.png" alt="RedBlade+ Studio guided setup" width="760"></p>
 
-Game helpers start disabled, stop on USB suspension/disconnection and never resume automatically. They act on the active application; the firmware cannot detect game focus. One Turbo target can run alongside forward hold. Normal presses of a helper's target key give control back to your finger.
+1. Use a **Red Blade Full Size ISO** with numpad: USB `320F:5136`, Sonix SN32F248B and 109 LEDs. The Red Blade 75 is not supported.
+2. Download the release and read the [installation and backup guide](docs/INSTALL.md). Studio guides the Full/Core installation, backs up VIA data privately and asks for the physical bootloader step. Review its messages before continuing; keep your backups.
+3. Use Studio setup to download and verify the portable OpenRGB 1.1 package, start its SDK and test detection of the 109-LED keyboard. A six-second lighting test checks the effect path. The managed installation does not create Windows autostart.
+4. For Aurora, select its OpenRGB/RGB.NET provider and use the SDK port shown by Studio. If an existing server on 6742 does not have the RedBlade, Studio can use 6743 alongside it; Aurora's configuration is not changed automatically. OpenRGB can also be used without Aurora.
 
-## Start with these shortcuts
+Close VIA when using RGB applications: they share the keyboard's Raw HID interface. RedBlade+ implements the VialRGB subset needed by OpenRGB, rather than the complete Vial configuration interface. The [installation guide](docs/INSTALL.md) also covers manual flashing and recovery.
 
-| Shortcut | Action |
-| --- | --- |
-| **Fn + Windows** | Toggle Game Mode; both Windows keys turn red |
-| **Fn + Calculator → Fn + 1** | Record slot 1; Calculator again finishes |
-| **Fn + 1 / Shift + Fn + 1** | Play slot 1 once / loop it |
-| **Fn + numpad −/+** | Adjust; hold to step repeatedly; release keeps the value |
-| **Fn + E** | Start/stop Turbo E |
-| **Esc** | Stop Turbo and forward hold |
-| **Fn + F1** | Give lighting control back to OpenRGB / Aurora |
-| **Fn + F8** | Restore defaults, stop helpers and unlock Windows |
+## Shortcuts and lighting
 
-The [full shortcut guide](docs/SHORTCUTS.md) covers the four-key deck, live cadence, generic key selection, Fn indicators, saving, recovery and bootloader entry. **Fn + Esc held for 2 seconds** enters the bootloader on 0.6.0+. A short press stops helpers/unlocks Windows. Versions 0.4/0.5 used Fn + Shift + Esc.
+<p align="center"><a href="docs/assets/shortcuts.png"><img src="docs/assets/shortcuts.png" alt="RedBlade+ Full keyboard shortcut map" width="760"></a></p>
 
-![Shortcut and dynamic-lighting map](docs/assets/shortcuts.png)
+[Open the full shortcut guide](docs/SHORTCUTS.md) · [French map](docs/assets/shortcuts.fr.png)
 
-[Full-size map](docs/assets/shortcuts.svg) · [French map](docs/assets/shortcuts.fr.png)
+**Fn + F1** returns lighting control to OpenRGB/Aurora; **Fn + F4** selects Off. While Fn is held, the shortcut guide remains visible in this Off mode. This behavior does not claim to override USB suspend or a global VialRGB Off command. **Esc** stops game helpers; the [guide](docs/SHORTCUTS.md) covers their operation and limits.
 
-## Getting started
+## Updates and validation
 
-| Supported hardware | Value |
-| --- | --- |
-| Keyboard | Red Blade **Full Size ISO**, with numpad — not the Red Blade 75 |
-| USB / MCU | `320F:5136` · Sonix SN32F248B |
-| Lighting | 109 LEDs, including Calculator, Mute, Volume − and Volume + |
+Studio can check official GitHub releases and offer a verified software update. The startup dialog's **Later** choice defers automatic installation until the next launch. Firmware is never flashed automatically: installation uses the guided flow and requires physical bootloader entry.
 
-1. Download the release ZIP and read the [backup and flash guide](docs/INSTALL.md#backup-and-flashing).
-2. Back up your VIA layout privately, identify the correct bootloader and flash the included `.bin` with SonixFlasherC.
-3. If an older VIA Fn layer survived, use the [Fn-layer installer](docs/SHORTCUTS.md#upgrading-an-existing-via-layer) while RGB clients are stopped.
-4. Configure OpenRGB/Aurora, then choose **Fn + F1**:
+**0.12 status:** Studio and Full/Core 0.12 compile and pass host tests, including real WebView2 interface checks. Full 0.12 and the new managed OpenRGB setup still need physical acceptance on the target PC. Full 0.11 was installed and identified on the preparation keyboard; the owner confirmed typing, numpad and selected lighting behaviors. Those observations do not validate 0.12 or Core. Power-cycle persistence and physical input latency have not been measured. See the [audit](docs/AUDIT.md) and release notes for scope.
 
-```powershell
-pwsh -File tools/configure-windows.ps1 -Apply
-pwsh -File tools/configure-aurora-mapping.ps1 -Apply
-```
+The [brightness audit](docs/RGB_BRIGHTNESS.md) found no hidden software gain: color channels reach 255 and driver multipliers default to 1. Electrical or multiplexing changes have not been measured or implemented, so no additional brightness gain is claimed. The project retains requested 1 ms USB polling; [performance tools](docs/PERFORMANCE.md) report host measurements, not physical key latency.
 
-```text
-Aurora / another SDK client → OpenRGB → VialRGB → RedBlade+
-```
+## Documentation and source
 
-OpenRGB also works without Aurora. VIA and OpenRGB share Raw HID; close VIA during normal RGB use. The firmware provides the VialRGB subset needed by OpenRGB, not the complete Vial configuration UI.
+[Installation](docs/INSTALL.md) · [Shortcuts](docs/SHORTCUTS.md) · [Editions](docs/EDITIONS.md) · [Studio](app/README.md) · [Performance](docs/PERFORMANCE.md) · [Audit](docs/AUDIT.md) · [Contributing](CONTRIBUTING.md)
 
-## Performance and validation
-
-- Requested USB polling: **1 ms**; factory eager debounce, NKRO and the shared Sonix scan/PWM timer are preserved.
-- RGB work is split into eight-LED chunks with a 33 ms minimum frame interval. Status overlays are bounded; Fn has a persistent idle/active color. Turbo schedules at most one edge per housekeeping pass; no catch-up queue or busy wait.
-- A Windows native benchmark and read-only USB timing tool are included. [Run them tonight](docs/PERFORMANCE.md); host timings are not physical key-latency measurements.
-
-**0.8.1 is experimental.** The 0.8 feature set was confirmed on the keyboard: reactive white/replay, latched Hyper, click Turbo and Aurora priority. On 0.8.1, the owner confirmed the dedicated Windows indicator, Fn-only Off, retained lock status after Fn release, operation with RGB Off, unlock, typing and Aurora. Core is build/host-tested, with no hardware validation claimed. See the [audit](docs/AUDIT.md), [manifest](dist/manifest.json) and [test workflow](.github/workflows/test.yml) for the exact scope.
-
-The keyboard turns its RGB off when USB is suspended or unconfigured. A host that keeps the USB bus genuinely active after shutdown cannot be distinguished from an application that stopped sending colors; see the [USB power limitations](docs/INSTALL.md#fallback-lighting-and-red-wave--070).
-
-## Project files
-
-- [Installation and technical reference](docs/INSTALL.md) · [French reference](docs/INSTALL.fr.md)
-- [All shortcuts](docs/SHORTCUTS.md) · [Performance tools](docs/PERFORMANCE.md) · [Code audit](docs/AUDIT.md)
-- [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [Logo and generation prompt](assets/LOGO.md)
-
-Based on pinned [SonixQMK](https://github.com/SonixQMK/qmk_firmware/tree/62973ee48a976c6f7cc6d4f7b198bd48a2fdfe60), with native [OpenRGB](https://github.com/CalcProgrammer1/OpenRGB) / [Aurora](https://github.com/Aurora-RGB/Aurora) integration. Added code is GPL-2.0-or-later; upstream notices and corresponding sources are retained. [License](LICENSE).
+The release packages include both firmware binaries, complete QMK sources, Studio source and benchmarks. Based on pinned [SonixQMK](https://github.com/SonixQMK/qmk_firmware/tree/62973ee48a976c6f7cc6d4f7b198bd48a2fdfe60), with [OpenRGB](https://github.com/CalcProgrammer1/OpenRGB) and [Aurora](https://github.com/Aurora-RGB/Aurora). Added code is GPL-2.0-or-later; upstream notices and corresponding sources are retained. [License](LICENSE).

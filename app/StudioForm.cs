@@ -13,7 +13,7 @@ internal sealed partial class StudioForm:Form
     bool Transitioning=>operationGate.CurrentCount==0;
     StudioConfig config=StudioConfig.Default();bool dirty,french,busy,effectActive,closeAfterEffect;uint? generation;
     readonly EditHistory history=new();
-    string firmware="",connection="offline",currentPage="keyboard",previewPage="keyboard",lastError="";Version? installedVersion;
+    string firmware="",connection="offline",currentPage="keyboard",previewPage="keyboard",lastError="",openRgbStatus="";bool redbladeFound;int sdkPort=6742;Version? installedVersion;
     static readonly Version BundledVersion=FirmwareImage.Load("full").Version;
     UpdateSession? updates;JobResult? job;string? jobId;Task? runningJob;EffectSettings effect=new("wave","#DD002B","#FFFFFF",40,180);
     internal bool IsHardwareBusy=>busy||Transitioning;
@@ -62,7 +62,7 @@ internal sealed partial class StudioForm:Form
             {
                 if(!StudioBridge.AllowedOrigin(e.Source))return;StudioRequest? request=null;
                 try{request=StudioBridge.Parse(e.WebMessageAsJson);object? result=await Dispatch(request);Post(new{id=request.Id,ok=true,data=result});}
-                catch(Exception error){Diagnostics.Record(error,"Studio action "+request?.Action);Post(new{id=request?.Id??"",ok=false,error=error.Message});}
+                catch(Exception error){Diagnostics.Record(error,"Studio action "+request?.Action);Post(new{id=request?.Id??"",ok=false,error=StudioText.Localize(error.Message,french,true)});}
                 finally{SendState();}
             };
             core.NavigationCompleted+=async(_,e)=>
@@ -92,13 +92,14 @@ internal sealed partial class StudioForm:Form
     void Post(object message){if(!IsDisposed&&web.CoreWebView2!=null)web.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(message,StudioBridge.Json));}
     object Snapshot()=>new
     {
-        app=new{version=UpdateSession.CurrentVersion.ToString(),language=french?"fr":"en",dirty,busy=Transitioning||busy&&!effectActive||updates?.Installing==true,preview,error=lastError},keyboard=new{status=connection,firmware},
+        app=new{version=UpdateSession.CurrentVersion.ToString(),language=french?"fr":"en",dirty,busy=Transitioning||busy&&!effectActive||updates?.Installing==true,preview,error=StudioText.Localize(lastError,french,true)},keyboard=new{status=connection,firmware=firmware.StartsWith("Stock / legacy",StringComparison.Ordinal)?T("Stock / legacy (version unavailable)","D’origine / ancien (version indisponible)"):firmware,version=installedVersion?.ToString()},
+        setup=new{openRgbStatus,redbladeFound,sdkPort},
         firmware=new{bundledVersion=BundledVersion.ToString(),latestVersion=updates?.Firmware.GetValueOrDefault("full")?.Version.ToString(),recommendedSource=updates?.Firmware.GetValueOrDefault("full")?.Version>=BundledVersion?"latest":"bundled",edition="full"},
         capabilities=new{studio=connection=="connected",extendedOptions=preview||installedVersion==null||installedVersion>=new Version(0,10,0),reactiveStyles=preview||installedVersion==null||installedVersion>=new Version(0,11,0),extendedReaction=preview||installedVersion==null||installedVersion>=new Version(0,12,0),softwareEffects=!preview},
         editor=new{history.CanUndo,history.CanRedo},
         profile=new{Current.Modules,Current.Master,Current.DefaultMode,Current.TimeoutSeconds,Current.TurboRate,Current.RecorderSpeed,Current.TrailFrames,Current.CapsWordLayout,Current.ReactiveStyle,Current.ReactiveWidth,Current.ReactiveRate,Current.HighlightMode,safetyTimeoutSeconds=Current.SafetyTimeoutSeconds==0?30:Current.SafetyTimeoutSeconds,keys=Current.Keys,effects=Current.Effects},
         layout=KeyboardLayout.Load(),updates=new{status=updates?.Status??"",availableVersion=updates?.Check?.SoftwareNewer==true?updates.Check.Offer?.Version.ToString():null,softwareReady=updates?.Software!=null,preferences=updates?.Preferences??new UpdatePreferences()},
-        job,softwareEffect=new{active=effectActive,settings=effect,effect.Preset,effect.Color1,effect.Color2,effect.Speed,effect.Brightness}
+        job=job==null?null:new{job.Stage,job.Done,job.Success,job.Programming,message=StudioText.Localize(job.Message,french,job.Done&&!job.Success),diagnostic=job.Message,job.Firmware,job.BackupDirectory},softwareEffect=new{active=effectActive,settings=effect,effect.Preset,effect.Color1,effect.Color2,effect.Speed,effect.Brightness}
     };
     internal void SendState(){if(IsDisposed)return;if(InvokeRequired){BeginInvoke((Action)SendState);return;}Post(new{type="state",state=Snapshot()});}
     void Changed(){ConfigCodec.Validate(config);dirty=true;SaveDraft();SendState();}

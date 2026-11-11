@@ -358,9 +358,10 @@ bool redblade_controls_process(uint16_t keycode, keyrecord_t *record) {
 }
 bool redblade_controls_indicators_needed(bool fn_active) { (void)fn_active; return true; }
 bool redblade_controls_indicator(uint8_t index, bool fn_active, hsv_t *color) {
-    if (!redblade_rgb_output_active()) return false;
+    const bool off_fn = fn_active && redblade_rgb_off_fn_available();
+    if (!off_fn && !redblade_rgb_output_active()) return false;
     const bool hints=fn_active && shortcut_enabled(index);
-    if (fn_active && redblade_config_feature(RB_MODULE_FN_FOCUS) && !hints) {
+    if (fn_active && (off_fn || redblade_config_feature(RB_MODULE_FN_FOCUS)) && !hints) {
         *color = (hsv_t){0,0,0};
         return true;
     }
@@ -460,7 +461,7 @@ bool redblade_controls_indicator(uint8_t index, bool fn_active, hsv_t *color) {
 }
 
 void redblade_controls_render(uint8_t led_min, uint8_t led_max, bool fn_active) {
-    if (!redblade_rgb_output_active()) return;
+    if (!redblade_rgb_output_active() && !(fn_active && redblade_rgb_off_fn_available())) return;
     for (uint8_t i = led_min; i < led_max; ++i) {
         hsv_t color;
         if (!redblade_controls_indicator(i, fn_active, &color)) continue;

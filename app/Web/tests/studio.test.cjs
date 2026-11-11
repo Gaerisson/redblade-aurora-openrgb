@@ -36,7 +36,7 @@ test('Caps Word offers AZERTY 0 and QWERTY 1 independently of keyboard labels', 
 
 test('shortcut search finds localized recorder loops and mouse turbo instructions', () => {
   const loop=findShortcuts('boucle','fr');
-  assert.ok(loop.some(x=>x.group==='Recorder' && x.keys.includes('Maj')));
+  assert.ok(loop.some(x=>x.group==='Enregistreur' && x.keys.includes('Maj')));
   const mouse=findShortcuts('mouse','en');
   assert.ok(mouse.some(x=>x.group==='Turbo & game' && x.keys.includes('Volume')));
   assert.ok(findShortcuts('F9','fr').some(x=>x.description.includes('sauvegarde')));
@@ -102,3 +102,8 @@ test('visual effect palette follows primary colors when empty and rejects invali
 });
 
 test('extended reaction duration chooses valid bounded firmware fields',()=>{const {reactionPair}=require('../app.js');assert.deepEqual(reactionPair(3960),{trailFrames:15,reactiveRate:8});assert.deepEqual(reactionPair(1980),{trailFrames:15,reactiveRate:4});assert.deepEqual(reactionPair(8000,false),{trailFrames:15,reactiveRate:0});});
+test('update notice only selects newer Studio versions',()=>{const {newerVersion}=require('../app.js');assert.equal(newerVersion('0.13.0','0.12.0'),true);assert.equal(newerVersion('0.12.0','0.12.0'),false);assert.equal(newerVersion('0.11','0.12'),false);assert.equal(newerVersion('unknown','0.12'),false);});
+test('gradient preview is stable over time',()=>{const {renderPreviewFrame}=require('../app.js');const a={preset:'gradient',color1:'#ff0000',color2:'#0000ff',speed:50,brightness:255,angle:0,scale:100,reverse:false,palette:[],targetLeds:null,background:'#000000',reactiveEnabled:false,reactiveColor:'#ffffff',reactiveDurationMs:1000,reactiveWidth:2,reactiveOpacity:100};const keys=[{led:0,x:0,y:0},{led:1,x:2,y:0}];assert.deepEqual(renderPreviewFrame(a,keys,0),renderPreviewFrame(a,keys,5000));});
+test('gaming group selects four physical positions on both layouts',()=>{const {gamingLeds}=require('../app.js');const raw=require('../../Resources/keyboard-layout.json');const layout=raw.map(k=>({led:k.Led,label:k.Label,azertyLabel:k.AzertyLabel}));const ids=gamingLeds(layout);assert.equal(ids.length,4);const keys=layout.filter(k=>ids.includes(k.led));assert.deepEqual(keys.map(k=>k.label).sort(),['A','D','S','W']);assert.deepEqual(keys.map(k=>k.azertyLabel).sort(),['D','Q','S','Z']);});
+test('keyboard label contrast follows solid key brightness',()=>{const {keyTextColor}=require('../app.js');assert.equal(keyTextColor('#ffffff'),'#111217');assert.equal(keyTextColor('#000000'),'#ffffff');assert.equal(keyTextColor('#dd002b'),'#ffffff');});
+test('update notice waits until editing and lighting effects stop',()=>{const {updateNoticeEligible}=require('../app.js');const s={app:{version:'0.12.0'},updates:{availableVersion:'0.13.0'}};assert.equal(updateNoticeEligible(s,new Set(),false,false),true);assert.equal(updateNoticeEligible(s,new Set(),false,true),false);assert.equal(updateNoticeEligible({...s,softwareEffect:{active:true}},new Set(),false,false),false);assert.equal(updateNoticeEligible(s,new Set(['0.13.0']),false,false),false);});

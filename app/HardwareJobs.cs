@@ -10,7 +10,7 @@ using System.Text.RegularExpressions;
 using Microsoft.Win32;
 namespace RedBladePlus.Studio;
 
-internal enum HardwareOperation { Read, Save, Preview, Flash, Control, Effects }
+internal enum HardwareOperation { Read, Save, Preview, Flash, Control, Effects, SetupOpenRgb, TestOpenRgb, TestLighting }
 internal enum HardwareControl { StopHelpers, Host, Local, Off }
 internal sealed class JobRequest
 {
@@ -25,6 +25,7 @@ internal sealed class JobRequest
     public string FirmwareBase64{get;set;}="";
     public string FirmwareManifestBase64{get;set;}="";
     public string FirmwareSha256{get;set;}="";
+    public bool AllowLegacyReset{get;set;}
 }
 internal sealed class JobResult
 {
@@ -38,6 +39,9 @@ internal sealed class JobResult
     public string Firmware{get;set;}="";
     public bool Unsupported{get;set;}
     public string BackupDirectory{get;set;}="";
+    public string OpenRgbStatus{get;set;}="";
+    public bool RedbladeFound{get;set;}
+    public int SdkPort{get;set;}
 }
 internal static class JobSafety
 {
@@ -98,6 +102,7 @@ internal static class HardwareJobs
         }
         if(request.Operation is HardwareOperation.Save or HardwareOperation.Preview)ConfigCodec.Decode(Convert.FromBase64String(request.Payload));
         else if(request.Payload!="")throw new InvalidDataException("Unexpected job payload.");
+        if(request.AllowLegacyReset&&request.Operation!=HardwareOperation.Flash)throw new InvalidDataException("Legacy migration consent is only valid for firmware installation.");
     }
     internal static JobResult? Poll(string id)
     {
@@ -140,22 +145,36 @@ internal static class HardwareJobs
             object progressLock=new();
             void Progress(string message){lock(progressLock){result.Message=message;WriteResult(directory,result);}}
             FirmwareImage? firmware=request.Operation==HardwareOperation.Flash?(request.FirmwareBase64.Length==0?FirmwareImage.Load(request.Edition):FirmwareImage.Validate(Convert.FromBase64String(request.FirmwareBase64),Convert.FromBase64String(request.FirmwareManifestBase64),request.Edition,request.FirmwareSha256)):null;
+            if(request.Operation is HardwareOperation.SetupOpenRgb or HardwareOperation.TestOpenRgb)
+            {
+                using var sdkCancel=new CancellationTokenSource(TimeSpan.FromMinutes(8));result.Stage="openrgb";Progress("Checking OpenRGB and the RedBlade…");
+                int found=await FindRunningKeyboard(sdkCancel.Token);
+                if(found!=0){result.RedbladeFound=true;result.SdkPort=found;result.OpenRgbStatus="ready";result.Message=$"RedBlade detected in OpenRGB on port {found}.";result.Success=true;return 0;}
+                if(request.Operation==HardwareOperation.TestOpenRgb){result.OpenRgbStatus="not_detected";throw new IOException("No OpenRGB server detected the RedBlade with 109 LEDs. Run OpenRGB setup and check the keyboard connection.");}
+                using var setupRgb=new RgbSession();
+                await JobSafety.WithCleanup(async()=>{await setupRgb.Pause(sdkCancel.Token);int port=setupRgb.ManagedPortAvailable;await setupRgb.StartManagedForSetup(request.RequestingUserSid,port,Progress,sdkCancel.Token);result.RedbladeFound=true;result.SdkPort=port;result.OpenRgbStatus="ready";result.Message=$"OpenRGB is ready and the RedBlade was detected on port {port}.";},()=>setupRgb.Restore());
+                if(!await ProbeKeyboard(result.SdkPort,sdkCancel.Token)){result.RedbladeFound=false;result.OpenRgbStatus="not_detected";throw new IOException("The RedBlade became unavailable after restoring the other RGB applications.");}
+                result.Success=true;return 0;
+            }
             Progress("Pausing current RGB clients for this operation…");using var rgb=new RgbSession();
             using var cancel=new CancellationTokenSource(request.Operation==HardwareOperation.Effects?TimeSpan.FromHours(12):request.Operation==HardwareOperation.Flash?TimeSpan.FromMinutes(10):TimeSpan.FromMinutes(3));
             await JobSafety.WithCleanup(async()=>
             {
-                await rgb.Pause(cancel.Token);
-                if(request.Operation==HardwareOperation.Effects)
+                int selectedPort=request.Operation is HardwareOperation.Effects or HardwareOperation.TestLighting?await FindRunningKeyboard(cancel.Token):0;
+                await rgb.Pause(cancel.Token,preferredPort:selectedPort);
+                if(request.Operation is HardwareOperation.Effects or HardwareOperation.TestLighting)
                 {
                     result.Stage="effects"; Progress("Starting OpenRGB effects…");
-                    await RunOwnedEffects(rgb,request.EffectSettings!,inputDirectory,Progress,cancel.Token);return;
+                    var effect=request.Operation==HardwareOperation.TestLighting?new EffectSettings("wave","#FF274E","#2080FF",50,100):request.EffectSettings!;
+                    await RunOwnedEffects(rgb,effect,inputDirectory,request.RequestingUserSid,request.Operation==HardwareOperation.TestLighting,Progress,cancel.Token);
+                    if(request.Operation==HardwareOperation.TestLighting){result.RedbladeFound=true;result.SdkPort=rgb.SdkPort;result.OpenRgbStatus="ready";}return;
                 }
                 if(request.Operation==HardwareOperation.Flash){await Flash(request,firmware!,directory,inputDirectory,result,Progress,cancel.Token);return;}
-                using var hid=NativeHid.OpenKeyboard();var installed=await KeyboardProtocol.Identify(hid,cancel.Token);result.Firmware=(installed.Core?"Core ":"Full ")+installed.Version;
+                using var hid=NativeHid.OpenKeyboard();var installed=await KeyboardProtocol.Identify(hid,cancel.Token);result.Firmware=installed.DisplayName;
                 if(installed.Core||installed.Version<new Version(0,9,0))
                 {
                     result.Unsupported=true;
-                    if(request.Operation==HardwareOperation.Read){Progress(installed.Core?"OpenRGB Core identified. Full profile configuration is unavailable on Core.":"Older firmware identified. Upgrade to bundled Full 0.9.0 or later to save profiles.");return;}
+                    if(request.Operation==HardwareOperation.Read){Progress(installed.Legacy?"Stock / legacy firmware identified; its version is unavailable. Install Full using the guided installer. Existing VIA data will be backed up privately; stock keycodes cannot be migrated automatically.":installed.Core?"OpenRGB Core identified. Full profile configuration is unavailable on Core.":"Older firmware identified. Upgrade to Full 0.9.0 or later to save profiles.");return;}
                     throw new InvalidDataException(installed.Core?"Core has no onboard Studio configuration. Install Full to enable it.":"This firmware needs the bundled Full upgrade before profile operations.");
                 }
                 var protocol=new ConfigProtocol(hid);
@@ -189,7 +208,17 @@ internal static class HardwareJobs
         catch(Exception error){result.Success=false;result.Message=string.IsNullOrWhiteSpace(error.Message)?error.GetType().Name:error.Message;try{if(protectedJob!=null)File.WriteAllText(Path.Combine(directory,"diagnostic.log"),Diagnostic(error,result.Stage));}catch{}return 1;}
         finally{try{result.Done=true;if(result.Success)result.Stage="done";if(protectedJob!=null)WriteResult(directory,result);}finally{try{gate?.Dispose();}finally{protectedJob?.Dispose();}}}
     }
-    static async Task RunOwnedEffects(RgbSession rgb,EffectSettings settings,string inputDirectory,Action<string> progress,CancellationToken cancel)
+    static async Task<int> FindRunningKeyboard(CancellationToken ct)
+    {
+        foreach(int port in new[]{6742,6743})if(await ProbeKeyboard(port,ct))return port;return 0;
+    }
+    internal static async Task<bool> ProbeKeyboard(int port,CancellationToken ct)
+    {
+        try{using var sdk=new OpenRgbSdk();await sdk.ConnectAsync(port,ct);await sdk.FindKeyboardAsync(ct);return true;}
+        catch(Exception e) when(e is SocketException or TimeoutException or EndOfStreamException){return false;}
+        catch(OperationCanceledException) when(!ct.IsCancellationRequested){return false;}
+    }
+    static async Task RunOwnedEffects(RgbSession rgb,EffectSettings settings,string inputDirectory,string sid,bool test,Action<string> progress,CancellationToken cancel)
     {
         await rgb.EnsureSdkStopped(cancel);
         EffectLightingSnapshot snapshot;using(var hid=NativeHid.OpenKeyboard())snapshot=await EffectLightingSnapshot.Capture(hid,cancel);
@@ -197,8 +226,9 @@ internal static class HardwareJobs
         await JobSafety.WithCleanup(async()=>
         {
             using(var hid=NativeHid.OpenKeyboard())await snapshot.Acquire(hid,cancel);
-            resumeAttempted=true;await rgb.ResumeOpenRgbForEffects(cancel);
-            await RunEffects(rgb.SdkPort,settings,inputDirectory,progress,cancel);
+            resumeAttempted=true;await rgb.ResumeOpenRgbForEffects(sid,progress,cancel);
+            if(test){using var timer=CancellationTokenSource.CreateLinkedTokenSource(cancel);bool streaming=false;try{await OpenRgbEffects.RunAsync(rgb.SdkPort,()=>settings,new InlineProgress(message=>{progress(message);if(message=="OpenRGB connected"){streaming=true;timer.CancelAfter(TimeSpan.FromSeconds(6));}}),timer.Token);}catch(OperationCanceledException) when(streaming&&!cancel.IsCancellationRequested&&timer.IsCancellationRequested){progress("Lighting test complete. Restoring your RGB applications…");}}
+            else await RunEffects(rgb.SdkPort,settings,inputDirectory,progress,cancel);
         },async()=>
         {
             using var restore=new CancellationTokenSource(TimeSpan.FromSeconds(35));
@@ -206,7 +236,7 @@ internal static class HardwareJobs
             using var hid=NativeHid.OpenKeyboard();await snapshot.Restore(hid,restore.Token);
         });
     }
-    sealed class InlineProgress(Action<string> report):IProgress<string> { public void Report(string value)=>report(value); }
+    internal sealed class InlineProgress(Action<string> report):IProgress<string> { public void Report(string value)=>report(value); }
     internal static async Task RunEffects(int port,EffectSettings initial,string inputDirectory,Action<string> progress,CancellationToken lifetime)
     {
         EffectSettings current=initial;using var stop=CancellationTokenSource.CreateLinkedTokenSource(lifetime);
@@ -292,6 +322,7 @@ internal static class HardwareJobs
         await File.WriteAllBytesAsync(Path.Combine(backupDirectory,"via.json"),JsonSerializer.SerializeToUtf8Bytes(backup),cancel);
         if(custom!=null)await File.WriteAllBytesAsync(Path.Combine(backupDirectory,"onboard.bin"),custom.Bytes,cancel);
         result.BackupDirectory=backupDirectory;
+        if(previous.Legacy&&!request.AllowLegacyReset)throw new InvalidDataException("Stock / legacy VIA data was backed up privately. Connect the keyboard first, then restart the guided installer and acknowledge that the stock keymap/macros cannot be restored automatically. No firmware was programmed.");
         if(custom!=null&&request.Edition=="full"&&!FlashVerification.CanRestoreTarget(custom.Bytes,image.Version))throw new InvalidDataException("The backed-up profiles contain settings unsupported by this older Full firmware. Flashing stopped; the private backup was retained.");
         var originalLocations=NativeHid.UsbLocations("320f&pid_5136");
         if(originalLocations.Length!=1)throw new IOException("A unique Redblade USB port could not be identified. Flashing refused.");
@@ -320,8 +351,10 @@ internal static class HardwareJobs
         var reconnected=connection.Hid;
         using(reconnected)
         {
-            using var verify=new CancellationTokenSource(TimeSpan.FromMinutes(2));var current=connection.Identity;result.Firmware=(current.Core?"Core ":"Full ")+current.Version;result.Unsupported=current.Core||current.Version<new Version(0,9,0);
-            result.Stage="restore";progress("Firmware identity verified. Checking VIA preservation…");await backup.ForFirmware(previous.Version,current.Version,previous.Core||current.Core).RestoreIfChanged(reconnected,current,progress,verify.Token);
+            using var verify=new CancellationTokenSource(TimeSpan.FromMinutes(2));var current=connection.Identity;result.Firmware=current.DisplayName;result.Unsupported=current.Core||current.Version<new Version(0,9,0);
+            result.Stage="restore";progress("Firmware identity verified. Checking VIA preservation…");
+            if(previous.Legacy&&request.AllowLegacyReset)progress("New firmware verified. Stock VIA backup retained for manual migration; the new factory keymap is active as acknowledged before flashing.");
+            else await backup.ForFirmware(previous.Version,current.Version,previous.Core||current.Core).RestoreIfChanged(reconnected,current,progress,verify.Token);
             if(custom!=null&&!current.Core)
             {
                 var protocol=new ConfigProtocol(reconnected);var actual=await protocol.Read(verify.Token);
@@ -330,7 +363,7 @@ internal static class HardwareJobs
             if(!current.Core&&current.Version>=new Version(0,9,0)){var read=await new ConfigProtocol(reconnected).Read(verify.Token);result.Payload=Convert.ToBase64String(read.Bytes);result.Generation=read.Caps.Generation;}
             if(!FlashVerification.IsComplete(flashed.Exit,checksums,true,true))throw new IOException("Flash verification did not finish.");
         }
-        progress(custom!=null&&request.Edition=="core"?"Core flashed and verified. Full profile backup retained privately; Core cannot restore Full settings.":"Firmware, reconnection, VIA and supported onboard profiles verified. RGB applications are being restored.");
+        progress(previous.Legacy?"Firmware and reconnection verified. New factory keymap active; stock VIA backup retained for manual migration. RGB applications are being restored.":custom!=null&&request.Edition=="core"?"Core flashed and verified. Full profile backup retained privately; Core cannot restore Full settings.":"Firmware, reconnection, VIA and supported onboard profiles verified. RGB applications are being restored.");
     }
     // Only identification reads are retried. Each attempt uses a fresh handle; no restore or programming is replayed.
     internal static async Task<(IHidTransport Hid,KeyboardIdentity Identity)> ReconnectVerifiedAsync(Func<IHidTransport> open,Version expectedVersion,bool expectedCore,TimeSpan timeout,TimeSpan delay,CancellationToken cancel)
@@ -344,8 +377,9 @@ internal static class HardwareJobs
                 try
                 {
                     hid=open();identity=await KeyboardProtocol.Identify(hid,deadline.Token);
+                    if(identity.Legacy)throw new InvalidDataException("The keyboard returned an unsupported identity while reconnecting.");
                 }
-                catch(Exception error) when(error is IOException or InvalidDataException){last=error;hid?.Dispose();}
+                catch(Exception error) when(error is IOException or InvalidDataException){last=error;identity=null;hid?.Dispose();}
                 catch{hid?.Dispose();throw;}
                 if(identity!=null)
                 {
@@ -402,7 +436,7 @@ internal sealed class ViaBackup
     }
     internal async Task RestoreIfChanged(IHidTransport hid,KeyboardIdentity identity,Action<string> progress,CancellationToken cancel)
     {
-        var after=await Read(hid,identity,cancel);if(after.ViaProtocol!=ViaProtocol||after.Layers!=Layers||after.Macros.Length!=Macros.Length)throw new InvalidDataException("VIA dimensions changed. Automatic restore refused; private backup retained.");
+        var after=await Read(hid,identity,cancel);if(after.ViaProtocol!=ViaProtocol||after.Layers!=Layers||after.Macros.Length!=Macros.Length)throw new InvalidDataException($"VIA dimensions changed: backup protocol {ViaProtocol}, {Layers} layers, {Macros.Length} macro bytes; keyboard protocol {after.ViaProtocol}, {after.Layers} layers, {after.Macros.Length} macro bytes. Automatic restore refused; private backup retained.");
         if(!after.Keymap.SequenceEqual(Keymap)||!after.Macros.SequenceEqual(Macros))
         {
             if(!System.Version.TryParse(Firmware,out var previous)||previous<new System.Version(0,4,0)||ViaProtocol!=13)throw new InvalidDataException("The previous firmware keycode generation is unknown. Automatic VIA restore refused; private backup retained for manual migration.");
@@ -539,9 +573,17 @@ internal sealed class EffectLightingSnapshot(KeyboardIdentity identity,byte[] ru
 internal sealed class RgbSession:IDisposable
 {
     sealed record RunningApp(string Name,string Path,string[] Arguments,Microsoft.Win32.SafeHandles.SafeAccessTokenHandle Token);
-    readonly List<RunningApp> apps=new();bool serviceWasRunning,paused,sdkWasReachable,serviceStartedForEffects;int port=6742;
+    readonly List<RunningApp> apps=new();bool serviceWasRunning,paused,sdkWasReachable,serviceStartedForEffects,keepManaged;int port=6742,managedPort;Process? managedProcess;ManagedOpenRgb? managed;
+    readonly HashSet<int> originalSdkPorts=new();
+    internal static int ChooseManagedPort(IEnumerable<int> occupied)
+    {
+        var reserved=occupied.ToHashSet();foreach(int candidate in new[]{6742,6743})if(!reserved.Contains(candidate))return candidate;
+        throw new IOException("Both supported OpenRGB SDK ports are already in use. Existing servers were preserved; close an unused OpenRGB server and retry setup.");
+    }
+    internal int ManagedPortAvailable=>ChooseManagedPort(originalSdkPorts);
     internal int SdkPort=>port;
-    internal async Task Pause(CancellationToken cancel,bool keepOpenRgb=false)
+    internal bool OriginalSdkWasReachable=>sdkWasReachable;
+    internal async Task Pause(CancellationToken cancel,bool keepOpenRgb=false,int preferredPort=0)
     {
         int session=Process.GetCurrentProcess().SessionId;
         serviceWasRunning=OpenRgbService.IsRunning();
@@ -555,6 +597,16 @@ internal sealed class RgbSession:IDisposable
                 int processId=process.Id;string[] args=Arguments(await Task.Run(()=>CommandLine(processId),cancel).WaitAsync(TimeSpan.FromSeconds(8),cancel));if(args.Length==0||!File.Exists(path))throw new IOException("Cannot preserve RGB startup command. No clients were paused.");
                 var arguments=args.Skip(1).ToArray();if(name=="OpenRGB")port=PortFromArgs(arguments,port);if(!keepOpenRgb||name!="OpenRGB")apps.Add(new(name,path,arguments,PreserveToken(process)));
             }
+        if(preferredPort!=0)port=preferredPort;
+        // Remember every reachable original SDK, not just the instance selected
+        // for this keyboard. Paused servers must be able to reclaim their ports.
+        var candidates=apps.Where(a=>a.Name=="OpenRGB").Select(a=>PortFromArgs(a.Arguments)).Append(port).Concat(new[]{6742,6743}).Distinct();
+        foreach(int candidate in candidates)
+        {
+            using var portProbe=CancellationTokenSource.CreateLinkedTokenSource(cancel);portProbe.CancelAfter(1000);using var socket=new TcpClient();
+            try{await socket.ConnectAsync("127.0.0.1",candidate,portProbe.Token);originalSdkPorts.Add(candidate);}
+            catch(OperationCanceledException) when(!cancel.IsCancellationRequested){}catch(SocketException){}
+        }
         // Only require SDK recovery if it was actually reachable before interruption.
         // A running OpenRGB GUI does not imply that its SDK server is enabled.
         using(var probe=CancellationTokenSource.CreateLinkedTokenSource(cancel))
@@ -577,21 +629,43 @@ internal sealed class RgbSession:IDisposable
             if(process.SessionId!=session)continue;try{process.CloseMainWindow();using var grace=CancellationTokenSource.CreateLinkedTokenSource(cancel);grace.CancelAfter(1200);await process.WaitForExitAsync(grace.Token);}catch(OperationCanceledException){if(!process.HasExited)process.Kill();await process.WaitForExitAsync(cancel);}
         }
     }
-    internal async Task EnsureSdkStopped(CancellationToken ct)
+    internal Task EnsureSdkStopped(CancellationToken ct)=>EnsurePortStopped(port,ct);
+    static async Task EnsurePortStopped(int selectedPort,CancellationToken ct)
     {
         using var probe=CancellationTokenSource.CreateLinkedTokenSource(ct);probe.CancelAfter(1000);using var client=new TcpClient();
-        try{await client.ConnectAsync("127.0.0.1",port,probe.Token);throw new IOException("Another OpenRGB SDK provider is still active; exclusive keyboard control refused.");}
+        try{await client.ConnectAsync("127.0.0.1",selectedPort,probe.Token);throw new IOException($"Another OpenRGB SDK provider is still active on port {selectedPort}; exclusive keyboard control refused.");}
         catch(OperationCanceledException) when(!ct.IsCancellationRequested){}catch(SocketException){}
     }
-    internal async Task ResumeOpenRgbForEffects(CancellationToken ct)
+    internal async Task StartManagedForSetup(string sid,int selectedPort,Action<string> progress,CancellationToken ct)
+    {
+        managed=await OpenRgbSetup.EnsureInstalledAsync(sid,new HardwareJobs.InlineProgress(progress),ct);managedPort=selectedPort;
+        await StartManaged(ct);
+        if(!await HardwareJobs.ProbeKeyboard(selectedPort,ct))throw new IOException("OpenRGB started, but the RedBlade was not detected. Check its USB connection and firmware.");
+        keepManaged=true;port=selectedPort;
+    }
+    async Task StartManaged(CancellationToken ct)
+    {
+        await EnsurePortStopped(managedPort,ct);
+        var start=new ProcessStartInfo(managed!.Executable){UseShellExecute=false,CreateNoWindow=true,WindowStyle=ProcessWindowStyle.Hidden,WorkingDirectory=Path.GetDirectoryName(managed.Executable)!};
+        foreach(string arg in new[]{"--config",managed.ConfigDirectory,"--noautoconnect","--server","--server-host","127.0.0.1","--server-port",managedPort.ToString(System.Globalization.CultureInfo.InvariantCulture)})start.ArgumentList.Add(arg);
+        managedProcess=Process.Start(start)??throw new IOException("Managed OpenRGB did not start.");
+        for(int n=0;n<100;n++){ct.ThrowIfCancellationRequested();if(managedProcess.HasExited)throw new IOException("Managed OpenRGB exited before its SDK was ready.");using var client=new TcpClient();try{await client.ConnectAsync("127.0.0.1",managedPort,ct);return;}catch(SocketException){await Task.Delay(200,ct);}}
+        throw new TimeoutException("Managed OpenRGB SDK did not start.");
+    }
+    internal async Task ResumeOpenRgbForEffects(string sid,Action<string> progress,CancellationToken ct)
     {
         if(serviceWasRunning)await OpenRgbService.SetRunning(true,ct);
         if(!serviceWasRunning&&!sdkWasReachable&&OpenRgbService.Exists()){serviceStartedForEffects=true;await OpenRgbService.SetRunning(true,ct);}
         int session=Process.GetCurrentProcess().SessionId;
         var existing=apps.Where(a=>a.Name=="OpenRGB").Select(a=>a.Name).Distinct().ToDictionary(name=>name,name=>Process.GetProcessesByName(name).Count(p=>{using(p)return p.SessionId==session;}));
         foreach(var app in apps.Where(a=>a.Name=="OpenRGB"))Start(app,existing);
-        for(int n=0;n<50;n++){using var client=new TcpClient();try{await client.ConnectAsync("127.0.0.1",port,ct);return;}catch(SocketException){await Task.Delay(200,ct);}}
-        throw new IOException($"OpenRGB SDK did not start on port {port}.");
+        if(serviceWasRunning||serviceStartedForEffects||apps.Any(a=>a.Name=="OpenRGB"))
+        {
+            for(int n=0;n<50;n++){using var client=new TcpClient();try{await client.ConnectAsync("127.0.0.1",port,ct);if(await HardwareJobs.ProbeKeyboard(port,ct))return;break;}catch(SocketException){await Task.Delay(200,ct);}}
+            await PauseOpenRgbForEffects(ct);
+        }
+        int selected=ManagedPortAvailable;
+        await StartManagedForSetup(sid,selected,progress,ct);
     }
     internal async Task PauseOpenRgbForEffects(CancellationToken ct)
     {
@@ -607,12 +681,15 @@ internal sealed class RgbSession:IDisposable
     {
         if(!paused)return;var errors=new List<Exception>();using var timeout=new CancellationTokenSource(TimeSpan.FromSeconds(45));
         int session=Process.GetCurrentProcess().SessionId;
-        var existing=apps.Select(a=>a.Name).Distinct().ToDictionary(name=>name,name=>Process.GetProcessesByName(name).Count(p=>{using(p)return p.SessionId==session;}));
+        int managedId=managedProcess?.Id??-1;
+        if(managedProcess!=null&&!keepManaged&&!managedProcess.HasExited){managedProcess.Kill();await managedProcess.WaitForExitAsync(timeout.Token);}
+        var existing=apps.Select(a=>a.Name).Distinct().ToDictionary(name=>name,name=>Process.GetProcessesByName(name).Count(p=>{using(p)return p.SessionId==session&&p.Id!=managedId;}));
         try{if(serviceStartedForEffects)await OpenRgbService.SetRunning(false,timeout.Token);if(serviceWasRunning)await OpenRgbService.SetRunning(true,timeout.Token);foreach(var app in apps.Where(a=>a.Name=="OpenRGB"))Start(app,existing);}catch(Exception error){errors.Add(error);}
-        if(ShouldWaitForSdk(sdkWasReachable))
+        foreach(int restoredPort in originalSdkPorts)
         {
-            bool ready=false;for(int n=0;n<60&&!timeout.IsCancellationRequested;n++){using var client=new TcpClient();try{await client.ConnectAsync("127.0.0.1",port,timeout.Token);ready=true;break;}catch{await Task.Delay(300);}}if(!ready)errors.Add(new IOException($"OpenRGB SDK did not return on port {port}."));
+            bool ready=false;for(int n=0;n<60&&!timeout.IsCancellationRequested;n++){using var client=new TcpClient();try{await client.ConnectAsync("127.0.0.1",restoredPort,timeout.Token);ready=true;break;}catch{await Task.Delay(300);}}if(!ready)errors.Add(new IOException($"OpenRGB SDK did not return on port {restoredPort}."));
         }
+        if(keepManaged&&managedProcess!=null&&managedProcess.HasExited)try{await StartManaged(timeout.Token);}catch(Exception error){errors.Add(error);}
         foreach(var app in apps.Where(a=>a.Name!="OpenRGB"))try{Start(app,existing);}catch(Exception error){errors.Add(error);}
         if(errors.Count>0)throw new AggregateException("RGB restoration needs attention.",errors);
     }

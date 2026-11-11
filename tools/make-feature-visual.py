@@ -37,7 +37,7 @@ def generate(qmk):
   cards=[
    ('01','STUDIO','Profil actif · 109 touches' if fr else 'Active profile · 109 keys','24 couleurs · guide intégré' if fr else '24 colors · built-in guide','#5ad0e7'),
    ('02','HYPER + TURBO','Clavier + clic gauche/droit' if fr else 'Keys + left/right click','Cadence conservée après +' if fr else 'Speed stays after release','#ffba5a'),
-   ('03','RGB STUDIO','9 effets logiciels' if fr else '9 software effects','OpenRGB · Aurora restauré' if fr else 'OpenRGB · Aurora restored','#ff5069'),
+   ('03','RGB STUDIO','12 effets logiciels' if fr else '12 software effects','OpenRGB · Aurora restauré' if fr else 'OpenRGB · Aurora restored','#ff5069'),
    ('04','OPTIONS','Caps Word · Fn + Caps','Arrêt auto configurable' if fr else 'Configurable safety stop','#b28af5')]
   for n,(num,title,l1,l2,color) in enumerate(cards):
    x=64+n*376;rect(x,752,352,224,'#141820','#303641');text(x+22,788,num,'label',color)

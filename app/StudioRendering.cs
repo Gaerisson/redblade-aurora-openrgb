@@ -8,11 +8,11 @@ internal sealed partial class StudioForm
     {
         if(!preview)throw new InvalidOperationException("Preview mode required.");
         previewMap=name.Equals("map",StringComparison.OrdinalIgnoreCase);previewFn=name.Equals("fn",StringComparison.OrdinalIgnoreCase);
-        previewPage=name.ToLowerInvariant() switch{"keyboard" or "fn"=>"keyboard","functions"=>"functions","effects" or "colors"=>"effects","firmware" or "updates" or "guide" or "map"=>"guide",_=>throw new ArgumentException("Unknown preview page.")};french=useFrench;
+        previewPage=name.ToLowerInvariant() switch{"keyboard" or "fn"=>"keyboard","functions"=>"functions","effects" or "colors"=>"effects","firmware" or "setup"=>"setup","updates" or "guide" or "map"=>"guide",_=>throw new ArgumentException("Unknown preview page.")};french=useFrench;
     }
     async Task SelectPage(string page)
     {
-        if(page is not("keyboard" or "effects" or "functions" or "guide"))throw new ArgumentException("Unknown page.");
+        if(page is not("keyboard" or "effects" or "functions" or "guide" or "setup"))throw new ArgumentException("Unknown page.");
         await ready.Task.WaitAsync(TimeSpan.FromSeconds(45));
         await web.CoreWebView2.ExecuteScriptAsync("document.querySelector('[data-page=\""+page+"\"]').click()");
     }
@@ -32,6 +32,14 @@ internal sealed partial class StudioForm
         using var output=File.Create(Path.GetFullPath(path));await web.CoreWebView2.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png,output);
     }
     async Task<JsonElement> Script(string script)=>JsonDocument.Parse(await web.CoreWebView2.ExecuteScriptAsync(script)).RootElement.Clone();
+    internal async Task CaptureUiFailure()
+    {
+        if(!preview||web.CoreWebView2==null)return;
+        string folder=AppContext.BaseDirectory;
+        using(var output=File.Create(Path.Combine(folder,"ui-test-failure.png")))await web.CoreWebView2.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png,output);
+        var context=await Script("JSON.stringify({width:innerWidth,height:innerHeight,scale:devicePixelRatio,page:document.querySelector('.page.active')?.id,fnText:document.getElementById('fnHelpText')?.textContent,fnKeys:document.getElementById('fnHelpKeys')?.textContent,errors:window.__studioErrors})");
+        File.WriteAllText(Path.Combine(folder,"ui-test-context.json"),context.GetString());
+    }
     async Task Mouse(string type,double x,double y,bool down=false)
         =>await web.CoreWebView2.CallDevToolsProtocolMethodAsync("Input.dispatchMouseEvent",JsonSerializer.Serialize(new{type,x,y,button=type=="mouseMoved"?"none":"left",buttons=down?1:0,clickCount=type=="mouseMoved"?0:1}));
     async Task Drag(double sx,double sy,double ex,double ey)
@@ -54,7 +62,9 @@ internal sealed partial class StudioForm
                 if(map.GetProperty("complete").GetBoolean()&&map.GetProperty("width").GetInt32()>0)break;
                 await Task.Delay(75);
             }
-            if(map.GetProperty("width").GetInt32()!=1600||map.GetProperty("height").GetInt32()!=1540||!map.GetProperty("statusHidden").GetBoolean())throw new Exception("Shortcut image failed to load: "+map.GetRawText());
+            var expectedPng=Embedded.Read(french?"shortcuts.fr.png":"shortcuts.png");
+            int expectedWidth=System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(expectedPng.AsSpan(16,4)),expectedHeight=System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(expectedPng.AsSpan(20,4));
+            if(map.GetProperty("width").GetInt32()!=expectedWidth||map.GetProperty("height").GetInt32()!=expectedHeight||!map.GetProperty("statusHidden").GetBoolean())throw new Exception("Shortcut image failed to load: "+map.GetRawText());
             if(map.GetProperty("src").GetString()!=(french?"shortcuts.fr.png":"shortcuts.png"))throw new Exception("Wrong shortcut image language.");
             if(map.GetProperty("top").GetDouble()>=map.GetProperty("viewport").GetDouble()-100)throw new Exception("Shortcut image is below the initial guide viewport: "+map.GetRawText());
             if(!(await Script("document.querySelector('.update-card').parentElement.parentElement.classList.contains('guide-grid')")).GetBoolean())throw new Exception("Guide columns are not in the same grid.");
@@ -84,7 +94,7 @@ internal sealed partial class StudioForm
         if((await Script("document.querySelectorAll('#keyboardCanvas .key').length")).GetInt32()!=109)throw new Exception("Web UI did not render all 109 keys.");
         for(int cycle=0;cycle<10;cycle++)
         {
-            foreach(string page in new[]{"keyboard","effects","functions","guide"}){await SelectPage(page);await Task.Delay(30);}
+            foreach(string page in new[]{"keyboard","effects","functions","guide","setup"}){await SelectPage(page);await Task.Delay(30);}
             await Script("document.getElementById('language').click()");await Task.Delay(30);
         }
         await SelectPage("keyboard");await Script("document.getElementById('selectAll').click();document.getElementById('keyColor').value='#7b2d42';document.getElementById('paint').click()");await Task.Delay(150);
@@ -119,8 +129,12 @@ internal sealed partial class StudioForm
         if(Current.Keys[1]!=(dimColor with {V=255}))throw new Exception("Selected intensity did not preserve hue and saturation.");
         await Script("document.getElementById('undo').click()");await Task.Delay(80);
         if(Current.Keys[1]!=dimColor)throw new Exception("Maximum intensity did not participate in undo.");
+        if((await Script("getComputedStyle(document.querySelector('.key[data-led=\"1\"]')).backgroundImage")).GetString()!="none")throw new Exception("Keyboard color preview still applies an internal gradient.");
+        await Script("document.getElementById('groupSelect').value='gaming';document.getElementById('groupSelect').dispatchEvent(new Event('change'))");
+        if((await Script("document.querySelectorAll('#keyboardCanvas .key.selected').length")).GetInt32()!=4)throw new Exception("Gaming selection did not contain exactly four physical keys.");
         var beforeHelp=ConfigCodec.Encode(config);
         await Script("document.getElementById('fnGuideToggle').click()");
+        await Script("document.querySelector('.key[data-led=\"21\"]').scrollIntoView({block:'center'})");await Task.Delay(80);
         var helpPoint=await Script("(()=>{const r=document.querySelector('.key[data-led=\"21\"]').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()");
         await Mouse("mouseMoved",helpPoint.GetProperty("x").GetDouble(),helpPoint.GetProperty("y").GetDouble());await Task.Delay(80);
         string once=(await Script("document.getElementById('fnHelpText').textContent")).GetString()!;
@@ -152,6 +166,20 @@ internal sealed partial class StudioForm
         if(!rejectedEdit||Current.Master!=savedMaster)throw new Exception("Effect restoration allowed edits before the save transition completed.");
         await SelectPage("guide");await Script("document.querySelector('.shortcut-text').open=true;document.getElementById('zoomIn').click();document.getElementById('search').value='turbo';document.getElementById('search').dispatchEvent(new Event('input'))");
         var errors=await Script("window.__studioErrors");if(errors.GetArrayLength()!=0)throw new Exception("Web UI error: "+errors.GetRawText());
-        if(!(await Script("document.getElementById('connect').disabled&&document.getElementById('save').disabled&&document.getElementById('flash').disabled")).GetBoolean())throw new Exception("Preview enabled a hardware action.");
+        await SelectPage("setup");
+        if(!(await Script("['connect','save','flash','setupOpenRgb','testOpenRgb','testLighting'].every(id=>document.getElementById(id).disabled)")).GetBoolean())throw new Exception("Preview enabled a hardware action.");
+        using(var notificationTest=new UpdateSession(this,testing:true))
+        {
+            updates=notificationTest;
+            try
+            {
+                await Dispatch(StudioBridge.Parse("{\"id\":\"notice-open\",\"action\":\"updateNotice\",\"args\":{\"open\":true}}"));
+                await Script("document.getElementById('updateDialog').showModal();document.getElementById('deferUpdate').click()");
+                for(int attempt=0;attempt<40&&!notificationTest.DeferredUntilRestart;attempt++)await Task.Delay(50);
+                for(int attempt=0;attempt<40&&(notificationTest.NoticeOpen||(await Script("document.getElementById('updateDialog').open")).GetBoolean());attempt++)await Task.Delay(50);
+                if(!notificationTest.DeferredUntilRestart||notificationTest.NoticeOpen||(await Script("document.getElementById('updateDialog').open")).GetBoolean())throw new Exception("Later did not defer the updater and close its real dialog.");
+            }
+            finally{updates=null;}
+        }
     }
 }

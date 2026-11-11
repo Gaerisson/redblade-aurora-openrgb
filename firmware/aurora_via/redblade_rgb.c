@@ -162,6 +162,10 @@ bool redblade_rgb_output_active(void) {
     return !(rgb_matrix_get_mode() == RGB_MATRIX_CUSTOM_REDBLADE_DIRECT && local_profile == RB_PROFILE_HOST && idle_fallback && !(settings & RB_SETTING_IDLE_WHITE));
 }
 
+bool redblade_rgb_off_fn_available(void) {
+    return !suspended && rgb_matrix_is_enabled() && local_profile == RB_PROFILE_OFF && master_brightness;
+}
+
 hsv_t redblade_rgb_apply_brightness(hsv_t color) {
     if (master_brightness != 255) color.v = ((uint16_t)color.v * master_brightness + 127) / 255;
     return color;

@@ -131,7 +131,8 @@ int main(void) {
     press(RB_GAME); assert(redblade_controls_indicator(RB_LED_LGUI,false,&indicator) && indicator.h==0);
     assert(redblade_controls_indicator(RB_LED_RGUI,false,&indicator) && indicator.h==0);
     assert(!redblade_controls_indicator(16,false,&indicator));
-    press(RB_DARK); assert(!redblade_controls_indicator(16,true,&indicator));
+    press(RB_DARK); assert(redblade_controls_indicator(16,true,&indicator) && indicator.v>0);
+    assert(!redblade_controls_indicator(16,false,&indicator));
     uint8_t data[32]={0xFE,0x81}; assert(via_command_kb(data,32));
     assert(data[2]==1 && data[4]==REDBLADE_VERSION_MINOR && data[6]==1 && data[7]==RB_PROFILE_OFF);
     assert(eeprom_writes==1); // All actions except explicit Save remain RAM-only.

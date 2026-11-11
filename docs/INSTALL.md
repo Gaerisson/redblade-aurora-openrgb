@@ -1,6 +1,6 @@
 # Installation & Technical Reference
 
-**Studio and firmware 0.11 preview:** Full/Core flashing remains guided; no 0.11 flash or persistence has been validated on physical hardware. The preceding device validation covers Full 0.10; its programming/readback and owner-confirmed input are described in the [audit](AUDIT.md). Studio requires Microsoft Edge WebView2 Runtime. See [Studio](../app/README.md).
+**Studio and firmware 0.12 preview:** Start with Studio's **Setup** page for identification, guided flashing, OpenRGB preparation and LED tests. Full/Core 0.12 are build/host-tested; physical 0.12 acceptance is pending. Previous physical checks concern Full 0.11, not this release. Studio requires Microsoft Edge WebView2 Runtime. See [Studio](../app/README.md) and the [audit](AUDIT.md).
 
 **English** · [Français](INSTALL.fr.md) · [Project](../README.md) · [Shortcuts](SHORTCUTS.md)
 

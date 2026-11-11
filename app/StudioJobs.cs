@@ -34,12 +34,20 @@ internal sealed partial class StudioForm
                 await Task.Delay(200);
             }
             if(job?.Success!=true)throw new IOException(job?.Message??"No keyboard result.");
-            if(!isEffect)ApplyHardwareResult(job,request.Operation is HardwareOperation.Read or HardwareOperation.Flash);
+            if(job.OpenRgbStatus.Length>0){openRgbStatus=job.OpenRgbStatus;redbladeFound=job.RedbladeFound;sdkPort=job.SdkPort;}
+            if(!isEffect&&request.Operation is not(HardwareOperation.SetupOpenRgb or HardwareOperation.TestOpenRgb or HardwareOperation.TestLighting))ApplyHardwareResult(job,request.Operation is HardwareOperation.Read or HardwareOperation.Flash);
         }
         catch(Exception error)
         {
             string message=error is Win32Exception win&&win.NativeErrorCode==1223?T("Windows authorization was cancelled.","L’autorisation Windows a été annulée."):error.Message;
-            lastError=message;Diagnostics.Record(error,"Keyboard operation "+request.Operation);job=new(){Done=true,Success=false,Stage="error",Message=message};
+            lastError=message;Diagnostics.Record(error,"Keyboard operation "+request.Operation);
+            job??=new();job.Done=true;job.Success=false;job.Message=message;
+            if(job.OpenRgbStatus.Length>0){openRgbStatus=job.OpenRgbStatus;redbladeFound=job.RedbladeFound;sdkPort=job.SdkPort;}
+            if(request.Operation is HardwareOperation.Flash or HardwareOperation.Read)
+            {
+                if(job.Firmware.Length>0){firmware=job.Firmware;Version.TryParse(firmware.Split(' ').Last(),out installedVersion);}
+                connection="error";generation=null;
+            }
             if(!isEffect)throw new IOException(message,error);
         }
         finally
@@ -57,7 +65,7 @@ internal sealed partial class StudioForm
     internal void ApplyHardwareResult(JobResult result,bool resetHistory=true)
     {
         firmware=result.Firmware;
-        if(firmware.Length>0)Version.TryParse(firmware.Split(' ').Last(),out installedVersion);
+        installedVersion=null;if(firmware.Length>0)Version.TryParse(firmware.Split(' ').Last(),out installedVersion);
         connection=result.Unsupported?"upgrade":"connected";
         if(result.Payload.Length>0){config=ConfigCodec.Decode(Convert.FromBase64String(result.Payload));generation=result.Generation;dirty=false;if(resetHistory)history.Clear();SaveDraft();}
         if(result.Unsupported)generation=null;SendState();

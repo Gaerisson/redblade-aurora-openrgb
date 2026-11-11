@@ -10,7 +10,7 @@ internal sealed partial class StudioForm
         switch(request.Action)
         {
             case "getState":StudioBridge.Fields(a);return Snapshot();
-            case "view":StudioBridge.Fields(a,"page");currentPage=StudioBridge.Text(a,"page");if(currentPage is not("keyboard" or "effects" or "functions" or "guide"))throw new InvalidDataException("Unknown page.");if(updates!=null)updates.WizardOpen=currentPage=="guide";return null;
+            case "view":StudioBridge.Fields(a,"page");currentPage=StudioBridge.Text(a,"page");if(currentPage is not("keyboard" or "effects" or "functions" or "guide" or "setup"))throw new InvalidDataException("Unknown page.");if(updates!=null)updates.WizardOpen=currentPage is "guide" or "setup";return null;
             case "language":StudioBridge.Fields(a,"language");string language=StudioBridge.Text(a,"language");if(language is not("en" or "fr"))throw new InvalidDataException("Unknown language.");french=language=="fr";return Snapshot();
             case "setKeys":
                 EnsureIdle();StudioBridge.Fields(a,"leds","color");string selectedColor=StudioBridge.Text(a,"color",7);
@@ -41,6 +41,11 @@ internal sealed partial class StudioForm
             case "downloadUpdate":StudioBridge.Fields(a);if(updates!=null)await updates.DownloadSoftware();return null;
             case "installUpdate":StudioBridge.Fields(a);if(updates!=null)await updates.InstallSoftware();return null;
             case "updatePreferences":SetPreferences(a);return null;
+            case "updateNotice":StudioBridge.Fields(a,"open");if(updates!=null)updates.NoticeOpen=a.GetProperty("open").GetBoolean();return null;
+            case "deferUpdate":StudioBridge.Fields(a);if(updates!=null)updates.DeferUntilRestart();return null;
+            case "setupOpenRgb":case "testOpenRgb":case "testLighting":
+                StudioBridge.Fields(a);var setupOperation=request.Action switch{"setupOpenRgb"=>HardwareOperation.SetupOpenRgb,"testOpenRgb"=>HardwareOperation.TestOpenRgb,_=>HardwareOperation.TestLighting};
+                await PerformHardware(()=>Task.FromResult<JobRequest?>(new(){Operation=setupOperation}));return null;
             case "flash":
                 OnboardProfile? flashEdits=null;await PerformHardware(()=>PrepareFlash(a,p=>flashEdits=p),afterSuccess:()=>{if(flashEdits!=null)AcceptEdit(KeyboardEditing.WithActiveProfile(config,flashEdits));});return null;
             case "cancelJob":case "stopEffect":StudioBridge.Fields(a);await StopEffectsOrCancel(explicitCancel:true);return null;
@@ -63,6 +68,11 @@ internal sealed partial class StudioForm
             if(answer==DialogResult.Yes)keepLocal(KeyboardEditing.Clone(config).Profiles[config.Active]);
         }
         var request=new JobRequest{Operation=HardwareOperation.Flash,Edition=edition};
+        if(firmware.StartsWith("Stock / legacy",StringComparison.Ordinal))
+        {
+            if(MessageBox.Show(this,T("The stock firmware uses an unknown VIA keycode generation. Studio will keep a private backup, but the new factory keymap will replace its keymap and macros. Continue with this first installation?","Le firmware d’origine utilise des codes VIA inconnus. Studio conservera une sauvegarde privée, mais le nouveau mappage d’usine remplacera son mappage et ses macros. Continuer cette première installation ?"),Text,MessageBoxButtons.YesNo,MessageBoxIcon.Warning)!=DialogResult.Yes)return null;
+            request.AllowLegacyReset=true;
+        }
         if(source=="latest")
         {
             if(updates==null)throw new InvalidOperationException("Update service is unavailable.");

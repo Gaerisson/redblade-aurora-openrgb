@@ -1,5 +1,15 @@
 # RedBlade+ Studio
 
+## Guided setup and OpenRGB
+
+Open **Setup** to connect the keyboard, install Full or Core with a VIA backup, prepare OpenRGB, check the 109-LED controller and run a six-second lighting test. A working OpenRGB SDK is reused. Otherwise Studio installs the pinned [official OpenRGB 1.1 Windows portable archive](https://openrgb.org/releases.html), checks its SHA-256 and archive bounds, and maintains an isolated configuration with the RedBlade VialRGB USB entry. It installs no low-level driver or Windows startup entry. OpenRGB uses its normal hardware detectors; Studio streams colors only to the verified RedBlade controller.
+
+The local SDK uses 127.0.0.1:6742, or 6743 when an existing server occupies 6742 without exposing the RedBlade. Use the displayed port in Aurora's OpenRGB (RGB.NET) provider. Existing RGB applications and their configuration are preserved. If both supported ports are occupied, setup refuses to take either port. Effects pause the RGB clients while active and restore them afterwards; the managed SDK stays available until stopped or Windows exits.
+
+The update notice opens only when editing, effects and hardware work are idle. **Later** or Escape defers automatic installation until the next launch. A firmware update always requires the guided installer and a physical Fn+Esc hold; opening Studio never flashes the keyboard.
+
+First installation from stock firmware requires acknowledging that unknown VIA keycodes cannot be migrated automatically. A private backup is retained and the new factory keymap is used. Existing RedBlade+ installations retain the usual verified restoration; dimension mismatches refuse writes and report protocol, layer count and macro-buffer size.
+
 Studio 0.12.0 is a portable Windows x64 editor for RedBlade+ Full firmware 0.9.0+ (optional settings require Full 0.10.0 0.11.0 or 0.12.0 as indicated). It presents the active profile, with 109 physical ISO keys, 24 effect colors and built-in modules. The four-profile wire format is preserved for compatibility. Core uses its existing OpenRGB/VIA interface and does not implement the Full Studio configuration API.
 
 Full 0.12 enables a reaction duration slider up to approximately 4 seconds, cross waves and a global double pulse. The legacy defaults remain unchanged until edited. Modifier highlights can be disabled, limited to autonomous lighting, or explicitly overlaid on host RGB. Ctrl is blue, Shift violet and Alt amber. Factory-position shortcut hints follow the selected AZERTY/QWERTY layout; VIA remapping can differ.

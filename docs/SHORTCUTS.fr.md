@@ -60,6 +60,8 @@ Turbo démarre à 50/s. Un Turbo peut fonctionner avec le maintien pour avancer.
 
 Le choix Turbo utilise la touche standard de la couche de base VIA, même si Fn reste maintenue. Fn, modificateurs, Échap, alimentation/système, médias et macros ne sont pas des cibles. Le choix expire après 10 secondes ; Fn + T pendant un Turbo l’arrête. Le mode jeu filtre Windows et les raccourcis QMK simples utilisant Windows, pas toutes les macros ou actions avancées.
 
+Full 0.12 : maintenez Fn pour afficher le guide lumineux même après Fn + F4. Relâchez Fn pour retrouver le noir. La veille USB et l’arrêt global de la matrice par VialRGB restent noirs.
+
 ## 3. Éclairage — F1 à F4
 
 | Raccourci | Action |

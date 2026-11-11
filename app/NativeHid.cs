@@ -153,7 +153,10 @@ internal sealed class NativeHid : IHidTransport
     }
 }
 
-internal sealed record KeyboardIdentity(Version Version,bool Core,int ViaProtocol);
+internal sealed record KeyboardIdentity(Version Version,bool Core,int ViaProtocol,bool Legacy=false)
+{
+    internal string DisplayName=>Legacy?"Stock / legacy (version unavailable)":(Core?"Core ":"Full ")+Version;
+}
 internal static class KeyboardProtocol
 {
     internal static async Task<byte[]> Via(IHidTransport hid,byte[] payload,CancellationToken cancel,int echo=1)
@@ -165,7 +168,9 @@ internal static class KeyboardProtocol
     {
         var via=await Via(hid,new byte[]{1},cancel);int protocol=(via[1]<<8)|via[2];if(protocol is <9 or >13)throw new InvalidDataException("Unsupported VIA protocol.");
         var packet=new byte[32];packet[0]=0xfe;packet[1]=0x81;var info=await hid.ExchangeAsync(packet,cancel);
-        if(info.Length==32&&info[0]==0xff)return new(new Version(0,0,0),false,protocol);
+        // VIA changes only the command byte for an unsupported extension. A stale
+        // FF response to another request is not evidence of a legacy firmware.
+        if(info.Length==32&&info[0]==0xff&&info.AsSpan(1).SequenceEqual(packet.AsSpan(1)))return new(new Version(0,0,0),false,protocol,Legacy:true);
         if(info.Length!=32||info[0]!=0xfe||info[1]!=0x81||info[2]!=1)throw new InvalidDataException("Mismatched keyboard identity response. Close competing clients and read again.");
         Wire.CheckSignature(info);return new(new Version(info[3],info[4],info[5]),(info[19]&128)!=0,protocol);
     }
