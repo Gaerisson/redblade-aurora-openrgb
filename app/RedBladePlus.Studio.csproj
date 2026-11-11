@@ -27,7 +27,8 @@
     <EmbeddedResource Include="Web/app.js" LogicalName="web.app.js" />
     <EmbeddedResource Include="Resources/redblade.ico" LogicalName="app.ico" />
     <EmbeddedResource Include="../docs/assets/shortcuts.png" LogicalName="shortcuts.png" />
-    <EmbeddedResource Include="../docs/assets/shortcuts.fr.png" LogicalName="shortcuts.fr.png" />
+    <!-- This is a raw PNG served by the primary assembly, not a culture satellite. -->
+    <EmbeddedResource Include="../docs/assets/shortcuts.fr.png" LogicalName="shortcuts.fr.png" WithCulture="false" />
     <EmbeddedResource Include="../dist/manifest.json" LogicalName="full.manifest.json" />
     <EmbeddedResource Include="../dist/manifest-core.json" LogicalName="core.manifest.json" />
     <EmbeddedResource Include="../dist/redblade-fs-aurora-via.bin" LogicalName="full.bin" />

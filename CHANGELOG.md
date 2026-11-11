@@ -2,12 +2,13 @@
 
 All new release notes are written in English. Version 0.x is experimental; hardware validation is recorded separately from build and host-test results.
 
-## 0.11.0 — in development
+## 0.11.0 preview — Color Lab and reactive lighting
 
 - Color Lab adds drag and marquee selection, selection groups, solid and linear/radial fills, a palette, bounded 24-step undo/redo and the option to retain active-profile edits when connecting.
 - Nine OpenRGB PC effects support palettes, zones, direction, scale and reactive overlays. Raw Input is filtered to the Red Blade device and recent events are bounded in memory; no scan-code or keystroke log is stored.
 - Full 0.11 adds autonomous key fade, ripple and horizontal wave styles. Each new press restarts the single wave. Core remains OpenRGB/VIA only. Wire size and profile count are unchanged.
-- Full/Core 0.11 are in development; no 0.11 hardware flash, physical latency, persistence or power-cycle validation is claimed. Existing published 0.10 artifacts are unchanged.
+- Fixed French shortcut-map packaging: both PNGs are embedded in the main application. The map appears first in the guide, keeps its zoom across state refreshes, and has loading/error feedback. Real WebView2 regression checks cover both languages.
+- Full 0.11 programming/checksum and identity passed on the preparation keyboard. VIA/macros and all four profiles were restored with complete readback after recovery from a malformed immediate identity reply. The owner confirmed typing, numpad, saved ripple/color and PC reactive typing. The read-only reconnect fix has regression coverage; no second physical flash, power-cycle, sustained-load or physical latency result is claimed. Core 0.11 is build/host-tested. Published 0.10 artifacts are unchanged.
 
 ## 0.10.0 preview — Studio and firmware
 

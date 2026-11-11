@@ -15,7 +15,7 @@ def generate(qmk):
      '<style>text{font-family:Arial,DejaVu Sans,sans-serif;fill:#f3f4f8}.brand{font-size:64px;font-weight:800;letter-spacing:-2px}.sub{font-size:25px;fill:#b8becb}.label{font-size:18px;font-weight:700;letter-spacing:2px}.card{font-size:28px;font-weight:700}.body{font-size:21px;fill:#b8becb}.key{font-size:12px;font-weight:700;text-anchor:middle}.small{font-size:16px;fill:#858e9f}</style>']
   def text(x,y,s,cl='body',color=None): a.append(f'<text x="{x}" y="{y}" class="{cl}"'+(f' style="fill:{color}"' if color else '')+'>'+escape(s)+'</text>')
   def rect(x,y,w,h,fill,stroke='none',r=12): a.append(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{r}" fill="{fill}" stroke="{stroke}"/>')
-  text(64,88,'RedBlade+','brand');text(444,80,'OPENRGB FIRMWARE  /  STUDIO 0.11 DEV','label','#ff5267')
+  text(64,88,'RedBlade+','brand');text(444,80,'OPENRGB FIRMWARE  /  STUDIO 0.11 PREVIEW','label','#ff5267')
   text(64,141,'Le clavier que tu connais. Plus de possibilités.' if fr else 'Your keyboard. More capable.','sub')
   text(64,201,'109 LED PAR TOUCHE' if fr else '109 PER-KEY LEDS','label','#e9eef7')
   text(465,201,'AURORA → OPENRGB','label','#58cde8')
@@ -43,7 +43,7 @@ def generate(qmk):
    x=64+n*376;rect(x,752,352,224,'#141820','#303641');text(x+22,788,num,'label',color)
    text(x+22,831,title,'card',color);text(x+22,878,l1);text(x+22,915,l2)
   text(64,1027,'3 slots RAM partagés ≈ 48 appuis simples · Vitesses cibles, selon USB/application · Échap pour arrêter' if fr else '3 shared RAM slots ≈ 48 simple presses · Target speeds depend on USB/application · Esc to stop','small')
-  text(64,1057,'Core : OpenRGB + VIA · 0.11 en développement, non validé sur matériel' if fr else 'Core: OpenRGB + VIA · 0.11 in development, not hardware-validated','small')
+  text(64,1057,'Full 0.11 testé sur clavier · Core : OpenRGB + VIA · Détails et limites dans la release' if fr else 'Full 0.11 keyboard-tested · Core: OpenRGB + VIA · See release for checks and limits','small')
   a.append('</svg>');(ROOT/'docs/assets'/('features.fr.svg' if fr else 'features.svg')).write_text('\n'.join(a)+'\n',encoding='utf-8')
 if __name__=='__main__':
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--qmk-tree',type=Path,required=True);generate(p.parse_args().qmk_tree)

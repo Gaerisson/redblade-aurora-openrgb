@@ -40,6 +40,27 @@ internal sealed partial class StudioForm
     {
         if(!preview)throw new InvalidOperationException("UI tests require hardware-disabled mode.");
         await ready.Task.WaitAsync(TimeSpan.FromSeconds(45));await Task.Delay(300);
+        await SelectPage("guide");
+        for(int language=0;language<2;language++)
+        {
+            JsonElement map=default;
+            for(int attempt=0;attempt<40;attempt++)
+            {
+                map=await Script("(()=>{const i=document.getElementById('shortcutImage'),r=i.getBoundingClientRect();return {complete:i.complete,width:i.naturalWidth,height:i.naturalHeight,top:r.top,viewport:innerHeight,src:i.getAttribute('src'),statusHidden:document.getElementById('mapStatus').hidden}})()");
+                if(map.GetProperty("complete").GetBoolean()&&map.GetProperty("width").GetInt32()>0)break;
+                await Task.Delay(75);
+            }
+            if(map.GetProperty("width").GetInt32()!=1600||map.GetProperty("height").GetInt32()!=1540||!map.GetProperty("statusHidden").GetBoolean())throw new Exception("Shortcut image failed to load: "+map.GetRawText());
+            if(map.GetProperty("src").GetString()!=(french?"shortcuts.fr.png":"shortcuts.png"))throw new Exception("Wrong shortcut image language.");
+            if(map.GetProperty("top").GetDouble()>=map.GetProperty("viewport").GetDouble()-100)throw new Exception("Shortcut image is below the initial guide viewport: "+map.GetRawText());
+            if(!(await Script("document.querySelector('.update-card').parentElement.parentElement.classList.contains('guide-grid')")).GetBoolean())throw new Exception("Guide columns are not in the same grid.");
+            await Script("window.__mapReloads=0;document.getElementById('shortcutImage').addEventListener('load',()=>window.__mapReloads++);document.getElementById('zoomIn').click()");
+            var zoomed=await Script("document.getElementById('shortcutImage').style.width");
+            for(int repeat=0;repeat<3;repeat++){SendState();await Task.Delay(60);}
+            if((await Script("window.__mapReloads")).GetInt32()!=0||(await Script("document.getElementById('shortcutImage').style.width")).GetString()!=zoomed.GetString())throw new Exception("State refresh reloaded the map or reset zoom.");
+            await Script("document.getElementById('zoomOut').click();document.getElementById('language').click()");await Task.Delay(80);
+        }
+        await SelectPage("keyboard");
         if((await Script("document.querySelectorAll('#keyboardCanvas .key').length")).GetInt32()!=109)throw new Exception("Web UI did not render all 109 keys.");
         for(int cycle=0;cycle<10;cycle++)
         {
@@ -93,7 +114,7 @@ internal sealed partial class StudioForm
         try{await Dispatch(StudioBridge.Parse("{\"id\":\"race-stop\",\"action\":\"patchProfile\",\"args\":{\"master\":124}}"));}catch(InvalidOperationException){rejectedEdit=true;}
         busy=false;effectActive=false;restoration.SetResult(true);await stopping;
         if(!rejectedEdit||Current.Master!=savedMaster)throw new Exception("Effect restoration allowed edits before the save transition completed.");
-        await SelectPage("guide");await Script("document.getElementById('zoomIn').click();document.getElementById('search').value='turbo';document.getElementById('search').dispatchEvent(new Event('input'))");
+        await SelectPage("guide");await Script("document.querySelector('.shortcut-text').open=true;document.getElementById('zoomIn').click();document.getElementById('search').value='turbo';document.getElementById('search').dispatchEvent(new Event('input'))");
         var errors=await Script("window.__studioErrors");if(errors.GetArrayLength()!=0)throw new Exception("Web UI error: "+errors.GetRawText());
         if(!(await Script("document.getElementById('connect').disabled&&document.getElementById('save').disabled&&document.getElementById('flash').disabled")).GetBoolean())throw new Exception("Preview enabled a hardware action.");
     }
