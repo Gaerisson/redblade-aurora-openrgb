@@ -11,7 +11,7 @@ void gpio_write_pin(uint32_t pin,bool high) { assert(pin==LED_FN_PIN);indicator_
 void host_mouse_send(report_mouse_t *r) {
     assert(!r->y && !r->v && !r->h);
     assert(r->buttons<=4);if(r->buttons && !mouse_buttons) ++mouse_downs;
-    if(r->x){assert(!r->buttons && (r->x==1 || r->x==-1));++mouse_moves;mouse_x_total+=r->x;mouse_last_x=r->x;}
+    if(r->x){assert(!r->buttons && (r->x==8 || r->x==-8));++mouse_moves;mouse_x_total+=r->x;mouse_last_x=r->x;}
     mouse_buttons=r->buttons;++mouse_reports;
 }
 led_config_t g_led_config = {.matrix_co = {
@@ -24,6 +24,9 @@ bool enabled = true, key_down[256];
 uint16_t base_keymap[6][21];
 led_t host_locks;
 rgb_t rendered[109];
+rgb_t hardwareRGBcommitted[109];
+unsigned rgb_fast_commits;
+void sn32f2xx_commit_color(int index) { assert(index>=0 && index<109);hardwareRGBcommitted[index]=rendered[index];++rgb_fast_commits; }
 led_t host_keyboard_led_state(void) { return host_locks; }
 void rgb_matrix_set_color(int i,uint8_t r,uint8_t g,uint8_t b) { assert(i>=0 && i<109); rendered[i]=(rgb_t){.r=r,.g=g,.b=b}; }
 bool is_key_pressed(uint8_t key) { return key_down[key]; }

@@ -48,7 +48,7 @@ Neither test measures mechanical switch actuation, matrix/debounce latency, the 
 
 For a physical comparison, use a controlled actuator/electrical trigger and USB analyzer or a high-speed acquisition setup, with the original and custom firmware under equivalent RGB load. No such measurement has been performed for this release.
 
-The implementation bounds work: eight base LEDs per RGB task iteration, bounded status overlays, including the persistent Fn status, at most nine incoming colors per packet, and at most one Turbo edge per housekeeping pass. Standard QMK report I/O still depends on USB scheduling. Turbo's 5–250 presses/clicks per second targets may run slower under load; missed pulses are not queued.
+The implementation bounds work: eight base LEDs per RGB task iteration, bounded status overlays, including the persistent Fn status, at most nine incoming colors per packet, and at most one Turbo edge per housekeeping pass. For Turbo, a dedicated SN32 update commits only the six bytes for Fn and the target after the HID report; the general RGB frame interval remains 33 ms. At high rates LEDs may appear steady. Standard QMK report I/O still depends on USB scheduling. Turbo's 5–250 presses/clicks per second targets may run slower under load; missed pulses are not queued.
 
 ## 0.10.0 host regression run
 

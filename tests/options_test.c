@@ -66,10 +66,15 @@ int main(void) {
  // Anti-AFK uses the existing movement-module gate and safety timeout.
  assert(!event(RB_ANTI_AFK,true,2,8));assert(redblade_anti_afk());
  assert(!event(RB_ANTI_AFK,false,2,8));
- unsigned moves=mouse_moves;now+=30000;redblade_controls_task(false);assert(mouse_moves==moves+1);
+ unsigned moves=mouse_moves;now+=30000;redblade_controls_task(false);assert(mouse_moves==moves+1 && key_down[KC_W]);
  data[33]&=~1;store_fixture_seed(0,4,data);redblade_store_init();redblade_controls_init();
  assert(!event(RB_ANTI_AFK,true,2,8));assert(!redblade_anti_afk());
- data[33]=15;data[40]=5;store_fixture_seed(0,5,data);redblade_store_init();redblade_controls_init();
+ // A late idle scan starts W, then the safety deadline releases it 20 ms later.
+ data[33]=15;data[40]=31;store_fixture_seed(0,5,data);redblade_store_init();redblade_controls_init();
+ assert(!event(RB_ANTI_AFK,true,2,8));assert(redblade_anti_afk());
+ now+=30980;redblade_controls_task(false);assert(key_down[KC_W]);
+ now+=20;redblade_controls_task(false);assert(!redblade_anti_afk() && !key_down[KC_W]);
+ data[33]=15;data[40]=5;store_fixture_seed(0,6,data);redblade_store_init();redblade_controls_init();
  assert(!event(RB_ANTI_AFK,true,2,8));assert(redblade_anti_afk());
  moves=mouse_moves;now+=5000;redblade_controls_task(false);assert(!redblade_anti_afk() && mouse_moves==moves);
  puts("options passed");

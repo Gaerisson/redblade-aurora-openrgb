@@ -341,7 +341,7 @@
 <text x="1220" y="2248" class="body" fill="#f2f1f4" style="fill:#f2f1f4">Fn + W (QWERTY) / Z (AZERTY)</text>
 <text x="1220" y="2278" class="small">Toggle forward hold.</text>
 <text x="1220" y="2331" class="body" fill="#f2f1f4" style="fill:#f2f1f4">Fn + I</text>
-<text x="1220" y="2361" class="small">Anti-AFK: alternate mouse movement every 30 s; typing stops it.</text>
+<text x="1220" y="2361" class="small">Anti-AFK: mouse + brief W/S after 30 s idle; typing stops it.</text>
 <text x="64" y="2455" class="small">Hold Fn to reveal shortcuts, even after Fn + F4; USB suspend keeps the keyboard dark.</text>
 <text x="64" y="2493" class="small">Factory bindings may differ after VIA remapping  ·  Studio includes an interactive Fn explorer</text>
 </svg>

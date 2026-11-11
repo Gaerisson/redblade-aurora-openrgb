@@ -17,6 +17,7 @@
 #define KC_E 0x08
 #define KC_F 0x09
 #define KC_W 0x1A
+#define KC_S 0x16
 #define KC_SPC 0x2C
 #define KC_ESC 0x29
 #define MATRIX_ROWS 6

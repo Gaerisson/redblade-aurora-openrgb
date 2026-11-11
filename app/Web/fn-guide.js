@@ -31,7 +31,7 @@
         [[40],'Numpad −','automation',224,'Decrease the current turbo rate or recorder playback speed; hold to repeat.','Diminue la cadence turbo ou la vitesse de lecture de l’enregistreur selon le contexte ; maintenir pour répéter.'],
         [[60],'Numpad +','automation',224,'Increase the current turbo rate or recorder playback speed; hold to repeat.','Augmente la cadence turbo ou la vitesse de lecture de l’enregistreur selon le contexte ; maintenir pour répéter.'],
         [[43],'W','automation',256,'Toggle automatic W hold.','Active ou arrête le maintien automatique de W.'],
-        [[49],'I','automation',256,'Full 0.13: toggle Anti-AFK; small alternating mouse movement every 30 seconds. Typing or another helper stops it.','Full 0.13 : active ou arrête Anti-AFK ; petit mouvement de souris alterné toutes les 30 secondes. Une frappe ou une autre fonction l’arrête.'],
+        [[49],'I','automation',256,'Full 0.13: toggle Anti-AFK; after 30 seconds idle, moves the mouse and briefly presses W/S. These keys can type outside games. Typing or another helper stops it.','Full 0.13 : active ou arrête Anti-AFK ; après 30 secondes sans activité, bouge la souris et appuie brièvement sur W/S (Z/S en AZERTY). Ces touches peuvent saisir du texte hors jeu. Une frappe ou une autre fonction l’arrête.'],
         [[44],'E','automation',32,'Toggle E turbo.','Active ou arrête le turbo E.'],
         [[65],'F','automation',32,'Toggle F turbo.','Active ou arrête le turbo F.'],
         [[99],'Space','automation',32,'Toggle Space turbo.','Active ou arrête le turbo Espace.'],

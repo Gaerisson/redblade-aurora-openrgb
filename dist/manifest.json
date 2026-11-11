@@ -8,7 +8,7 @@
   "qmk_commit": "62973ee48a976c6f7cc6d4f7b198bd48a2fdfe60",
   "toolchain": "arm-none-eabi-gcc (crosstool-NG 1.27.0.82_7f9d704 - qmk/qmk_toolchains @ a55a2b0) 15.2.0",
   "binary_bytes": 65536,
-  "sha256": "daeea93c7993090559e781c0561e614c231d2e083f7e7241cf4f6a664d336af4",
+  "sha256": "f3d9c59aa99acc5b07437ae6a20ad0156f85c49e52bcbfed86f795d19069af47",
   "ram_bytes_including_reserved_stacks": 8112,
   "ram_remaining_bytes": 80,
   "keyboard_usb_poll_interval_ms": 1,
@@ -92,21 +92,30 @@
       "indicators": "shared Fn/target phase: amber left, purple right, cyan middle",
       "middle": "Fn+T then Mute"
     },
-    "turbo_indicator": "actual press/release at up to 12/s; grouped actual presses above 12/s; same per-frame phase on Fn and target",
+    "turbo_indicator": "Fn and target follow every actual press/release, with dedicated SN32 per-pixel commits after HID send; no grouped pulses",
     "anti_afk": {
       "shortcut": "Fn+I",
       "interval_ms": 30000,
-      "movement": "alternating relative X +1/-1",
+      "movement": "alternating relative X +8/-8 pixels",
       "startup": "off",
       "stop": "typing including advanced VIA actions, Esc, Fn+I, another helper, suspend, defaults or configured safety timeout",
       "module": "shared Auto-W / Anti-AFK, bit 256",
-      "game_detection_guaranteed": false
+      "game_detection_guaranteed": false,
+      "keyboard": "HID W for 80 ms, 40 ms released, HID S for 80 ms; approximately 30 seconds idle between sequences",
+      "arming": "refuses held keys, regular or weak modifiers"
+    },
+    "indicator_fast_path": {
+      "pixels_per_edge": 2,
+      "rgb_bytes_per_edge": 6,
+      "general_frame_flush": false,
+      "scan_pwm_clock_changed": false,
+      "extra_frame_buffer": false
     }
   },
   "bootloader_shortcut": "Fn+Esc held for 2000 ms; Shift optional; short press stops helpers/unlocks",
   "native_benchmark": {
     "physical_key_latency_measured": false,
-    "sha256": "504f015aa966fa6ebb7ee5ae82af5b9fc86990606df94efadeed1d21b976caaf",
+    "sha256": "d62f2d02c98d81cb8ef38a9611eb23307d0ad7ea7d426e7fac9b8691fb642e23",
     "file": "redblade-plus-benchmark-windows.exe"
   },
   "fn_rgb_status": {

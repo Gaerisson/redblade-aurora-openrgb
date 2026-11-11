@@ -48,7 +48,7 @@ La lecture ne possède que ses touches générées et les libère à l’arrêt.
 | Fn + E / F / Espace | Démarrer/arrêter un Turbo direct |
 | Fn + R / Fn + Maj + R | Préréglage suivant / précédent : **25, 50, 100 appuis/s** ; sélectionner Turbo |
 | Fn + − / + du pavé, contexte Turbo | **5–100/s par pas de 5, puis 125/150/175/200/225/250/s** ; maintien pour enchaîner, valeur conservée au relâchement |
-| Fn + I | Activer ou arrêter Anti-AFK (Full 0.13) ; mouvement horizontal alterné toutes les 30 secondes |
+| Fn + I | Activer ou arrêter Anti-AFK (Full 0.13) ; souris et brefs déplacements W/S après environ 30 secondes d’inactivité |
 | Fn + Z en AZERTY / Fn + W en QWERTY | Maintenir pour avancer ; cible verte |
 | Fn + une touche Windows | Verrouiller/déverrouiller Windows ; **les deux touches sont rouges et le voyant Windows en haut à droite s’allume** |
 | Fn + Maj + une touche Windows | Déverrouiller Windows |
@@ -59,9 +59,9 @@ Le Turbo souris partage la cadence et remplace le Turbo clavier. Il envoie uniqu
 
 La cadence d’usine est de 60/s dans Full 0.13 ; les profils enregistrés conservent leur cadence. Fn + R conserve les préréglages 25/50/100/s. Un Turbo peut fonctionner avec le maintien pour avancer. Un appui normal sur une cible rend la main à ton doigt. La cadence est une cible, dépendante de l’USB et de l’application ; une seule transition est produite par passage, sans attente active ni rafale de rattrapage.
 
-Fn et la cible active pulsent ensemble selon les sorties réelles : jusqu’à 12 actions/s, elles suivent les appuis et relâchements ; au-delà, les clics sont regroupés pour une pulsation visible d’environ 6 Hz maximum. Le clic milieu est cyan, le gauche ambre et le droit violet. La luminosité suit le réglage général.
+Fn et la cible active suivent chaque appui et relâchement généré. À haute cadence, elles peuvent sembler allumées en continu. Le clic milieu est cyan, le gauche ambre et le droit violet. La luminosité suit le réglage général.
 
-Anti-AFK alterne un déplacement horizontal de souris de +1/−1 toutes les 30 secondes, sans saisir de lettre. Fn + I, Échap, la suspension, la remise à zéro, une frappe clavier ou une autre fonction l’arrête. Les autres souris ne sont pas surveillées. La case existante Auto-W / Anti-AFK contrôle les deux fonctions ; aucun bit de profil n’est ajouté.
+Après environ 30 secondes d’inactivité, Anti-AFK alterne un déplacement horizontal de souris de ±8 pixels, appuie sur W pendant 80 ms, attend 40 ms, appuie sur S pendant 80 ms, puis attend à nouveau. W correspond à la touche physique Z en AZERTY. Le focus du jeu n’étant pas détecté, ces touches peuvent saisir W/S ou Z/S hors jeu. L’activation est refusée si une touche ou un modificateur est maintenu. Fn + I, Échap, la suspension, la remise à zéro, le délai de sécurité, une frappe y compris une action VIA avancée ou une autre fonction l’arrête. Les autres souris ne sont pas surveillées et aucune frappe n’est enregistrée. La case existante Auto-W / Anti-AFK contrôle les deux fonctions ; aucun bit de profil n’est ajouté.
 
 Le choix Turbo utilise la touche standard de la couche de base VIA, même si Fn reste maintenue. Fn, modificateurs, Échap, alimentation/système, médias et macros ne sont pas des cibles. Le choix expire après 10 secondes ; Fn + T pendant un Turbo l’arrête. Le mode jeu filtre Windows et les raccourcis QMK simples utilisant Windows, pas toutes les macros ou actions avancées.
 

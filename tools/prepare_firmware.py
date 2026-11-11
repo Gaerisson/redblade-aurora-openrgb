@@ -1,4 +1,4 @@
-"""Install the keymap and one timer-decoupling patch into the pinned QMK tree."""
+"""Install the keymap and verified timer/status-pixel patches into pinned QMK."""
 import argparse
 import json
 from pathlib import Path
@@ -9,6 +9,25 @@ from check_fn_map import check as check_fn_map
 
 QMK_COMMIT = '62973ee48a976c6f7cc6d4f7b198bd48a2fdfe60'
 BASE_TIMER = '(RGB_MATRIX_HUE_STEP * RGB_MATRIX_SAT_STEP * RGB_MATRIX_VAL_STEP * RGB_MATRIX_SPD_STEP * RGB_MATRIX_LED_PROCESS_LIMIT)'
+FAST_COMMIT = '''
+#ifdef REDBLADE_FAST_INDICATORS
+// Full's two Turbo status pixels bypass the general frame flush. No extra
+// buffer, transport, timer change or interrupt masking: copy one RGB pixel.
+void sn32f2xx_commit_color(int index) {
+    if (index >= 0 && index < SN32F2XX_LED_COUNT) {
+        led_state[index] = led_state_buf[index];
+    }
+}
+#endif
+'''
+
+
+def patched_driver(original, fast=True):
+    line = next((line for line in original.splitlines() if 'static const uint32_t freq ' in line and BASE_TIMER in line), None)
+    if line is None:
+        raise SystemExit('Unexpected pinned Sonix driver; refusing an unverified patch')
+    clock = '#ifndef SN32F2XX_PWM_CLOCK_FREQUENCY\n#    define SN32F2XX_PWM_CLOCK_FREQUENCY ' + BASE_TIMER + '\n#endif\nstatic const uint32_t freq = SN32F2XX_PWM_CLOCK_FREQUENCY;'
+    return original.replace(line, clock, 1) + (FAST_COMMIT if fast else '')
 
 
 def prepare(qmk, edition='full'):
@@ -32,15 +51,12 @@ def prepare(qmk, edition='full'):
             shutil.copy2(source, target/source.name)
     driver = qmk / 'drivers/led/sn32f2xx.c'
     text = driver.read_text(encoding='utf-8')
-    patched_line = 'static const uint32_t freq = SN32F2XX_PWM_CLOCK_FREQUENCY;'
-    if patched_line not in text:
-        original = next((line for line in text.splitlines() if 'static const uint32_t freq ' in line and BASE_TIMER in line), None)
-        if original is None:
-            raise SystemExit('Unexpected Sonix driver; refusing an unverified patch')
-        replacement = ('#ifndef SN32F2XX_PWM_CLOCK_FREQUENCY\n'
-                       '#    define SN32F2XX_PWM_CLOCK_FREQUENCY ' + BASE_TIMER + '\n'
-                       '#endif\n' + patched_line)
-        driver.write_text(text.replace(original, replacement, 1), encoding='utf-8')
+    original = subprocess.check_output(['git','-C',str(qmk),'show','HEAD:drivers/led/sn32f2xx.c']).decode('utf-8')
+    expected = patched_driver(original)
+    if text not in (original, patched_driver(original, fast=False), expected):
+        raise SystemExit('Unexpected local Sonix driver changes; refusing to overwrite them')
+    if text != expected:
+        driver.write_text(expected, encoding='utf-8')
     print('Pinned Red Blade FS keymap installed; original 720896 Hz scan/PWM clock preserved')
 
 

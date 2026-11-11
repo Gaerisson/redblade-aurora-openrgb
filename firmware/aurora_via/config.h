@@ -4,6 +4,7 @@
 #undef DEBUG_MATRIX_SCAN_RATE
 
 #define USB_POLLING_INTERVAL_MS 1
+#define REDBLADE_FAST_INDICATORS
 #define RGB_MATRIX_LED_PROCESS_LIMIT 8
 #define RGB_MATRIX_LED_FLUSH_LIMIT 33
 // The shared Sonix matrix driver normally derives its hardware timer clock

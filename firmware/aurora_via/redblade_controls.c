@@ -26,11 +26,16 @@ static int8_t rate_direction;
 static bool rate_repeating;
 static keypos_t rate_key;
 static uint32_t rate_at;
-static bool turbo_down, selecting, turbo_frame_on;
+static bool turbo_down, selecting;
 // Reuse Auto-W's state and start time; movement helpers are mutually exclusive.
-// 0: off, 1: Auto-W, 2/3: alternating anti-AFK direction.
-static uint8_t movement_mode, turbo_visual, turbo_visual_divider;
+// 0: off, 1: Auto-W. Anti-AFK uses bit0 for direction and paired phases:
+// 2/3 idle, 4/5 forward, 6/7 release gap, 8/9 backward.
+static uint8_t movement_mode;
 static uint32_t movement_edge_at;
+static void turbo_lights(void);
+#ifdef REDBLADE_FAST_INDICATORS
+void sn32f2xx_commit_color(int index);
+#endif
 static uint8_t pending_key, consumed_releases[(MATRIX_ROWS * MATRIX_COLS + 7) / 8];
 static uint32_t turbo_edge_at, selection_started_at;
 static keypos_t trigger[3];
@@ -72,31 +77,38 @@ uint8_t redblade_turbo_led(void) { return turbo_led; }
 bool redblade_turbo_selecting(void) { return selecting || pending_key; }
 bool redblade_auto_w(void) { return movement_mode==1; }
 bool redblade_anti_afk(void) { return movement_mode>=2; }
-void redblade_controls_begin_frame(void) { turbo_frame_on=(turbo_visual & 128)!=0; }
+void redblade_controls_begin_frame(void) {} // Turbo phase now follows each output edge.
 bool redblade_guide_active(void) { return false; } // Retired, keep diagnostic ABI.
 bool redblade_recorder_rate_context(void) { return recorder_rate_context; }
 static bool mouse_target(void) { return turbo_key>=0xD1 && turbo_key<=0xD3; }
-static void turbo_visual_edge(bool down) {
-    if (turbo_rate<=12) turbo_visual=down ? 128 : 0;
-    else if (down) {
-        const uint8_t count=(turbo_visual & 127)+1;
-        turbo_visual=count>=turbo_visual_divider ? (turbo_visual ^ 128) & 128 : (turbo_visual & 128) | count;
-    }
-}
 static void turbo_output(bool down) {
     if (mouse_target()) {
         report_mouse_t report = {0};
         report.buttons = down ? (1U << (turbo_key-0xD1)) : 0;
         host_mouse_send(&report);
     } else if (down) register_code(turbo_key); else unregister_code(turbo_key);
-    turbo_visual_edge(down);
+    // Input is sent first. Only the two status pixels are then committed;
+    // the 109-LED frame and the shared scan/PWM timer are unchanged.
+    turbo_down=down;turbo_lights();
 }
 static hsv_t turbo_color(void) {
-    const uint8_t v=turbo_frame_on ? 128 : 12;
+    const uint8_t v=turbo_down ? 128 : 0;
     if (turbo_key==0xD3) return (hsv_t){128,255,v}; // Middle button has its own cyan cue.
     const bool mouse=mouse_target();
     return redblade_config_effect_scaled(mouse ? (turbo_key==0xD1 ? RB_COLOR_MOUSE_LEFT : RB_COLOR_MOUSE_RIGHT) : RB_COLOR_TURBO,
         (hsv_t){mouse ? (turbo_key==0xD1 ? 32 : 200) : 0,255,v},128);
+}
+static void turbo_lights(void) {
+#ifdef REDBLADE_FAST_INDICATORS
+    if (!redblade_rgb_output_active()) return;
+    hsv_t color=turbo_color();
+    if (color.v>rgb_matrix_get_val()) color.v=rgb_matrix_get_val();
+    const rgb_t rgb=redblade_rgb_convert(redblade_rgb_apply_brightness(color));
+    rgb_matrix_set_color(RB_LED_FN,rgb.r,rgb.g,rgb.b);sn32f2xx_commit_color(RB_LED_FN);
+    if (turbo_led<RGB_MATRIX_LED_COUNT && turbo_led!=RB_LED_FN) {
+        rgb_matrix_set_color(turbo_led,rgb.r,rgb.g,rgb.b);sn32f2xx_commit_color(turbo_led);
+    }
+#endif
 }
 static hsv_t afk_color(void) {
     return redblade_config_effect_scaled(RB_COLOR_FORWARD,(hsv_t){85,255,timer_read32()-movement_edge_at<200 ? 128 : 40},128);
@@ -104,9 +116,13 @@ static hsv_t afk_color(void) {
 
 static void stop_turbo(void) {
     if (turbo_down) turbo_output(false);
-    turbo_key = 0; turbo_led = 255; turbo_down = false; turbo_visual=0;
+    turbo_key = 0; turbo_led = 255; turbo_down = false;
 }
-static void stop_w(void) { if (redblade_auto_w()) unregister_code(KC_W); movement_mode=0; }
+static void stop_w(void) {
+    if (redblade_auto_w() || movement_mode==4 || movement_mode==5) unregister_code(KC_W);
+    if (movement_mode==8 || movement_mode==9) unregister_code(KC_S);
+    movement_mode=0;
+}
 static void caps_clear_shift(void) {
     if (!caps_weak) return;
     caps_weak=false;
@@ -121,7 +137,6 @@ static void set_rate(uint8_t rate) {
     // later edges so a requested 60/s does not become 62.5/s.
     turbo_base_ms = 500 / rate; turbo_remainder = 500 % rate;
     turbo_interval = turbo_base_ms; turbo_fraction = 0; turbo_edge_at = timer_read32();
-    turbo_visual_divider=(rate+11)/12; turbo_visual=turbo_down ? 128 : 0;
 }
 static void rate_step(int8_t direction) {
     if (recorder_rate_context) redblade_recorder_speed_step(direction);
@@ -142,7 +157,6 @@ static void start_turbo(uint8_t key, uint8_t led) {
     turbo_started_at = timer_read32();
     turbo_key = key; turbo_led = led; turbo_down = true;
     turbo_fraction = 0; turbo_interval = turbo_base_ms; turbo_edge_at = timer_read32();
-    turbo_visual=128;
     turbo_output(true);
     redblade_rgb_key_flash(led);
 }
@@ -204,10 +218,20 @@ void redblade_controls_task(bool fn_active) {
         if (redblade_recorder_state()==RB_REC_PLAYING && now-playback_started_at>=limit) redblade_recorder_stop(true);
     }
     redblade_recorder_task(fn_active);
-    if (redblade_anti_afk() && timer_read32()-movement_edge_at>=30000UL) {
-        // One report only after actual inactivity; no queued catch-up movements.
-        report_mouse_t report={0};report.x=movement_mode==2 ? 1 : -1;
-        host_mouse_send(&report);movement_mode^=1;movement_edge_at=timer_read32();
+    if (redblade_anti_afk() && (get_mods() || get_weak_mods())) stop_w();
+    if (redblade_anti_afk()) {
+        const uint8_t phase=movement_mode & ~1U,direction=movement_mode & 1;
+        const uint32_t delay=phase==2 ? 30000UL : phase==6 ? 40UL : 80UL;
+        if (timer_read32()-movement_edge_at>=delay) {
+            // One phase per pass, no delay()/catch-up and no new state buffer.
+            if (phase==2) {
+                if (get_mods() || get_weak_mods() || has_anykey()) stop_w();
+                else { report_mouse_t report={0};report.x=direction ? -8 : 8;host_mouse_send(&report);register_code(KC_W);movement_mode=4|direction; }
+            } else if (phase==4) { unregister_code(KC_W);movement_mode=6|direction; }
+            else if (phase==6) { register_code(KC_S);movement_mode=8|direction; }
+            else { unregister_code(KC_S);movement_mode=2|(direction^1); }
+            movement_edge_at=timer_read32();
+        }
     }
     if (!boot_armed && !turbo_key && !selecting && !pending_key) return;
     const uint32_t now = timer_read32();
@@ -222,8 +246,8 @@ void redblade_controls_task(bool fn_active) {
         // At most one edge per pass. Drop missed deadlines, never catch up.
         turbo_edge_at = now;
         turbo_output(!turbo_down);
-        if (!turbo_down) redblade_rgb_key_flash(turbo_led);
-        turbo_down = !turbo_down; turbo_interval = turbo_base_ms;
+        if (turbo_down) redblade_rgb_key_flash(turbo_led);
+        turbo_interval = turbo_base_ms;
         turbo_fraction += turbo_remainder;
         if (turbo_fraction >= turbo_rate) { ++turbo_interval; turbo_fraction -= turbo_rate; }
     }
@@ -371,7 +395,7 @@ bool redblade_controls_process(uint16_t keycode, keyrecord_t *record) {
             break;
         case RB_ANTI_AFK: {
             const bool was_active=redblade_anti_afk();stop_automation();
-            if (!was_active) { movement_mode=2;forward_started_at=movement_edge_at=timer_read32(); }
+            if (!was_active && !get_mods() && !get_weak_mods() && !has_anykey()) { movement_mode=2;forward_started_at=movement_edge_at=timer_read32(); }
             break;
         }
         case RB_TURBO_RATE:
@@ -400,6 +424,9 @@ bool redblade_controls_indicators_needed(bool fn_active) { (void)fn_active; retu
 bool redblade_controls_indicator(uint8_t index, bool fn_active, hsv_t *color) {
     const bool off_fn = fn_active && redblade_rgb_off_fn_available();
     if (!off_fn && !redblade_rgb_output_active()) return false;
+    // Active Turbo is a useful Fn action even without a factory Fn binding.
+    // Neither focus nor slot/Caps hints may overwrite the edge-driven phase.
+    if (turbo_key && (index==RB_LED_FN || index==turbo_led)) { *color=turbo_color();return true; }
     const bool hints=fn_active && shortcut_enabled(index);
     if (fn_active && (off_fn || redblade_config_feature(RB_MODULE_FN_FOCUS)) && !hints) {
         *color = (hsv_t){0,0,0};
@@ -410,7 +437,6 @@ bool redblade_controls_indicator(uint8_t index, bool fn_active, hsv_t *color) {
     if (redblade_config_feature(RB_MODULE_RECORDER) && redblade_recorder_indicator(index, fn_active, color)) return true;
     if (index == RB_LED_FN) {
         if (selecting || pending_key) *color = redblade_config_effect_scaled(RB_COLOR_SELECTION,(hsv_t){32,255,(timer_read32()/250)&1 ? 128 : 40},128);
-        else if (turbo_key) *color = turbo_color();
         else if (redblade_anti_afk()) *color = afk_color();
         else if (redblade_auto_w()) *color = redblade_config_effect(RB_COLOR_FORWARD,(hsv_t){85,255,96});
         else if (fn_active) *color = redblade_config_effect(RB_COLOR_FN_HELD,(hsv_t){128,255,96});
@@ -419,9 +445,6 @@ bool redblade_controls_indicator(uint8_t index, bool fn_active, hsv_t *color) {
         return true;
     }
     if (game_mode && (index == RB_LED_LGUI || index == RB_LED_RGUI)) { *color = redblade_config_effect(RB_COLOR_WIN_LOCK,(hsv_t){0,255,128}); return true; }
-    if (index == turbo_led && turbo_key) {
-        *color=turbo_color();return true;
-    }
     if (redblade_anti_afk() && index==49) { *color=afk_color();return true; }
     if (redblade_auto_w() && index == RB_LED_W) { *color = redblade_config_effect(RB_COLOR_FORWARD,(hsv_t){85,255,96}); return true; }
     if (selecting && index==17) { *color=(hsv_t){128,255,96};return true; }
@@ -503,8 +526,8 @@ bool redblade_controls_indicator(uint8_t index, bool fn_active, hsv_t *color) {
 }
 
 void redblade_controls_render(uint8_t led_min, uint8_t led_max, bool fn_active) {
-    // Standard QMK effects also draw these indicators. Do not depend only on
-    // the custom Direct effect to refresh their shared Turbo phase.
+    // Standard effects read the current output state too; edge commits keep
+    // the two Turbo pixels current between these general RGB frames.
     if (led_min==0) redblade_controls_begin_frame();
     if (!redblade_rgb_output_active() && !(fn_active && redblade_rgb_off_fn_available())) return;
     for (uint8_t i = led_min; i < led_max; ++i) {

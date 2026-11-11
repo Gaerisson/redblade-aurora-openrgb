@@ -341,7 +341,7 @@
 <text x="1220" y="2248" class="body" fill="#f2f1f4" style="fill:#f2f1f4">Fn + Z (AZERTY) / W (QWERTY)</text>
 <text x="1220" y="2278" class="small">Activer ou arrêter le maintien avant.</text>
 <text x="1220" y="2331" class="body" fill="#f2f1f4" style="fill:#f2f1f4">Fn + I</text>
-<text x="1220" y="2361" class="small">Anti-AFK : mouvement alterné toutes les 30 s ; frappe pour arrêter.</text>
+<text x="1220" y="2361" class="small">Anti-AFK : souris + brefs Z/S après 30 s sans activité ; frappe pour arrêter.</text>
 <text x="64" y="2455" class="small">Maintenez Fn pour afficher les raccourcis, même après Fn + F4 ; la veille USB garde le clavier éteint.</text>
 <text x="64" y="2493" class="small">Les raccourcis d’usine peuvent changer dans VIA  ·  Studio propose un explorateur Fn interactif</text>
 </svg>

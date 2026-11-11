@@ -92,7 +92,7 @@ def generate(qmk=None):
         bullet(96,2248,'Fn + WIN  /  Fn + '+t('Shift','Maj')+' + WIN',t('Lock / explicitly unlock Windows keys.', 'Verrouiller / déverrouiller les touches Windows.'))
         bullet(96,2331,'Fn + ESC  /  Fn + ESC 2 s',t('Stop helpers and unlock / enter bootloader.', 'Arrêter et déverrouiller / ouvrir le mode flash.'))
         bullet(1220,2248,'Fn + '+t('W (QWERTY) / Z (AZERTY)','Z (AZERTY) / W (QWERTY)'),t('Toggle forward hold.', 'Activer ou arrêter le maintien avant.'))
-        bullet(1220,2331,'Fn + I',t('Anti-AFK: alternate mouse movement every 30 s; typing stops it.', 'Anti-AFK : mouvement alterné toutes les 30 s ; frappe pour arrêter.'))
+        bullet(1220,2331,'Fn + I',t('Anti-AFK: mouse + brief W/S after 30 s idle; typing stops it.', 'Anti-AFK : souris + brefs Z/S après 30 s sans activité ; frappe pour arrêter.'))
         text(64,2455,t('Hold Fn to reveal shortcuts, even after Fn + F4; USB suspend keeps the keyboard dark.', 'Maintenez Fn pour afficher les raccourcis, même après Fn + F4 ; la veille USB garde le clavier éteint.'),'small')
         text(64,2493,t('Factory bindings may differ after VIA remapping  ·  Studio includes an interactive Fn explorer', 'Les raccourcis d’usine peuvent changer dans VIA  ·  Studio propose un explorateur Fn interactif'),'small')
         parts.append('</svg>')

@@ -48,7 +48,7 @@ Playback owns only its generated keys and releases them on stop. A loop has a mi
 | Fn + E / F / Space | Toggle a quick Turbo target |
 | Fn + R / Fn + Shift + R | Next / previous preset: **25, 50, 100 presses/s**; selects Turbo context |
 | Fn + numpad − / + in Turbo context | **5–100/s in steps of 5, then 125/150/175/200/225/250/s**; hold to step repeatedly, release keeps the value |
-| Fn + I | Toggle Anti-AFK (Full 0.13); alternating horizontal mouse movement every 30 seconds |
+| Fn + I | Toggle Anti-AFK (Full 0.13); mouse and brief W/S movement after about 30 seconds idle |
 | Fn + W on QWERTY / Fn + Z on AZERTY | Toggle forward hold; green target |
 | Fn + either Windows key | Toggle Game Mode; **both Windows keys turn red and the upper-right Windows indicator lights** |
 | Fn + Shift + either Windows key | Explicitly unlock Windows |
@@ -59,9 +59,9 @@ Mouse Turbo shares the same target rate and replaces keyboard Turbo. It emits bu
 
 Factory default Turbo rate is 60/s in Full 0.13; saved profiles retain their rate. Fn + R presets remain 25/50/100/s. One Turbo target can coexist with forward hold. Ordinary target presses give control back to your finger. Rates are targets, subject to USB scheduling and application behavior. The engine emits at most one edge per cooperative pass, with no busy wait or catch-up queue.
 
-Fn and the active target pulse together with actual output: at up to 12 actions/s they follow press and release; faster output is grouped into visible pulses of about 6 Hz maximum. Middle click uses cyan; left and right remain amber and violet. Brightness follows the master setting.
+Fn and the active target follow each generated press and release. At high rates they may appear steady. Middle click uses cyan; left and right remain amber and violet. Brightness follows the master setting.
 
-Anti-AFK emits alternating +1/−1 horizontal mouse movement every 30 seconds and types no letters. Fn + I, Esc, suspend, reset, keyboard activity or starting another helper stops it. It does not observe other mice. The existing Auto-W / Anti-AFK module checkbox enables both functions; it adds no profile bit.
+After about 30 seconds idle, Anti-AFK emits alternating ±8-pixel horizontal mouse movement, presses W for 80 ms, waits 40 ms, presses S for 80 ms, then waits another idle period. W is physical Z on AZERTY. Since game focus is not detected, it can type W/S or Z/S outside a game. Arming is refused while any key or modifier is held. Fn + I, Esc, suspend, reset, timeout, keyboard activity including advanced VIA actions, or starting another helper stops it. It does not observe other mice or log input. The existing Auto-W / Anti-AFK module checkbox enables both functions; it adds no profile bit.
 
 Turbo selection uses the chosen VIA base-layer basic key, even with Fn held. Fn/layers, modifiers, Esc, system/power/media actions and macros are excluded. Selection expires after 10 seconds. Fn + T while running stops Turbo. E/F/R positions are the same on usual AZERTY/QWERTY layouts; W/Z names identify the same physical forward position. Game Mode blocks standalone Windows keys and simple QMK GUI chords, not arbitrary VIA macros or every advanced modifier action.
 

@@ -7,7 +7,7 @@ import shutil
 import subprocess
 import zipfile
 from check_release import ROOT, validate
-from prepare_firmware import BASE_TIMER
+from prepare_firmware import patched_driver
 
 
 def tracked_sources(tree, root):
@@ -36,10 +36,9 @@ def package(qmk, destination, native):
     changes=set(subprocess.check_output(['git','-C',str(qmk),'diff','--name-only','HEAD'],text=True).splitlines())
     if changes-{'drivers/led/sn32f2xx.c'}: raise RuntimeError('Unexpected tracked changes in QMK')
     original=subprocess.check_output(['git','-C',str(qmk),'show','HEAD:drivers/led/sn32f2xx.c']).decode('utf-8')
-    line=next(line for line in original.splitlines() if 'static const uint32_t freq ' in line and BASE_TIMER in line)
-    expected=original.replace(line,'#ifndef SN32F2XX_PWM_CLOCK_FREQUENCY\n#    define SN32F2XX_PWM_CLOCK_FREQUENCY '+BASE_TIMER+'\n#endif\nstatic const uint32_t freq = SN32F2XX_PWM_CLOCK_FREQUENCY;',1)
+    expected=patched_driver(original)
     if (qmk/'drivers/led/sn32f2xx.c').read_text(encoding='utf-8')!=expected:
-        raise RuntimeError('Sonix clock patch differs from the approved change')
+        raise RuntimeError('Sonix driver patch differs from the approved changes')
     keymap=qmk/'keyboards/designedbygg/redblade/rbfs/keymaps/aurora_via'
     for source in (ROOT/'firmware/aurora_via').iterdir():
         if source.is_file() and source.read_bytes().replace(b'\r\n',b'\n')!=(keymap/source.name).read_bytes().replace(b'\r\n',b'\n'):
