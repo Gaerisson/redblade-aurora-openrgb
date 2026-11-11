@@ -1,25 +1,27 @@
 {
   "kind": "host_native_regression",
-  "firmware": "0.10.0",
+  "firmware": "0.11.0",
   "frame_iterations_per_scenario": 50000,
   "host_cpu_ns_per_109_led_frame": {
-    "direct": 2880.0,
-    "dimmed": 2680.0,
-    "local_white": 3000.0,
-    "wave_handover": 2120.0,
-    "reactive_white_five_keys": 2860.0,
-    "fn_focus": 2140.0,
-    "onboard_palette": 3200.0,
-    "onboard_fn_focus": 2720.0
+    "direct": 2840.0,
+    "dimmed": 2700.0,
+    "local_white": 3260.0,
+    "wave_handover": 2280.0,
+    "reactive_white_five_keys": 3240.0,
+    "fn_focus": 2220.0,
+    "onboard_palette": 3720.0,
+    "onboard_fn_focus": 3420.0,
+    "onboard_reactive_ripple_five_keys": 4200.0,
+    "onboard_reactive_wave_five_keys": 4280.0
   },
   "host_cpu_ns_per_key_hook": {
-    "game_off": 23.5,
-    "game_on": 26.0
+    "game_off": 30.0,
+    "game_on": 28.0
   },
-  "checksum": 1647491223,
+  "checksum": 3528091223,
   "host_cpu_ns_per_recorder_task": {
-    "idle": 2.0,
-    "loop_20ms_hold_5ms_gap": 4.0
+    "idle": 1.5,
+    "loop_20ms_hold_5ms_gap": 6.0
   },
   "cpu_clock_ticks_per_second": 1000,
   "key_hook_iterations": 2000000,

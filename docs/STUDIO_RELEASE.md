@@ -1,6 +1,6 @@
 # Studio release packaging
 
-Studio and firmware versions are independent: this preview uses Studio 0.10.0 and Full/Core 0.10.0 manifests and BINs. Verify both firmware artifacts before building Studio. Run the Studio self-test from the freshly published executable, then package on Windows from a clean committed checkout:
+Studio and firmware versions are independent: the 0.11 development build targets Studio 0.11.0 and matching Full/Core 0.11.0 manifests and BINs. These artifacts must be built and verified before packaging; no 0.11 physical flash has been validated. Do not overwrite the published 0.10 assets. Verify both firmware artifacts before building Studio. Run the Studio self-test from the freshly published executable, then package on Windows from a clean committed checkout:
 
 ```powershell
 python tools/package_studio_release.py --exe C:/release-build/RedBladePlus-Studio.exe --sonix-source C:/release-inputs/SonixFlasherC-3.1.0-source.zip --libusb-source C:/release-inputs/libusb-1.0.30-source.tar.bz2 --helper-dir C:/release-inputs/sonixflasher --output C:/release-output

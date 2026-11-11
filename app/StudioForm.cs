@@ -12,6 +12,7 @@ internal sealed partial class StudioForm:Form
     readonly SemaphoreSlim operationGate=new(1,1);bool cancelPreparation;
     bool Transitioning=>operationGate.CurrentCount==0;
     StudioConfig config=StudioConfig.Default();bool dirty,french,busy,effectActive,closeAfterEffect;uint? generation;
+    readonly EditHistory history=new();
     string firmware="",connection="offline",currentPage="keyboard",previewPage="keyboard",lastError="";Version? installedVersion;
     static readonly Version BundledVersion=FirmwareImage.Load("full").Version;
     UpdateSession? updates;JobResult? job;string? jobId;Task? runningJob;EffectSettings effect=new("wave","#DD002B","#FFFFFF",40,180);
@@ -93,13 +94,20 @@ internal sealed partial class StudioForm:Form
     {
         app=new{version=UpdateSession.CurrentVersion.ToString(),language=french?"fr":"en",dirty,busy=Transitioning||busy&&!effectActive||updates?.Installing==true,preview,error=lastError},keyboard=new{status=connection,firmware},
         firmware=new{bundledVersion=BundledVersion.ToString(),latestVersion=updates?.Firmware.GetValueOrDefault("full")?.Version.ToString(),recommendedSource=updates?.Firmware.GetValueOrDefault("full")?.Version>=BundledVersion?"latest":"bundled",edition="full"},
-        capabilities=new{studio=connection=="connected",extendedOptions=preview||installedVersion==null||installedVersion>=new Version(0,10,0),softwareEffects=!preview},
-        profile=new{Current.Modules,Current.Master,Current.DefaultMode,Current.TimeoutSeconds,Current.TurboRate,Current.RecorderSpeed,Current.TrailFrames,Current.CapsWordLayout,safetyTimeoutSeconds=Current.SafetyTimeoutSeconds==0?30:Current.SafetyTimeoutSeconds,keys=Current.Keys,effects=Current.Effects},
+        capabilities=new{studio=connection=="connected",extendedOptions=preview||installedVersion==null||installedVersion>=new Version(0,10,0),reactiveStyles=preview||installedVersion==null||installedVersion>=new Version(0,11,0),softwareEffects=!preview},
+        editor=new{history.CanUndo,history.CanRedo},
+        profile=new{Current.Modules,Current.Master,Current.DefaultMode,Current.TimeoutSeconds,Current.TurboRate,Current.RecorderSpeed,Current.TrailFrames,Current.CapsWordLayout,Current.ReactiveStyle,Current.ReactiveWidth,safetyTimeoutSeconds=Current.SafetyTimeoutSeconds==0?30:Current.SafetyTimeoutSeconds,keys=Current.Keys,effects=Current.Effects},
         layout=KeyboardLayout.Load(),updates=new{status=updates?.Status??"",availableVersion=updates?.Check?.SoftwareNewer==true?updates.Check.Offer?.Version.ToString():null,softwareReady=updates?.Software!=null,preferences=updates?.Preferences??new UpdatePreferences()},
-        job,softwareEffect=new{active=effectActive,effect.Preset,effect.Color1,effect.Color2,effect.Speed,effect.Brightness}
+        job,softwareEffect=new{active=effectActive,settings=effect,effect.Preset,effect.Color1,effect.Color2,effect.Speed,effect.Brightness}
     };
     internal void SendState(){if(IsDisposed)return;if(InvokeRequired){BeginInvoke((Action)SendState);return;}Post(new{type="state",state=Snapshot()});}
     void Changed(){ConfigCodec.Validate(config);dirty=true;SaveDraft();SendState();}
+    void AcceptEdit(StudioConfig next)
+    {
+        ConfigCodec.Validate(next);
+        if(ProfileFile.Save(config).SequenceEqual(ProfileFile.Save(next)))return;
+        history.Record(config);config=next;Changed();
+    }
     void EnsureIdle(){if(Transitioning||busy&&!effectActive||updates?.Installing==true)throw new InvalidOperationException(T("A keyboard operation is already running.","Une opération clavier est déjà en cours."));}
     bool ConfirmReplacement()=>!dirty||MessageBox.Show(this,T("Replace unsaved local edits with the keyboard settings?","Remplacer les modifications locales non enregistrées par les réglages du clavier ?"),Text,MessageBoxButtons.YesNo)==DialogResult.Yes;
     protected override void Dispose(bool disposing){if(disposing){if(updates!=null)updates.Changed-=SendState;web.Dispose();}base.Dispose(disposing);}

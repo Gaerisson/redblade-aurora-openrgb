@@ -10,39 +10,83 @@ namespace RedBladePlus.Studio;
 
 internal sealed record EffectSettings([property: JsonRequired] string Preset, [property: JsonRequired] string Color1, [property: JsonRequired] string Color2, [property: JsonRequired] int Speed, [property: JsonRequired] int Brightness)
 {
+    public int Angle { get; init; } = 0;
+    public int Scale { get; init; } = 100;
+    public bool Reverse { get; init; }
+    public string[] Palette { get; init; } = Array.Empty<string>();
+    public int[]? TargetLeds { get; init; }
+    public string Background { get; init; } = "#000000";
+    public bool ReactiveEnabled { get; init; }
+    public string ReactiveStyle { get; init; } = "key";
+    public string ReactiveColor { get; init; } = "#FF274E";
+    public int ReactiveDurationMs { get; init; } = 700;
+    public int ReactiveWidth { get; init; } = 2;
+    public int ReactiveOpacity { get; init; } = 100;
+    static bool Color(string? value) => value != null && Regex.IsMatch(value, "^#[0-9a-fA-F]{6}$");
     internal void Validate()
     {
-        if (Preset is not ("solid" or "breathing" or "wave" or "gradient" or "sweep" or "rain")) throw new ArgumentException("Unknown effect preset.");
-        if (Speed is < 1 or > 100 || Brightness is < 0 or > 255) throw new ArgumentException("Effect speed or brightness out of range.");
-        if (!Regex.IsMatch(Color1 ?? "", "^#[0-9a-fA-F]{6}$") || !Regex.IsMatch(Color2 ?? "", "^#[0-9a-fA-F]{6}$")) throw new ArgumentException("Invalid effect color.");
+        if (Preset is not ("solid" or "breathing" or "wave" or "gradient" or "sweep" or "rain" or "spectrum" or "twinkle" or "reactive")) throw new ArgumentException("Unknown effect preset.");
+        if (Speed is < 1 or > 100 || Brightness is < 0 or > 255 || Angle is < 0 or > 359 || Scale is < 25 or > 400 || ReactiveDurationMs is < 100 or > 2000 || ReactiveWidth is < 1 or > 8 || ReactiveOpacity is < 0 or > 100) throw new ArgumentException("Effect parameter out of range.");
+        if (!Color(Color1) || !Color(Color2) || !Color(Background) || !Color(ReactiveColor) || Palette == null || (Palette.Length != 0 && Palette.Length is not (>= 2 and <= 8)) || Palette.Any(x => !Color(x))) throw new ArgumentException("Invalid effect color or palette.");
+        if (TargetLeds != null && (TargetLeds.Length is < 1 or > 109 || TargetLeds.Any(i => i is < 0 or > 108) || TargetLeds.Distinct().Count() != TargetLeds.Length)) throw new ArgumentException("Invalid target LEDs.");
+        if (ReactiveStyle is not ("key" or "ripple" or "row")) throw new ArgumentException("Unknown reactive style.");
     }
 }
 internal static class EffectRenderer
 {
-    internal static byte[] Render(EffectSettings settings, long timeMs, IReadOnlyList<PhysicalKey> layout)
+    [ThreadStatic] static EffectSettings? validatedSettings;
+    [ThreadStatic] static IReadOnlyList<PhysicalKey>? validatedLayout;
+    [ThreadStatic] static PhysicalKey[]? positionsByLed;
+    internal static byte[] Render(EffectSettings settings, long timeMs, IReadOnlyList<PhysicalKey> layout, IReadOnlyList<KeyActivity>? events = null)
     {
-        settings.Validate();
-        if (layout.Count != 109 || layout.Select(k => k.Led).Distinct().Count()!=109 || layout.Any(k=>k.Led is <0 or >108)) throw new InvalidDataException("Keyboard geometry must map all 109 LEDs exactly once.");
-        var a = Parse(settings.Color1); var b = Parse(settings.Color2); var result = new byte[327];
-        double minX=layout.Min(k=>k.X), maxX=layout.Max(k=>k.X), minY=layout.Min(k=>k.Y), maxY=layout.Max(k=>k.Y);
-        double phase = timeMs / (11000.0 - settings.Speed * 100.0);
-        foreach (var k in layout)
+        if (!ReferenceEquals(settings,validatedSettings)) { settings.Validate(); validatedSettings=settings; }
+        if (!ReferenceEquals(layout,validatedLayout)) { if (layout.Count != 109 || layout.Select(k => k.Led).Distinct().Count()!=109 || layout.Any(k=>k.Led is <0 or >108)) throw new InvalidDataException("Keyboard geometry must map all 109 LEDs exactly once."); positionsByLed=new PhysicalKey[109];foreach(var k in layout)positionsByLed[k.Led]=k;validatedLayout=layout; }
+        var result = new byte[327];
+        double minX=layout[0].X, maxX=minX, minY=layout[0].Y, maxY=minY;
+        for(int i=1;i<layout.Count;i++){var key=layout[i];minX=Math.Min(minX,key.X);maxX=Math.Max(maxX,key.X);minY=Math.Min(minY,key.Y);maxY=Math.Max(maxY,key.Y);}
+        double phase = timeMs / (11000.0 - settings.Speed * 100.0); if(settings.Reverse) phase=-phase;
+        double angle=settings.Angle*Math.PI/180, cos=Math.Cos(angle), sin=Math.Sin(angle), scale=settings.Scale/100.0;
+        for(int keyIndex=0; keyIndex<layout.Count; keyIndex++)
         {
+            var k=layout[keyIndex];
+            bool target=settings.TargetLeds==null || Array.IndexOf(settings.TargetLeds,k.Led)>=0;
             double x=(k.X-minX)/Math.Max(1,maxX-minX), y=(k.Y-minY)/Math.Max(1,maxY-minY);
-            double mix=0, light=1;
+            double pos=((x-.5)*cos+(y-.5)*sin)*scale+.5, mix=0, light=1;
             switch(settings.Preset)
             {
                 case "breathing": light=(1-Math.Cos(2*Math.PI*phase))/2; break;
-                case "gradient": mix=x; break;
-                case "wave": mix=(1+Math.Sin(2*Math.PI*(x-phase)))/2; break;
-                case "sweep": light=Math.Pow(Math.Max(0,Math.Cos(Math.PI*(x-((phase%1)*1.6-.3)))), 8); break;
+                case "gradient": mix=Math.Clamp(pos,0,1); break;
+                case "wave": mix=(1+Math.Sin(2*Math.PI*(pos-phase)))/2; break;
+                case "sweep": light=Math.Pow(Math.Max(0,Math.Cos(Math.PI*(pos-((((phase%1)+1)%1)*1.6-.3)))), 8); break;
                 case "rain": double drop=((phase*.65 + ((k.Column*37%101)/101.0))%1+1)%1; light=Math.Exp(-Math.Pow((y-drop)*9,2)); mix=(k.Column*17%101)/100.0; break;
+                case "spectrum": mix=((pos-phase)%1+1)%1; break;
+                case "twinkle": double seed=(k.Led*7919%101)/101.0; light=Math.Pow(Math.Max(0,Math.Sin(2*Math.PI*(phase+seed))),6); mix=seed; break;
+                case "reactive": light=0; break;
             }
-            for(int c=0;c<3;c++) result[k.Led*3+c]=(byte)Math.Clamp((int)Math.Round((a[c]*(1-mix)+b[c]*mix)*light*settings.Brightness/255.0),0,255);
+            double overlay=0;
+            if(target && (settings.ReactiveEnabled || settings.Preset=="reactive") && events!=null)
+                for(int i=0;i<events.Count;i++)
+                {
+                    var e=events[i]; long age=timeMs-e.TimestampMs; if(age<0 || age>=settings.ReactiveDurationMs || e.Led is <0 or >108) continue;
+                    var source=positionsByLed![e.Led];
+                    double d=settings.ReactiveStyle=="row" ? Math.Abs(k.Y-source.Y) : Math.Sqrt(Math.Pow(k.X-source.X,2)+Math.Pow(k.Y-source.Y,2));
+                    double intensity=settings.ReactiveStyle=="key" ? (k.Led==e.Led?1:0) : Math.Max(0,1-Math.Abs(d-age/(double)settings.ReactiveDurationMs*22)/settings.ReactiveWidth);
+                    overlay=Math.Max(overlay,intensity*(1-age/(double)settings.ReactiveDurationMs)*settings.ReactiveOpacity/100.0);
+                }
+            for(int c=0;c<3;c++)
+            {
+                double baseColor;
+                if(!target || settings.Preset=="reactive") baseColor=Channel(settings.Background,c);
+                else if(settings.Preset=="spectrum" && settings.Palette.Length==0) baseColor=Spectrum(mix,c)*light;
+                else { int count=settings.Palette.Length; double z=mix*(count>0?count-1:1); int a=Math.Min((int)z,Math.Max(0,count-2)); double fraction=count>0?z-a:mix; string ca=count>0?settings.Palette[a]:settings.Color1, cb=count>0?settings.Palette[a+1]:settings.Color2; baseColor=(Channel(ca,c)*(1-fraction)+Channel(cb,c)*fraction)*light; }
+                result[k.Led*3+c]=(byte)Math.Clamp((int)Math.Round((baseColor*(1-overlay)+Channel(settings.ReactiveColor,c)*overlay)*settings.Brightness/255.0),0,255);
+            }
         }
         return result;
     }
-    static byte[] Parse(string s)=>new[]{Convert.ToByte(s.Substring(1,2),16),Convert.ToByte(s.Substring(3,2),16),Convert.ToByte(s.Substring(5,2),16)};
+    static int Hex(char c) => c <= '9' ? c-'0' : (c | 32)-'a'+10;
+    static int Channel(string s,int c)=>Hex(s[1+c*2])*16+Hex(s[2+c*2]);
+    static double Spectrum(double h,int c) { double n=(h*6+(c==0?0:c==1?4:2))%6; return 255*Math.Clamp(Math.Abs(n-3)-1,0,1); }
 }
 
 // OpenRGB SDK protocol 0–3: https://gitlab.com/CalcProgrammer1/OpenRGB/-/blob/master/Documentation/OpenRGBSDK.md
@@ -156,14 +200,15 @@ internal static class OpenRgbEffects
     {
         if(port is <1 or >65535) throw new ArgumentOutOfRangeException(nameof(port));
         var layout=KeyboardLayout.Load(); settingsProvider().Validate(); using var sdk=new OpenRgbSdk(); await sdk.ConnectAsync(port,ct); uint device=await sdk.FindKeyboardAsync(ct); await sdk.DirectAsync(device,ct);
-        using var watcherCts=new CancellationTokenSource(); var watch=sdk.WatchAsync(watcherCts.Token); var clock=Stopwatch.StartNew(); bool safe=true;
+        using var watcherCts=new CancellationTokenSource(); var watch=sdk.WatchAsync(watcherCts.Token); var clock=Stopwatch.StartNew(); using var activity=new KeyboardActivity(() => clock.ElapsedMilliseconds); bool safe=true;
         try
         {
             progress?.Report("OpenRGB connected");
             while(true)
             {
                 ct.ThrowIfCancellationRequested(); if(watch.IsCompleted) { safe=false; await watch; throw new IOException("OpenRGB disconnected."); }
-                await sdk.FrameAsync(device,EffectRenderer.Render(settingsProvider(),clock.ElapsedMilliseconds,layout),ct);
+                var current=settingsProvider(); activity.SetEnabled(current.ReactiveEnabled || current.Preset=="reactive");
+                await sdk.FrameAsync(device,EffectRenderer.Render(current,clock.ElapsedMilliseconds,layout,activity.Events),ct);
                 var delay=Task.Delay(34,ct); if(await Task.WhenAny(delay,watch)==watch) { safe=false; await watch; throw new IOException("OpenRGB disconnected."); } await delay;
             }
         }

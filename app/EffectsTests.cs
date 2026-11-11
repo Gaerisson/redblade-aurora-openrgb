@@ -26,6 +26,10 @@ internal static class EffectsTests
         Check(priorMap.ForFirmware(new Version(0,9,0),new Version(0,10,0),true).Keymap[378]==0,"Core is not migrated");
         Check(priorMap.ForFirmware(new Version(0,10,0),new Version(0,10,0),false).Keymap[378]==0,"existing 0.10 mapping preserved");
         var validSettings = new EffectSettings("solid", "#FF4000", "#0000FF", 50, 255);
+        var modernProfile=ConfigCodec.Encode(StudioConfig.Default());modernProfile[32+3*416+10]=2;
+        Check(!FlashVerification.CanRestoreTarget(modernProfile,new Version(0,10,0))&&FlashVerification.CanRestoreTarget(modernProfile,new Version(0,11,0)),"autonomous styles block older targets in every profile");
+        modernProfile[32+3*416+10]=0;modernProfile[32+3*416+11]=16;
+        Check(!FlashVerification.CanRestoreTarget(modernProfile,new Version(0,10,0)),"new wave width blocks downgrade independently of style");
         var request = new JobRequest { Operation=HardwareOperation.Effects, RequestingUserSid="S-1-5-21-1-2-3-1001", EffectSettings=validSettings };
         HardwareJobs.Validate(request);
         request.Operation=HardwareOperation.Read;
@@ -37,13 +41,35 @@ internal static class EffectsTests
         {
             string path=Path.Combine(testDir,"effect.json");
             File.WriteAllText(path,System.Text.Json.JsonSerializer.Serialize(validSettings));
-            Check(HardwareJobs.ReadEffectFile(path)==validSettings,"live settings round trip");
+            Check(System.Text.Json.JsonSerializer.Serialize(HardwareJobs.ReadEffectFile(path))==System.Text.Json.JsonSerializer.Serialize(validSettings),"live settings round trip");
             foreach(string bad in new[]{"{}","{\"Preset\":\"solid\",\"Color1\":\"#FFFFFF\",\"Color2\":\"#FFFFFF\",\"Speed\":1,\"Brightness\":255,\"script\":\"x\"}",new string('x',4097)})
             {
                 File.WriteAllText(path,bad); bool rejected=false; try{HardwareJobs.ReadEffectFile(path);}catch(Exception e) when(e is IOException or InvalidDataException or ArgumentException or System.Text.Json.JsonException){rejected=true;} Check(rejected,"invalid live settings rejected");
             }
         }
         finally{Directory.Delete(testDir,true);}
+        var advanced = validSettings with { Preset="spectrum", TargetLeds=new[]{0}, ReactiveEnabled=true, ReactiveStyle="key" };
+        advanced.Validate();
+        var geometry = KeyboardLayout.Load();
+        var spectrum=EffectRenderer.Render(validSettings with{Preset="spectrum"},0,geometry);
+        Check(spectrum[0]==255&&spectrum[1]==0&&spectrum[2]==0,"spectrum starts with standard red hue");
+        var reverseSweep=EffectRenderer.Render(validSettings with{Preset="sweep",Speed=100,Reverse=true},500,geometry);
+        int middle=geometry.MinBy(k=>Math.Abs(k.X-(geometry.Min(k=>k.X)+geometry.Max(k=>k.X))/2))!.Led;
+        Check(reverseSweep[middle*3]>200,"reverse sweep travels across the keyboard at the mirrored phase");
+        var maskFrame = EffectRenderer.Render(advanced with { Preset="solid" }, 100, geometry, new[]{new KeyActivity(0, 100)});
+        Check(maskFrame[0]==255 && maskFrame[3]==0, "reactive overlay and target mask");
+        Check(KeyboardScanCodes.ToLed(0x11, false, false)==43 && KeyboardScanCodes.ToLed(0x1d, true, false)==103, "physical scan code mapping");
+        Check(KeyboardScanCodes.ToLed(0x45,false,true)==15 && KeyboardScanCodes.ToLed(0x56,false,false)==79, "E1 pause and ISO key");
+        var reactive = advanced with { Preset="reactive", ReactiveStyle="key", TargetLeds=null };
+        Check(EffectRenderer.Render(reactive,800,geometry,new[]{new KeyActivity(0,100)}).All(x=>x==0), "expired activity disappears");
+        long now=100; using(var activity=new KeyboardActivity(()=>now)) { for(int i=0;i<40;i++)activity.Add(i,now); Check(activity.Events.Count==32 && activity.Events[0].Led==8,"activity bounded"); now=2200; Check(activity.Events.Count==0,"activity expires"); activity.SetEnabled(false); Check(activity.Events.Count==0,"disable clears activity"); }
+        var ripple=reactive with { ReactiveStyle="ripple", ReactiveDurationMs=1000, ReactiveWidth=1 };
+        var waveFrame=EffectRenderer.Render(ripple,100,geometry,new[]{new KeyActivity(0,0)});
+        Check(waveFrame[3]>0 && waveFrame[0]==0, "ripple moves with age and distance");
+        foreach(var bad in new[]{advanced with { TargetLeds=new[]{0,0} }, advanced with { ReactiveStyle="other" }, advanced with { Angle=360 }, advanced with { ReactiveWidth=0 }})
+        { bool rejected=false; try { bad.Validate(); } catch(ArgumentException) { rejected=true; } Check(rejected,"invalid advanced effect rejected"); }
+        foreach(var preset in new[]{"spectrum","twinkle","reactive"}) Check(EffectRenderer.Render(advanced with { Preset=preset },123,geometry).SequenceEqual(EffectRenderer.Render(advanced with { Preset=preset },123,geometry)),"advanced preset deterministic");
+        bool badPalette=false; try { (advanced with { Palette=new[]{"#123456"} }).Validate(); } catch(ArgumentException) { badPalette=true; } Check(badPalette,"single color palette rejected");
         var layout = KeyboardLayout.Load();
         var s = new EffectSettings("solid", "#FF4000", "#0000FF", 50, 255);
         var frame = EffectRenderer.Render(s, 0, layout);

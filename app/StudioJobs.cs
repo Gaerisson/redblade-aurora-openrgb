@@ -3,7 +3,7 @@ using System.ComponentModel;
 namespace RedBladePlus.Studio;
 internal sealed partial class StudioForm
 {
-    async Task PerformHardware(Func<Task<JobRequest?>> prepare,bool isEffect=false)
+    async Task PerformHardware(Func<Task<JobRequest?>> prepare,bool isEffect=false,Action? afterSuccess=null)
     {
         if(updates?.Installing==true||!await operationGate.WaitAsync(0))throw new InvalidOperationException(T("A keyboard operation is already running.","Une opération clavier est déjà en cours."));
         cancelPreparation=false;SendState();
@@ -14,7 +14,7 @@ internal sealed partial class StudioForm
             job=new(){Stage="prepare",Message=T("Preparing the keyboard operation…","Préparation de l’opération clavier…")};SendState();
             var request=await prepare();
             if(request==null||cancelPreparation){job=null;return;}
-            if(isEffect)runningJob=RunHardware(request,true);else await RunHardware(request);
+            if(isEffect)runningJob=RunHardware(request,true);else{await RunHardware(request);afterSuccess?.Invoke();}
         }
         catch(Exception error){if(job?.Done!=true)job=new(){Done=true,Stage="error",Message=error.Message};throw;}
         finally{operationGate.Release();SendState();}
@@ -34,7 +34,7 @@ internal sealed partial class StudioForm
                 await Task.Delay(200);
             }
             if(job?.Success!=true)throw new IOException(job?.Message??"No keyboard result.");
-            if(!isEffect)ApplyHardwareResult(job);
+            if(!isEffect)ApplyHardwareResult(job,request.Operation is HardwareOperation.Read or HardwareOperation.Flash);
         }
         catch(Exception error)
         {
@@ -54,12 +54,12 @@ internal sealed partial class StudioForm
         if(jobId!=null&&job?.Programming!=true)HardwareJobs.Cancel(jobId);
         if(effectActive&&runningJob!=null)await runningJob;
     }
-    internal void ApplyHardwareResult(JobResult result)
+    internal void ApplyHardwareResult(JobResult result,bool resetHistory=true)
     {
         firmware=result.Firmware;
         if(firmware.Length>0)Version.TryParse(firmware.Split(' ').Last(),out installedVersion);
         connection=result.Unsupported?"upgrade":"connected";
-        if(result.Payload.Length>0){config=ConfigCodec.Decode(Convert.FromBase64String(result.Payload));generation=result.Generation;dirty=false;SaveDraft();}
+        if(result.Payload.Length>0){config=ConfigCodec.Decode(Convert.FromBase64String(result.Payload));generation=result.Generation;dirty=false;if(resetHistory)history.Clear();SaveDraft();}
         if(result.Unsupported)generation=null;SendState();
     }
 }

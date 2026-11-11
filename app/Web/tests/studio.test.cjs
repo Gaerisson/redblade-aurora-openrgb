@@ -41,3 +41,62 @@ test('shortcut search finds localized recorder loops and mouse turbo instruction
   assert.ok(mouse.some(x=>x.group==='Turbo & game' && x.keys.includes('Volume')));
   assert.ok(findShortcuts('F9','fr').some(x=>x.description.includes('sauvegarde')));
 });
+test('linear and radial gradients respect selected geometry', () => {
+ const {gradientColors}=require('../app.js'); const keys=[{led:0,x:0,y:0,w:1,h:1},{led:1,x:1,y:0,w:1,h:1},{led:2,x:2,y:0,w:1,h:1}];
+ assert.deepEqual(gradientColors(keys,'linear','#000000','#ffffff',0).map(x=>x.color),['#000000','#808080','#ffffff']);
+ assert.deepEqual(gradientColors(keys,'radial','#000000','#ffffff',0).map(x=>x.color),['#ffffff','#000000','#ffffff']);
+});
+test('marquee intersects key geometry and selection modes are deterministic', () => {
+ const {keysInBox,combineSelection,dragExceeded}=require('../app.js');
+ assert.deepEqual(keysInBox([{led:1,x:0,y:0,w:1,h:1},{led:2,x:2,y:0,w:1,h:1}],{x1:.5,y1:.5,x2:1.5,y2:1.5}),[1]);
+ assert.deepEqual(combineSelection([1,2],[2,3],'subtract'),[1]);
+ assert.deepEqual(combineSelection([1,2],[2,3],'add'),[1,2,3]);
+ assert.equal(dragExceeded(0,0,2,2),false); assert.equal(dragExceeded(0,0,5,0),true);
+});
+test('ISO Enter marquee excludes the missing lower-left corner', () => {
+ const {keysInBox}=require('../app.js'); const key={led:74,x:0,y:0,w:1.25,h:2};
+ assert.deepEqual(keysInBox([key],{x1:0,y1:1.1,x2:.2,y2:1.9}),[]);
+ assert.deepEqual(keysInBox([key],{x1:.3,y1:1.1,x2:.6,y2:1.9}),[74]);
+});
+test('effect settings defaults and zone validation preserve old requests', () => {
+ const {normalizeEffectOptions}=require('../app.js');
+ const defaults=normalizeEffectOptions({});
+ assert.deepEqual(defaults,{angle:0,scale:100,reverse:false,palette:[],targetLeds:null,background:'#000000',reactiveEnabled:false,reactiveStyle:'key',reactiveColor:'#ff274e',reactiveDurationMs:700,reactiveWidth:2,reactiveOpacity:100});
+ assert.equal(normalizeEffectOptions({targetLeds:[]}),null);
+ assert.equal(normalizeEffectOptions({palette:['#ffffff']}),null);
+ assert.equal(normalizeEffectOptions({targetLeds:[109]}),null);
+ assert.equal(normalizeEffectOptions({reactiveWidth:9}),null);
+});
+test('preview gradient normalizes actual key origins and respects targets', () => {
+ const {renderPreviewFrame}=require('../app.js');
+ const keys=[{led:0,x:10,y:3,column:0},{led:1,x:20,y:3,column:1},{led:2,x:30,y:3,column:2}];
+ const args={preset:'gradient',color1:'#000000',color2:'#ffffff',speed:50,brightness:255,angle:0,scale:100,reverse:false,palette:[],targetLeds:[0,1],background:'#102030',reactiveEnabled:false,reactiveStyle:'key',reactiveColor:'#ff0000',reactiveDurationMs:1000,reactiveWidth:2,reactiveOpacity:100};
+ assert.deepEqual(renderPreviewFrame(args,keys,0,[]),[{led:0,rgb:[0,0,0]},{led:1,rgb:[128,128,128]},{led:2,rgb:[16,32,48]}]);
+});
+test('preview rain uses physical column and real elapsed time', () => {
+ const {renderPreviewFrame}=require('../app.js');
+ const keys=[{led:0,x:0,y:0,column:0},{led:1,x:1,y:1,column:0}];
+ const args={preset:'rain',color1:'#ffffff',color2:'#ffffff',speed:50,brightness:255,angle:0,scale:100,reverse:false,palette:[],targetLeds:null,background:'#000000',reactiveEnabled:false,reactiveStyle:'key',reactiveColor:'#ff0000',reactiveDurationMs:1000,reactiveWidth:2,reactiveOpacity:100};
+ assert.deepEqual(renderPreviewFrame(args,keys,0,[]).map(x=>x.rgb),[[255,255,255],[0,0,0]]);
+ assert.notDeepEqual(renderPreviewFrame(args,keys,0,[]),renderPreviewFrame(args,keys,6000,[]));
+});
+test('preview reactive ripple uses physical geometry and duration', () => {
+ const {renderPreviewFrame}=require('../app.js');
+ const keys=[{led:0,x:10,y:3,column:0},{led:1,x:21,y:3,column:1}];
+ const args={preset:'reactive',color1:'#000000',color2:'#ffffff',speed:50,brightness:255,angle:0,scale:100,reverse:false,palette:[],targetLeds:null,background:'#000000',reactiveEnabled:true,reactiveStyle:'ripple',reactiveColor:'#ff0000',reactiveDurationMs:1000,reactiveWidth:2,reactiveOpacity:100};
+ assert.deepEqual(renderPreviewFrame(args,keys,500,[{led:0,at:0}]).map(x=>x.rgb),[[0,0,0],[128,0,0]]);
+ assert.deepEqual(renderPreviewFrame(args,keys,1000,[{led:0,at:0}]).map(x=>x.rgb),[[0,0,0],[0,0,0]]);
+});
+test('preview spectrum starts red and uses the native hue ordering', () => {
+ const {renderPreviewFrame}=require('../app.js');
+ const keys=[{led:0,x:0,y:0,column:0},{led:1,x:1,y:0,column:1},{led:2,x:2,y:0,column:2}];
+ const args={preset:'spectrum',color1:'#000000',color2:'#ffffff',speed:50,brightness:255,angle:0,scale:100,reverse:false,palette:[],targetLeds:null,background:'#000000',reactiveEnabled:false,reactiveStyle:'key',reactiveColor:'#ff0000',reactiveDurationMs:1000,reactiveWidth:2,reactiveOpacity:100};
+ assert.deepEqual(renderPreviewFrame(args,keys,0,[]).map(x=>x.rgb),[[255,0,0],[0,255,255],[255,0,0]]);
+});
+test('visual effect palette follows primary colors when empty and rejects invalid custom lists', () => {
+ const {visualPalette}=require('../app.js');
+ assert.deepEqual(visualPalette('', '#112233', '#445566'),['#112233','#445566']);
+ assert.deepEqual(visualPalette('#abcdef, #123456', '#112233', '#445566'),['#abcdef','#123456']);
+ assert.equal(visualPalette('#abcdef', '#112233', '#445566'),null);
+ assert.equal(visualPalette('#abcdef, invalid', '#112233', '#445566'),null);
+});

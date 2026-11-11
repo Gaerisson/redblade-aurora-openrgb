@@ -27,8 +27,8 @@ static double frames(unsigned scenario) {
             via_command_kb(packet,32);
         }
         if(scenario==3) { redblade_rgb_replay(); now+=1300; }
-        redblade_rgb_begin_frame();
         if(scenario==4) for(unsigned led=42;led<=46;++led) redblade_rgb_key_flash(led);
+        redblade_rgb_begin_frame();
         for(unsigned first=0;first<109;first+=8) {
             const bool indicators=redblade_controls_indicators_needed(scenario==5);
             for(unsigned i=first;i<first+8 && i<109;++i) {
@@ -79,12 +79,14 @@ int main(void) {
     const double custom=frames(0),custom_fn=frames(5);
     const double normal=key_events(false),game=key_events(true);
     const double rec_idle=recorder_task_cost(false),rec_loop=recorder_task_cost(true);
+    config[32+10]=1;store_fixture_seed(0,2,config);redblade_store_init();const double ripple=frames(4);
+    config[32+10]=2;store_fixture_seed(0,3,config);redblade_store_init();const double horizontal=frames(4);
     printf("{\"kind\":\"host_native_regression\",\"firmware\":\"%u.%u.%u\",\"frame_iterations_per_scenario\":50000,"
-           "\"host_cpu_ns_per_109_led_frame\":{\"direct\":%.3f,\"dimmed\":%.3f,\"local_white\":%.3f,\"wave_handover\":%.3f,\"reactive_white_five_keys\":%.3f,\"fn_focus\":%.3f,\"onboard_palette\":%.3f,\"onboard_fn_focus\":%.3f},"
+           "\"host_cpu_ns_per_109_led_frame\":{\"direct\":%.3f,\"dimmed\":%.3f,\"local_white\":%.3f,\"wave_handover\":%.3f,\"reactive_white_five_keys\":%.3f,\"fn_focus\":%.3f,\"onboard_palette\":%.3f,\"onboard_fn_focus\":%.3f,\"onboard_reactive_ripple_five_keys\":%.3f,\"onboard_reactive_wave_five_keys\":%.3f},"
            "\"host_cpu_ns_per_key_hook\":{\"game_off\":%.3f,\"game_on\":%.3f},\"checksum\":%u,"
            "\"host_cpu_ns_per_recorder_task\":{\"idle\":%.3f,\"loop_20ms_hold_5ms_gap\":%.3f},"
            "\"cpu_clock_ticks_per_second\":%lu,\"key_hook_iterations\":2000000,"
            "\"physical_key_latency_measured\":false,\"mcu_execution_time_measured\":false}\n",
-           REDBLADE_VERSION_MAJOR,REDBLADE_VERSION_MINOR,REDBLADE_VERSION_PATCH,host,dim,white,wave,reactive,fn_focus,custom,custom_fn,normal,game,(unsigned)checksum,rec_idle,rec_loop,(unsigned long)CLOCKS_PER_SEC);
+           REDBLADE_VERSION_MAJOR,REDBLADE_VERSION_MINOR,REDBLADE_VERSION_PATCH,host,dim,white,wave,reactive,fn_focus,custom,custom_fn,ripple,horizontal,normal,game,(unsigned)checksum,rec_idle,rec_loop,(unsigned long)CLOCKS_PER_SEC);
     return 0;
 }

@@ -97,6 +97,21 @@ static void crc_and_configuration_fail_closed(void) {
     }
     ++tests;
 }
+static void reactive_schema_bounds(void) {
+    const uint8_t styles[] = {0, 1, 2}, widths[] = {0, 4, 64};
+    for (unsigned i = 0; i < 3; ++i) {
+        old(); replacement[42] = styles[i]; replacement[43] = widths[i];
+        install(replacement, 41); assert(redblade_store_generation() == 42);
+        redblade_store_init(); assert(redblade_store_generation() == 42);
+    }
+    const unsigned offsets[] = {42, 43, 43, 44, 447};
+    const uint8_t invalid[] = {3, 3, 65, 1, 1};
+    for (unsigned i = 0; i < 5; ++i) {
+        old(); replacement[offsets[i]] = invalid[i]; install(replacement, 41);
+        assert(phase() == 4 && store_reply[5] == 7 && redblade_store_generation() == 41);
+    }
+    ++tests;
+}
 static void interruption_preserves_previous_bank(void) {
     for (unsigned step = 0; step < 100; ++step) {
         old(); assert(begin(replacement, 41) == 1);
@@ -179,7 +194,7 @@ static void asynchronous_lighting_copy_interruption(void) {
 int main(void) {
     assert(store_fixture_crc((const uint8_t *)"123456789", 9) == 0xcbf43926U);
     default_reads_and_capabilities(); journal_publish_and_reboot(); strict_mutation_guards(); crc_and_configuration_fail_closed();
-    interruption_preserves_previous_bank(); corrupt_committed_banks_and_generation_wrap(); flash_failures_abort_and_retry(); temporary_controls_do_not_save(); asynchronous_lighting_copy_retains_every_other_byte();
+    reactive_schema_bounds(); interruption_preserves_previous_bank(); corrupt_committed_banks_and_generation_wrap(); flash_failures_abort_and_retry(); temporary_controls_do_not_save(); asynchronous_lighting_copy_retains_every_other_byte();
     corrupt_inactive_header_is_never_published(); asynchronous_lighting_copy_interruption();
     printf("store: %u regression groups passed (1696-byte payload, journal interruption/corruption, protocol, Fn+F9)\n", tests);
     return 0;

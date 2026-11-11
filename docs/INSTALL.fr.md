@@ -1,6 +1,6 @@
 # Installation et référence technique
 
-**Studio et firmware 0.10 en aperçu :** le flash Full/Core est guidé ; flash et persistance restent à valider sur matériel. Le clavier physique reste en Full 0.8.1. Studio nécessite Microsoft Edge WebView2 Runtime. Voir [Studio](../app/README.md).
+**Studio et firmware 0.11 en aperçu :** le flash Full/Core reste guidé ; aucun flash ni aucune persistance 0.11 n’ont été validés sur matériel. La validation physique précédente couvre Full 0.10 ; sa programmation, sa relecture et la saisie confirmée par le propriétaire sont décrites dans l’[audit](AUDIT.md). Studio nécessite Microsoft Edge WebView2 Runtime. Voir [Studio](../app/README.md).
 
 [English](INSTALL.md) · **Français** · [Projet](../README.fr.md) · [Raccourcis](SHORTCUTS.md)
 
@@ -44,7 +44,7 @@ Cette commande ne prolonge pas le délai. Elle indique la version, le mode, la f
 - Le patch découple cette horloge de la taille des blocs de rendu. Le rendu traite au plus **8 LED** par passage et attend au moins **33 ms** entre images.
 - Une seule table HSV de **327 octets** garde les dernières couleurs. Aucune allocation dynamique, aucune file d'images et aucune écriture EEPROM dans le chemin RGB direct. Les deux buffers du pilote Sonix amont sont conservés.
 - Un paquet direct valide copie au plus **9 couleurs**. La conversion HSV → RGB se fait dans la tâche de rendu, pas dans le gestionnaire USB.
-- Les effets autonomes conservés sont simples : couleur fixe, respiration, cycle horizontal, dégradés et alphas/modificateurs. Les effets complexes et réactifs sont fournis par Aurora/OpenRGB ; leurs anciens buffers et leur suivi des frappes sont retirés du firmware.
+- Les effets autonomes conservés sont simples : couleur fixe, respiration, cycle horizontal, dégradés et alphas/modificateurs. Les effets complexes restent fournis par Aurora/OpenRGB. Full propose aussi des styles réactifs autonomes bornés ; les anciens buffers d’effets complexes restent absents.
 - Configuration Aurora proposée : intervalle de **34 ms**, environ **29,4 FPS**. Pas de service Windows supplémentaire.
 
 Ces choix bornent le travail ajouté. Ils ne constituent pas une mesure matérielle de latence : comparer le firmware d'origine et celui-ci avec un analyseur USB ou un dispositif de mesure reste nécessaire. Le transport VialRGB standard utilise 13 échanges pour une image complète de 109 LED ; ses paquets peuvent arriver pendant le rendu d'une image.

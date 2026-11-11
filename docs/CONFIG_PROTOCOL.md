@@ -1,6 +1,6 @@
 # RedBlade+ Studio configuration protocol, schema 1
 
-Target: Full firmware 0.10.0 (schema 1; Full 0.9.0 supports the earlier zero-reserved form), board identity `RDBLFS01`, USB 320F:5136, Raw HID FF60:61. Core deliberately excludes these modules/storage. All offsets below refer to the 32-byte payload, without the Windows report-ID prefix. Integers are little-endian unless explicitly stated. Existing VIA/VialRGB commands are unchanged.
+Target: Full firmware 0.11.0 (schema 1; Full 0.10.0 and 0.9.0 require the earlier zero-reserved form for bytes 10–11), board identity `RDBLFS01`, USB 320F:5136, Raw HID FF60:61. Core deliberately excludes these modules/storage. All offsets below refer to the 32-byte payload, without the Windows report-ID prefix. Integers are little-endian unless explicitly stated. Existing VIA/VialRGB commands are unchanged.
 
 ## Configuration payload
 
@@ -21,7 +21,9 @@ Exactly **1696 bytes**: 32 global bytes followed by four 416-byte profiles.
 | 7 | 1 | Reactive trail lifetime1..15 RGB frames, default15 |
 | 8 | 1 | Safety timeout in seconds: 0 means legacy default 30; otherwise 5..120. New defaults use 30. |
 | 9 | 1 | Caps Word layout: 0 AZERTY, 1 QWERTY; default 0. |
-| 10..15 | 6 | Zero, reserved |
+| 10 | 1 | Reactive style: 0 key fade (legacy), 1 ripple, 2 horizontal wave; default 0. Requires Full 0.11. |
+| 11 | 1 | Reactive width: 0 means default 16 geometry units; otherwise 4..64. Requires Full 0.11. |
+| 12..15 | 4 | Zero, reserved |
 | 16 | 327 | 109 per-key HSV8 triples, physical LED order from led-map.json; default(0,0,64) |
 | 343 | 72 | 24 effect HSV8 triples in the order below |
 | 415 | 1 | Zero, reserved |
@@ -30,7 +32,9 @@ Effects, index and default HSV8:
 
 0 startup wave (0,255,255); 1 reactive peak (0,255,255); 2 accent/Red profile (0,255,255); 3 media fallback (0,0,64); 4 Fn idle (170,255,24); 5 Fn held (128,255,96); 6 keyboard Turbo (0,255,128); 7 forward hold (85,255,96); 8 locked Windows keys (0,255,128); 9 Fn Game Mode (200,255,80); 10 left-click Turbo (32,255,128); 11 right-click Turbo (200,255,128); 12 Caps/Num active (85,255,128); 13 Scroll active (32,255,128); 14 Recorder recording (0,255,128); 15 Recorder one-shot (85,255,128); 16 Recorder loop (128,255,128); 17 selection/error (32,255,128); 18 Fn lighting hints (0,0,80); 19 Fn game hints (85,255,80); 20 Fn Turbo hints (0,255,96); 21 Fn Host hint (170,255,80); 22 Fn accent hint (0,255,80); 23 enabled option hints (85,255,64).
 
-Full 0.9 applications reject nonzero new bits or metadata; use the legacy zero form for compatibility. Full 0.10 accepts legacy values and maps timeout 0 to 30 seconds. Caps Word uses Fn + Caps (keycode `0x7E61`) and 34 basic Latin bindings; layout selects AZERTY or QWERTY. When enabled, the safety timeout stops Turbo, mouse Turbo, forward hold and Recorder playback, not recording capture; completed slots remain in RAM.
+Full 0.10 and earlier reject nonzero profile bytes 10–11; the editor only enables these fields with Full 0.11 capability. Full 0.9 applications reject nonzero newer option bits or metadata; use the legacy zero form for compatibility. Full 0.10 accepts legacy values and maps timeout 0 to 30 seconds. Caps Word uses Fn + Caps (keycode `0x7E61`) and 34 basic Latin bindings; layout selects AZERTY or QWERTY. When enabled, the safety timeout stops Turbo, mouse Turbo, forward hold and Recorder playback, not recording capture; completed slots remain in RAM.
+
+Reactive styles apply only to fallback/local white when module bit 3 is enabled, using effect slot 1 for the peak color and trail frames for duration. A new press restarts the one autonomous wave; host RGB keeps priority.
 
 RGB pickers convert RGB8 to HSV8 before encoding. Some RGB values quantize to the nearest HSV8 color. Dynamic brightness/breathing/blink still applies to these base colors. Master brightness and RGB Off/USB suspension remain authoritative. Fn focus follows the supplied shortcut positions and hides disabled helper shortcuts; it does not reclassify arbitrary VIA layer edits.
 

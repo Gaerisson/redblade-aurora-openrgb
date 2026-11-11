@@ -1,6 +1,6 @@
 # Installation & Technical Reference
 
-**Studio and firmware 0.10 preview:** Full/Core flashing is guided; flash and persistence remain unvalidated on hardware. The physical keyboard remains on Full 0.8.1. Studio requires Microsoft Edge WebView2 Runtime. See [Studio](../app/README.md).
+**Studio and firmware 0.11 preview:** Full/Core flashing remains guided; no 0.11 flash or persistence has been validated on physical hardware. The preceding device validation covers Full 0.10; its programming/readback and owner-confirmed input are described in the [audit](AUDIT.md). Studio requires Microsoft Edge WebView2 Runtime. See [Studio](../app/README.md).
 
 **English** · [Français](INSTALL.fr.md) · [Project](../README.md) · [Shortcuts](SHORTCUTS.md)
 
@@ -44,7 +44,7 @@ This command does not extend the timeout. It reports firmware version, mode, str
 - The patch decouples this clock from the rendering chunk size. Rendering processes at most **8 LEDs** per task iteration, with at least **33 ms** between frames.
 - One **327-byte** HSV array stores the latest colors. No dynamic allocation, frame queue or EEPROM write is used in the Direct RGB path. Both upstream Sonix driver buffers are retained.
 - A valid Direct packet copies at most **9 colors**. HSV → RGB conversion runs in the rendering task, not the USB request handler.
-- Retained standalone effects are simple: solid color, breathing, horizontal cycle, gradients and alphas/modifiers. Aurora/OpenRGB supplies complex and reactive effects; their previous firmware buffers and key-event tracking are removed.
+- Retained standalone effects are simple: solid color, breathing, horizontal cycle, gradients and alphas/modifiers. Aurora/OpenRGB supplies complex effects. Full also has bounded autonomous reactive styles; the former complex-effect buffers remain removed.
 - Proposed Aurora settings: **34 ms** update interval, approximately **29.4 FPS**. No additional Windows service.
 
 These choices bound the added work. They are not hardware latency measurements: comparison with the original firmware still requires a USB analyzer or other measurement setup. Standard VialRGB transport uses 13 exchanges for a complete 109-LED frame; packets may arrive while a frame is being rendered.

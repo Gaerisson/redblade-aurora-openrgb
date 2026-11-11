@@ -8,7 +8,7 @@
   "qmk_commit": "62973ee48a976c6f7cc6d4f7b198bd48a2fdfe60",
   "toolchain": "arm-none-eabi-gcc (crosstool-NG 1.27.0.82_7f9d704 - qmk/qmk_toolchains @ a55a2b0) 15.2.0",
   "binary_bytes": 65536,
-  "sha256": "201a23022a7dc17c86e10fedf24b5dbed1c5e1466eb5870b68b75ea04d15a420",
+  "sha256": "b862ab5473f378b87d8f52383de9d91bf5d238f13aad96c7e4fb39ef71267078",
   "ram_bytes_including_reserved_stacks": 8104,
   "ram_remaining_bytes": 88,
   "keyboard_usb_poll_interval_ms": 1,
@@ -18,54 +18,8 @@
   "via_layers": 3,
   "protocol_host_tests": "passed",
   "hardware_latency_measured": false,
-  "release": "v0.10.0",
-  "hardware_validation": {
-    "date": "2026-11-11",
-    "device": "preparation keyboard, Redblade FS ISO",
-    "firmware_identified": "Full 0.10.0",
-    "programming_and_checksum_verified": true,
-    "initial_guided_reconnect": "timed out before VIA restore; subsequent separate identify succeeded",
-    "via_and_macros_restored_and_readback": true,
-    "onboard_configuration_saved_and_readback": true,
-    "typing_numpad_and_aurora_user_confirmed": true,
-    "power_cycle_persistence": null,
-    "new_optional_features_user_tested": null,
-    "reconnect_retry_fix": "host regression tests only; no second physical flash"
-  },
-  "previous_version_hardware_validation": {
-    "release": "v0.8.1",
-    "validation": {
-      "date": "2026-11-04",
-      "edition": "full",
-      "flasher": "SonixFlasherC3.1.0",
-      "bootloader": "0c45:7040 SN32F24XB CS0 64KB",
-      "programming_verified": true,
-      "flash_checksum": "0x4f6a",
-      "via_protocol": 13,
-      "vialrgb_protocol": 1,
-      "led_count": 109,
-      "unique_led_positions_verified": true,
-      "fn_bindings_verified": 33,
-      "removed_fn_cells_verified": 3,
-      "base_layer_preserved": true,
-      "third_layer_preserved": true,
-      "macros_preserved": true,
-      "direct_mode_saved": true,
-      "bootloader_shortcut_on_device_tested": true,
-      "dedicated_windows_indicator_user_confirmed": true,
-      "fn_only_indicator_off_user_confirmed": true,
-      "indicator_survives_fn_release_user_confirmed": true,
-      "indicator_independent_of_rgb_off_user_confirmed": true,
-      "unlock_indicator_off_user_confirmed": true,
-      "typing_and_aurora_user_confirmed": true,
-      "openrgb_service_restored": true,
-      "aurora_restarted": true,
-      "hid_read_round_trip_report": "docs/hid-reference.json",
-      "usb_power_cycle_tested": false,
-      "sustained_turbo_rgb_load_tested": false,
-      "physical_key_latency_measured": false
-    }
-  },
+  "release": "v0.11.0",
+  "hardware_validation": null,
   "rgb_data_timeout_ms": 5000,
   "boot_animation_ms": 2000,
   "boot_animation_max_brightness": 255,
@@ -141,7 +95,7 @@
   "bootloader_shortcut": "Fn+Esc held for 2000 ms; Shift optional; short press stops helpers/unlocks",
   "native_benchmark": {
     "physical_key_latency_measured": false,
-    "sha256": "30283e39c0b6f38af36d7f253d51ee6521f00139e52a1fe343d18e7956fe3f58",
+    "sha256": "a92da7db560cbcecfc7babb74838bc958eccc5777310227cffb7f0dd2f3b3286",
     "file": "redblade-plus-benchmark-windows.exe"
   },
   "fn_rgb_status": {
@@ -291,5 +245,57 @@
     "module_disabled_shortcuts": "hidden",
     "mapping": "factory shipped Fn positions"
   },
-  "ram_measurement": "__heap_end__ minus aligned __heap_base__; includes all reserved stacks and alignment"
+  "ram_measurement": "__heap_end__ minus aligned __heap_base__; includes all reserved stacks and alignment",
+  "hardware_validation_history": [
+    {
+      "release": "v0.8.1",
+      "validation": {
+        "date": "2026-11-04",
+        "edition": "full",
+        "flasher": "SonixFlasherC3.1.0",
+        "bootloader": "0c45:7040 SN32F24XB CS0 64KB",
+        "programming_verified": true,
+        "flash_checksum": "0x4f6a",
+        "via_protocol": 13,
+        "vialrgb_protocol": 1,
+        "led_count": 109,
+        "unique_led_positions_verified": true,
+        "fn_bindings_verified": 33,
+        "removed_fn_cells_verified": 3,
+        "base_layer_preserved": true,
+        "third_layer_preserved": true,
+        "macros_preserved": true,
+        "direct_mode_saved": true,
+        "bootloader_shortcut_on_device_tested": true,
+        "dedicated_windows_indicator_user_confirmed": true,
+        "fn_only_indicator_off_user_confirmed": true,
+        "indicator_survives_fn_release_user_confirmed": true,
+        "indicator_independent_of_rgb_off_user_confirmed": true,
+        "unlock_indicator_off_user_confirmed": true,
+        "typing_and_aurora_user_confirmed": true,
+        "openrgb_service_restored": true,
+        "aurora_restarted": true,
+        "hid_read_round_trip_report": "docs/hid-reference.json",
+        "usb_power_cycle_tested": false,
+        "sustained_turbo_rgb_load_tested": false,
+        "physical_key_latency_measured": false
+      }
+    }
+  ],
+  "previous_version_hardware_validation": {
+    "release": "v0.10.0",
+    "validation": {
+      "date": "2026-11-11",
+      "device": "preparation keyboard, Redblade FS ISO",
+      "firmware_identified": "Full 0.10.0",
+      "programming_and_checksum_verified": true,
+      "initial_guided_reconnect": "timed out before VIA restore; subsequent separate identify succeeded",
+      "via_and_macros_restored_and_readback": true,
+      "onboard_configuration_saved_and_readback": true,
+      "typing_numpad_and_aurora_user_confirmed": true,
+      "power_cycle_persistence": null,
+      "new_optional_features_user_tested": null,
+      "reconnect_retry_fix": "host regression tests only; no second physical flash"
+    }
+  }
 }

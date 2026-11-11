@@ -1,6 +1,6 @@
 # Performance checks
 
-**0.10.0 status:** The native reference below measures the 0.10.0 build on the PC; the HID comparison is historical. No 0.10.0 physical latency measurement has been performed.
+**0.11.0 status:** The bundled native reference measures 0.11 code on the preparation PC. Physical keyboard latency and sustained hardware effect load have not been measured. HID comparisons below are historical.
 
 [Project](../README.md) · [Shortcuts](SHORTCUTS.md) · [Audit](AUDIT.md)
 
@@ -52,7 +52,7 @@ The implementation bounds work: eight base LEDs per RGB task iteration, bounded 
 
 ## 0.10.0 host regression run
 
-A native run on the preparation PC measured 2,880 ns per 109-LED Direct frame and 3,200 ns for the onboard palette; Fn focus measured 2,140 ns without and 2,720 ns with an onboard palette. The immediately preceding 0.8.1 host baseline measured 2,740 ns for Direct. These are averaged host CPU times, include fixture overhead and have 1 ms clock resolution; they are not microcontroller execution times or physical key latency. The scenarios and checksum are recorded in [performance-reference.json](performance-reference.json). No 0.10.0 hardware measurements were performed.
+A native run on the preparation PC measured 2,880 ns per 109-LED Direct frame and 3,200 ns for the onboard palette; Fn focus measured 2,140 ns without and 2,720 ns with an onboard palette. The immediately preceding 0.8.1 host baseline measured 2,740 ns for Direct. These are averaged host CPU times, include fixture overhead and have 1 ms clock resolution; they are not microcontroller execution times or physical key latency. The scenarios and checksum are recorded in [performance-reference-0.10.json](performance-reference-0.10.json). No 0.10.0 hardware measurements were performed.
 
 ## Build the native benchmark yourself
 
@@ -72,3 +72,7 @@ The Windows release executable uses MinGW GCC with static runtime linkage. The s
 The native report includes a reactive-white frame with five refreshed keys. Minimal shared mouse HID button reports reuse the Turbo scheduler; no cursor engine is enabled. Selected rates are latched until changed/reset, not a release-to-restore boost. These rates are targets, not physical latency promises.
 
 The native report also benchmarks the idle Recorder task and a synthetic loop with a 20 ms hold and 5 ms iteration gap. It uses fixture reports, not real keyboard output. The fixed 192-byte arena is shared by three slots; capture stores 1 ms key-edge delays, and playback performs at most one edge per housekeeping pass. A cached Q8 delay multiplier implements the target 0.5×–8× speeds; Hyper instead requests one edge per millisecond; 1×, 0.5× and 2× are exact before USB scheduling, intermediate multipliers are rounded. Capacity and timeout completion reserve space for balanced releases. There are no EEPROM writes, heap allocations, busy waits or catch-up bursts in capture/playback. Standard QMK report I/O and USB scheduling still apply; no physical latency measurement is implied.
+
+## 0.11 native reference
+
+The bundled report now measures the 0.11 host code, including latest-key ripple and horizontal-wave frames. Direct: 2840.0 ns/frame; autonomous ripple: 4200.0 ns/frame; horizontal wave: 4280.0 ns/frame. These are averaged PC CPU times with fixture overhead, not microcontroller execution or physical keyboard latency.

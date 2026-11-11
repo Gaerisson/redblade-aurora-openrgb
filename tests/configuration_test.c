@@ -108,5 +108,28 @@ int main(void) {
     memset(preview,0,32);preview[4]=0;preview[5]=255;preview[6]=7;command(preview,7);
     memset(preview,0,32);preview[4]=3;preview[5]=255;preview[6]=7;command(preview,7);
     redblade_rgb_toggle();assert(redblade_rgb_profile_get()==RB_PROFILE_WHITE);
+    // A single latest-key wave runs only in autonomous white and ages per frame.
+    read_config(payload); const unsigned base=32+payload[0]*416;
+    payload[base] |= 8; payload[base+3]=1; payload[base+7]=4;
+    payload[base+10]=1; payload[base+11]=16; save_config(payload);
+    g_led_config.point[1].x=20;g_led_config.point[1].y=20;
+    g_led_config.point[2].x=36;g_led_config.point[2].y=20;
+    g_led_config.point[3].x=20;g_led_config.point[3].y=36;
+    redblade_rgb_key_flash(1);redblade_rgb_begin_frame();
+    assert(redblade_rgb_color(1).s==255 && redblade_rgb_color(2).s==0);
+    redblade_rgb_begin_frame();assert(redblade_rgb_color(2).s>0 && redblade_rgb_color(3).s>0);
+    redblade_rgb_key_flash(2);redblade_rgb_begin_frame();assert(redblade_rgb_color(2).s==255);
+    for(unsigned i=0;i<4;++i) redblade_rgb_begin_frame();
+    assert(redblade_rgb_color(2).s==0);
+    payload[base+10]=2;save_config(payload);
+    redblade_rgb_key_flash(1);redblade_rgb_begin_frame();redblade_rgb_begin_frame();
+    assert(redblade_rgb_color(2).s>0 && redblade_rgb_color(3).s==0);
+    redblade_rgb_replay_key(4);redblade_rgb_begin_frame();assert(redblade_rgb_color(62).s==255);
+    uint8_t host[32]={7,0x42,62,0,1,85,255,90};assert(via_command_kb(host,32));
+    redblade_rgb_profile(RB_PROFILE_HOST);redblade_rgb_begin_frame();assert(redblade_rgb_color(62).h==85);
+    redblade_rgb_profile(RB_PROFILE_WHITE);redblade_rgb_begin_frame();assert(redblade_rgb_color(62).s==0);
+    redblade_rgb_key_flash(1);redblade_rgb_suspend();redblade_rgb_wake();
+    now+=REDBLADE_BOOT_ANIMATION_MS;redblade_rgb_begin_frame();assert(redblade_rgb_color(1).s==0);
+    payload[base]&=~8;save_config(payload);redblade_rgb_key_flash(1);redblade_rgb_begin_frame();assert(redblade_rgb_color(1).s==0);
     puts("PASS: Studio schema, full profile read/save, palette/effects, module gating, retained Recorder, journaled F9, reboot and runtime-only preview");
 }

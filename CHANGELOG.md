@@ -2,6 +2,13 @@
 
 All new release notes are written in English. Version 0.x is experimental; hardware validation is recorded separately from build and host-test results.
 
+## 0.11.0 — in development
+
+- Color Lab adds drag and marquee selection, selection groups, solid and linear/radial fills, a palette, bounded 24-step undo/redo and the option to retain active-profile edits when connecting.
+- Nine OpenRGB PC effects support palettes, zones, direction, scale and reactive overlays. Raw Input is filtered to the Red Blade device and recent events are bounded in memory; no scan-code or keystroke log is stored.
+- Full 0.11 adds autonomous key fade, ripple and horizontal wave styles. Each new press restarts the single wave. Core remains OpenRGB/VIA only. Wire size and profile count are unchanged.
+- Full/Core 0.11 are in development; no 0.11 hardware flash, physical latency, persistence or power-cycle validation is claimed. Existing published 0.10 artifacts are unchanged.
+
 ## 0.10.0 preview — Studio and firmware
 
 - Simplified active-profile editor, bilingual zoomable shortcut guide, application icon and explicit keyboard controls. The four-profile protocol remains compatible.

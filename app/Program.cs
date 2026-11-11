@@ -66,7 +66,7 @@ internal static class Program
             finally{form.Close();}
         };
         try{Application.Run(form);}finally{Application.ThreadException-=handler;}
-        string report=failure==null?"PASS: actual WebView2 navigation, 109 keys, native bridge edits, options, guide and updater interaction guard. No HID, UAC, service or external network operations.":failure.ToString();
+        string report=failure==null?"PASS: actual WebView2 navigation, 109 keys, mouse drag/marquee, gradient undo/redo, hex/swatch focus, reaction controls, advanced effect bridge, guide and updater guard. No HID, UAC, service or external network operations.":failure.ToString();
         File.WriteAllText(Path.Combine(AppContext.BaseDirectory,"ui-test-results.txt"),report+Environment.NewLine);
         return failure==null?0:1;
     }

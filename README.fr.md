@@ -14,19 +14,23 @@ Contrôle OpenRGB touche par touche, raccourcis Fn et fonctions de jeu pour le *
 
 [Télécharger](https://github.com/Gaerisson/redblade-aurora-openrgb/releases/latest) · [Raccourcis](docs/SHORTCUTS.fr.md) · [Installation](docs/INSTALL.fr.md) · [Performances](docs/PERFORMANCE.md) · [Changelog](CHANGELOG.md)
 
-![Fonctions du firmware](docs/assets/features.fr.png)
+![Fonctions du firmware](docs/assets/features.fr.svg)
 
-## Studio 0.10.0 — aperçu
+## Studio 0.11.0 — aperçu Color Lab
 
-RedBlade+ Studio est une application Windows x64 portable qui modifie le profil actif du firmware Full 0.10.0 : 109 couleurs de touches, 24 couleurs d’effets et des modules activables. Elle propose le français et l’anglais, les légendes AZERTY/QWERTY, un guide des raccourcis agrandissable, six effets RGB logiciels et des commandes explicites pour l’hôte, les couleurs enregistrées, l’extinction et l’arrêt des fonctions. Le format interne à quatre profils reste compatible ; l’interface modifie le profil actif. Core ne possède pas l’API de configuration Full. Voir [Studio](app/README.md).
+RedBlade+ Studio est une application Windows x64 portable qui modifie le profil actif Full. Color Lab sélectionne les 109 touches par clic, glissement, cadre ou groupe ; applique une couleur unie ou un dégradé linéaire ou radial ; et propose un historique borné. À la connexion, choisissez de conserver les modifications locales ou de charger le profil du clavier. Le format à quatre profils reste compatible ; Core ne possède pas l’API de configuration Full. Le français, l’anglais et les légendes AZERTY/QWERTY restent disponibles. Voir [Studio](app/README.md).
 
-[Télécharger Studio 0.10 et les deux firmwares](https://github.com/Gaerisson/redblade-aurora-openrgb/releases/tag/v0.10.0). Full 0.10 a été programmé et identifié sur le clavier de préparation ; VIA et les macros ont été restaurés et relus intégralement, et la sauvegarde des profils a réussi. Le propriétaire a confirmé la saisie, le pavé et Aurora. Un délai dépassé à la première reconnexion a révélé un défaut de Studio, désormais couvert par des tests de reconnexion bornée en lecture seule. La persistance après coupure USB et la latence physique ne sont pas mesurées. Sauvegardez VIA et vos réglages avant tout flash.
+Neuf effets PC prennent en charge palettes, zones et superposition réactive via OpenRGB. Les frappes réactives sont filtrées sur le clavier Red Blade et conservées temporairement en mémoire, sans journal de codes de touches ou de frappes. Full 0.11 ajoute trois styles réactifs autonomes ; chaque nouvelle frappe relance l’unique onde. Les vérifications de compilation et l’acceptation physique sont consignées séparément dans l’[audit](docs/AUDIT.md) et les notes de version.
+
+[Télécharger Studio 0.11 et les deux firmwares](https://github.com/Gaerisson/redblade-aurora-openrgb/releases/tag/v0.11.0). Full 0.10 a été programmé et identifié sur le clavier de préparation ; VIA et les macros ont été restaurés et relus intégralement, et la sauvegarde des profils a réussi. Le propriétaire a confirmé la saisie, le pavé et Aurora. Un délai dépassé à la première reconnexion a révélé un défaut de Studio, désormais couvert par des tests de reconnexion bornée en lecture seule. La persistance après coupure USB et la latence physique ne sont pas mesurées. Sauvegardez VIA et vos réglages avant tout flash.
 
 Full 0.10 ajoute Caps Word (Fn + Verr. Maj, AZERTY/QWERTY) et un délai de sécurité pour les fonctions automatiques, tous deux désactivés par défaut. Studio utilise WebView2 Runtime sous Windows et suspend Aurora pendant ses effets logiciels avant de le rétablir.
 
 Studio peut rechercher et télécharger automatiquement les mises à jour GitHub officielles, puis redémarrer après 30 secondes d’inactivité en l’absence de modifications non enregistrées et d’opération active. L’installation du firmware reste guidée et exige Fn + Échap physiquement ; aucun flash ne démarre au lancement.
 
-![Éditeur de clavier Studio](docs/assets/studio-keyboard.fr.png)
+![Éditeur de clavier Studio 0.11](docs/assets/studio-keyboard.fr.png)
+
+*Interface réelle Color Lab, capturée en aperçu avec accès matériel désactivé.*
 
 ## Deux éditions
 

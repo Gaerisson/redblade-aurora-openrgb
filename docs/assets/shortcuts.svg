@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1540" viewBox="0 0 1600 1540">
 <rect width="1600" height="1540" fill="#0c1019"/>
 <style>text{font-family:Arial,DejaVu Sans,sans-serif;fill:#e9eef7}.title{font-size:40px;font-weight:700}.sub{font-size:19px;fill:#a5b4c9}.key{font-size:15px;font-weight:700;text-anchor:middle}.tiny{font-size:10px;font-weight:700;text-anchor:middle;fill:#a5b4c9}.card{font-size:23px;font-weight:700}.body{font-size:19px}</style>
-<text x="48" y="62" class="title">RedBlade+ 0.10.0 FULL  /  OpenRGB Firmware</text>
+<text x="48" y="62" class="title">RedBlade+ 0.11 DEV FULL  /  OpenRGB Firmware</text>
 <text x="48" y="98" class="sub">Shortcuts + dynamic key lighting · AZERTY positions</text>
 <text x="48" y="128" class="sub">Fn focus: only useful keys stay lit. Customize colors and modules in Studio.</text>
 <rect x="48" y="164" width="60" height="60" rx="8" fill="#141e2c" stroke="#e13743" stroke-width="2"/>

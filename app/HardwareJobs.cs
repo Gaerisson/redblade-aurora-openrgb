@@ -54,8 +54,7 @@ internal static class FlashVerification
     internal static bool CanRestoreTarget(byte[] payload,Version target)
     {
         if(payload.Length!=ConfigCodec.Length)throw new InvalidDataException("Invalid profile backup size.");
-        if(target>=new Version(0,10,0))return true;
-        for(int i=0;i<4;i++){int b=32+i*416;if((payload[b+1]&0x0c)!=0||payload[b+8]!=0||payload[b+9]!=0)return false;}
+        for(int i=0;i<4;i++){int b=32+i*416;if(target<new Version(0,11,0)&&(payload[b+10]!=0||payload[b+11]!=0))return false;if(target<new Version(0,10,0)&&((payload[b+1]&0x0c)!=0||payload[b+8]!=0||payload[b+9]!=0))return false;}
         return true;
     }
     internal static bool SamePort(string original,string[] locations)=>locations.Length==1&&string.Equals(locations[0],original,StringComparison.OrdinalIgnoreCase);

@@ -25,7 +25,7 @@ def generate(qmk):
             parts.append(f'<text x="{x}" y="{y}" class="{style}"'+(f' style="fill:{fill}"' if fill else '')+'>'+escape(value)+'</text>')
         def rect(x,y,w,h,color='#1c2637',stroke='#3b4b63',radius=8):
             parts.append(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{radius}" fill="{color}" stroke="{stroke}" stroke-width="2"/>')
-        text(48,62,'RedBlade+ 0.10.0 FULL  /  OpenRGB Firmware','title')
+        text(48,62,'RedBlade+ 0.11 DEV FULL  /  OpenRGB Firmware','title')
         text(48,98,'Raccourcis + touches dynamiques · positions AZERTY' if fr else 'Shortcuts + dynamic key lighting · AZERTY positions','sub')
         text(48,128,'Focus Fn : seules les touches utiles restent allumées. Couleurs personnalisables dans Studio.' if fr else 'Fn focus: only useful keys stay lit. Customize colors and modules in Studio.','sub')
         special={0:('ESC','#e13743'),16:('CAL','#e13743'),17:('MUTE','#a593ed'),18:('VOL−','#a593ed'),19:('VOL+','#a593ed'),21:('1','#e13743'),22:('2','#e13743'),23:('3','#e13743'),37:('NUM','#49d68b'),61:('CAPS','#49d68b'),97:('WIN','#e13743'),101:('WIN','#e13743'),102:('FN','#4fcde8'),43:('Z','#49d68b'),44:('E','#f3bf57'),45:('R','#f3bf57'),46:('T','#f3bf57'),65:('F','#f3bf57'),99:('SPACE','#f3bf57'),40:('−','#a593ed'),60:('+','#a593ed'),14:('SCROLL','#f3bf57'),104:('←','#e9eef7'),106:('→','#e9eef7')}

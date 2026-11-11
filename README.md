@@ -14,19 +14,23 @@ Per-key OpenRGB lighting, useful Fn shortcuts and game helpers for the **Designe
 
 [Download](https://github.com/Gaerisson/redblade-aurora-openrgb/releases/latest) · [Shortcuts](docs/SHORTCUTS.md) · [Install](docs/INSTALL.md) · [Performance](docs/PERFORMANCE.md) · [Changelog](CHANGELOG.md)
 
-![Firmware features](docs/assets/features.png)
+![Firmware features](docs/assets/features.svg)
 
-## Studio 0.10.0 — preview
+## Studio 0.11.0 — Color Lab preview
 
-RedBlade+ Studio is a portable Windows x64 editor for the active profile on Full firmware 0.10.0: 109 key colors, 24 effect colors and optional module switches. It offers English/French, AZERTY/QWERTY legends, a zoomable shortcut guide, six host-driven RGB effects, and explicit host, saved colors, lights off and stop-helper controls. The four-profile wire format remains compatible; the interface edits the active profile. Core does not expose the Full configuration API. See [Studio](app/README.md).
+RedBlade+ Studio is a portable Windows x64 editor for the active Full profile. Color Lab selects 109 keys by click, drag, marquee or group; applies solid, linear or radial colors; and offers bounded undo/redo. On connection, choose whether to keep local edits or load the keyboard profile. The four-profile wire format remains compatible; Core does not expose the Full configuration API. English/French and AZERTY/QWERTY legends remain available. See [Studio](app/README.md).
 
-[Download Studio 0.10 and both firmware editions](https://github.com/Gaerisson/redblade-aurora-openrgb/releases/tag/v0.10.0). Full 0.10 has been programmed and identified on the preparation keyboard; VIA/macros were restored with complete readback, and onboard profile saving passed. Typing, numpad and Aurora were confirmed by the owner. An initial immediate-reconnect timeout exposed a Studio bug; bounded read-only reconnection is now covered by regression tests. Power-cycle persistence and physical input latency have not been measured. Back up VIA and custom settings before flashing.
+Nine PC effects support palettes, zones and a reactive overlay through OpenRGB. Reactive input is filtered to the Red Blade keyboard and kept transiently in memory without scan-code or keystroke logs. Full 0.11 adds three autonomous reactive styles; a new press restarts the single wave. Build checks and physical acceptance are recorded separately in the [audit](docs/AUDIT.md) and release notes.
+
+[Download Studio 0.11 and both firmware editions](https://github.com/Gaerisson/redblade-aurora-openrgb/releases/tag/v0.11.0). Full 0.10 has been programmed and identified on the preparation keyboard; VIA/macros were restored with complete readback, and onboard profile saving passed. Typing, numpad and Aurora were confirmed by the owner. An initial immediate-reconnect timeout exposed a Studio bug; bounded read-only reconnection is now covered by regression tests. Power-cycle persistence and physical input latency have not been measured. Back up VIA and custom settings before flashing.
 
 Full 0.10 adds optional Caps Word (Fn + Caps, AZERTY/QWERTY) and a configurable automatic timeout for generated helpers; both are off by default. Studio uses WebView2 Runtime on Windows and pauses Aurora while its software effects are active, restoring it afterward.
 
 Studio can check and download official GitHub updates automatically and restart after 30 seconds of inactivity when there are no unsaved changes or active jobs. Firmware installation always requires the guided flow and physical Fn + Esc; it never flashes at startup.
 
-![Studio keyboard editor](docs/assets/studio-keyboard.png)
+![Studio 0.11 Color Lab editor](docs/assets/studio-keyboard.png)
+
+*Actual Color Lab interface, captured in hardware-disabled preview mode.*
 
 ## Choose your edition
 
