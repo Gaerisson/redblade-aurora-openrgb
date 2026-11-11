@@ -1,5 +1,6 @@
 param(
     [string]$HelperDirectory,
+    [string]$WebView2Bootstrapper = (Join-Path $PSScriptRoot '../../../work/studio-prerequisites/MicrosoftEdgeWebview2Setup.exe'),
     [switch]$SkipSelfTest
 )
 $ErrorActionPreference = 'Stop'
@@ -13,6 +14,7 @@ if (-not (Test-Path -LiteralPath $dotnet)) { throw '.NET 10 Windows SDK is requi
 $output = Join-Path $PSScriptRoot 'publish'
 $arguments = @('publish', (Join-Path $PSScriptRoot 'RedBladePlus.Studio.csproj'), '--nologo', '-c', 'Release', '-r', 'win-x64', '--self-contained', 'true', '-o', $output)
 if ($HelperDirectory) { $arguments += ('-p:HelperDirectory=' + [IO.Path]::GetFullPath($HelperDirectory)) }
+$arguments += ('-p:WebView2Bootstrapper=' + [IO.Path]::GetFullPath($WebView2Bootstrapper))
 & $dotnet @arguments
 if ($LASTEXITCODE -ne 0) { throw 'Studio publishing failed.' }
 if (-not $SkipSelfTest) {

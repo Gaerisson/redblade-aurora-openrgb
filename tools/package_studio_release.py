@@ -20,7 +20,7 @@ def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def package(exe, sonix_source, libusb_source, helper_dir, output):
+def package(exe, sonix_source, libusb_source, helper_dir, output, webview2_bootstrapper):
     full, core = validate_full(), validate_core()
     if full['release'] != core['release']:
         raise ValueError('Firmware releases differ')
@@ -36,6 +36,7 @@ def package(exe, sonix_source, libusb_source, helper_dir, output):
         libusb_source: 'fea36f34f9156400209595e300840767ab1a385ede1dc7ee893015aea9c6dbaf',
         helper_dir / 'sonixflasher.exe': '741a87eb5ada23e7b6380d9b07b74fdce0ecc8a9e807a29b8f72415d73deeed6',
         helper_dir / 'libusb-1.0.dll': 'bc18f430b2639c2f63961a51724adb910ac8ed4a045ad2dcfd504e67ea52c460',
+        webview2_bootstrapper: 'cf2f2445fef0c5c14e372045f84998771eeb8bb01d59be4afd00692fa160082e',
     }
     for path, digest in expected.items():
         if not path.is_file() or sha(path) != digest:
@@ -69,10 +70,12 @@ def package(exe, sonix_source, libusb_source, helper_dir, output):
             z.write(path, f'third-party/{label}/{path.name}')
         for name in ('sonixflasher.exe', 'libusb-1.0.dll'):
             z.write(helper_dir / name, 'third-party/helpers/' + name)
+        z.write(webview2_bootstrapper, 'third-party/prerequisites/MicrosoftEdgeWebview2Setup.exe')
         z.writestr('SOURCE-BUNDLE.txt', f'Project commit: {commit}\nSonixFlasher source SHA256: {sha(sonix_source)}\nlibusb source SHA256: {sha(libusb_source)}\n'
                    'SonixFlasherC 3.1.0 tag commit e6ba5db11f703f89fd29a5bc0e56ed1ae42604c3: https://github.com/SonixQMK/SonixFlasherC/releases/tag/3.1.0\n'
                    'libusb 1.0.30: https://github.com/libusb/libusb/releases/tag/v1.0.30\n'
-                   'Rebuild Studio from redblade-plus/app with -p:HelperDirectory=<source bundle>/third-party/helpers. See app/THIRD-PARTY-NOTICES.md.\n')
+                   f'WebView2 bootstrapper SHA256: {sha(webview2_bootstrapper)}\n'
+                   'Rebuild Studio from redblade-plus/app with -p:HelperDirectory=<source bundle>/third-party/helpers and -p:WebView2Bootstrapper=<source bundle>/third-party/prerequisites/MicrosoftEdgeWebview2Setup.exe. See app/THIRD-PARTY-NOTICES.md.\n')
     release_assets = [output / 'RedBladePlus-Studio.exe']
     shutil.copy2(exe, release_assets[0])
     for name in ('redblade-fs-aurora-via.bin', 'redblade-fs-openrgb-core.bin', 'manifest.json', 'manifest-core.json'):
@@ -91,5 +94,6 @@ if __name__ == '__main__':
     p.add_argument('--libusb-source', type=Path, required=True)
     p.add_argument('--helper-dir', type=Path, required=True)
     p.add_argument('--output', type=Path, required=True)
+    p.add_argument('--webview2-bootstrapper', type=Path, default=ROOT.parent.parent / 'work/studio-prerequisites/MicrosoftEdgeWebview2Setup.exe')
     a = p.parse_args()
-    print(json.dumps(package(*(x.resolve() for x in (a.exe, a.sonix_source, a.libusb_source, a.helper_dir, a.output)))))
+    print(json.dumps(package(*(x.resolve() for x in (a.exe, a.sonix_source, a.libusb_source, a.helper_dir, a.output, a.webview2_bootstrapper)))))

@@ -7,7 +7,7 @@ internal sealed record StudioRequest(string Id,string Action,JsonElement Args);
 internal static class StudioBridge
 {
     internal static readonly JsonSerializerOptions Json=new(){PropertyNamingPolicy=JsonNamingPolicy.CamelCase};
-    static readonly HashSet<string> Actions=new(StringComparer.Ordinal){"getState","view","language","setKeys","setKeyColors","maximizeKeyIntensity","undo","redo","setEffectColor","patchProfile","connect","save","preview","control","importProfile","exportProfile","resetProfile","checkUpdates","downloadUpdate","installUpdate","updatePreferences","updateNotice","deferUpdate","setupOpenRgb","testOpenRgb","testLighting","flash","cancelJob","startEffect","updateEffect","stopEffect","openLink"};
+    static readonly HashSet<string> Actions=new(StringComparer.Ordinal){"setStartup","prerequisites","getState","view","language","setKeys","setKeyColors","maximizeKeyIntensity","undo","redo","setEffectColor","patchProfile","connect","save","preview","control","importProfile","exportProfile","resetProfile","checkUpdates","downloadUpdate","installUpdate","updatePreferences","updateNotice","deferUpdate","setupOpenRgb","testOpenRgb","testLighting","flash","cancelJob","startEffect","updateEffect","stopEffect","openLink"};
     internal static StudioRequest Parse(string json)
     {
         if(json.Length>131072)throw new InvalidDataException("Message too large.");

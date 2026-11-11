@@ -10,6 +10,8 @@ internal sealed partial class StudioForm
         switch(request.Action)
         {
             case "getState":StudioBridge.Fields(a);return Snapshot();
+            case "prerequisites":StudioBridge.Fields(a);using(var prerequisites=new PrerequisitesForm(french))prerequisites.ShowDialog(this);return null;
+            case "setStartup":EnsureIdle();StudioBridge.Fields(a,"enabled");if(preview)throw new InvalidOperationException("Windows startup changes are disabled in preview.");StartupIntegration.Set(a.GetProperty("enabled").GetBoolean());return null;
             case "view":StudioBridge.Fields(a,"page");currentPage=StudioBridge.Text(a,"page");if(currentPage is not("keyboard" or "effects" or "functions" or "guide" or "setup"))throw new InvalidDataException("Unknown page.");if(updates!=null)updates.WizardOpen=currentPage is "guide" or "setup";return null;
             case "language":StudioBridge.Fields(a,"language");string language=StudioBridge.Text(a,"language");if(language is not("en" or "fr"))throw new InvalidDataException("Unknown language.");french=language=="fr";return Snapshot();
             case "setKeys":
@@ -41,7 +43,7 @@ internal sealed partial class StudioForm
             case "downloadUpdate":StudioBridge.Fields(a);if(updates!=null)await updates.DownloadSoftware();return null;
             case "installUpdate":StudioBridge.Fields(a);if(updates!=null)await updates.InstallSoftware();return null;
             case "updatePreferences":SetPreferences(a);return null;
-            case "updateNotice":StudioBridge.Fields(a,"open");if(updates!=null)updates.NoticeOpen=a.GetProperty("open").GetBoolean();return null;
+            case "updateNotice":StudioBridge.Fields(a,"open");bool noticeOpen=a.GetProperty("open").GetBoolean();if(updates!=null)updates.NoticeOpen=noticeOpen;if(noticeOpen&&Visible&&WindowState!=FormWindowState.Minimized){Activate();web.Focus();}return null;
             case "deferUpdate":StudioBridge.Fields(a);if(updates!=null)updates.DeferUntilRestart();return null;
             case "setupOpenRgb":case "testOpenRgb":case "testLighting":
                 StudioBridge.Fields(a);var setupOperation=request.Action switch{"setupOpenRgb"=>HardwareOperation.SetupOpenRgb,"testOpenRgb"=>HardwareOperation.TestOpenRgb,_=>HardwareOperation.TestLighting};

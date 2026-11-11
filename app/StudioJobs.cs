@@ -23,6 +23,11 @@ internal sealed partial class StudioForm
     {
         if(preview)throw new InvalidOperationException("Hardware disabled in preview.");
         if(busy)throw new InvalidOperationException("A keyboard operation is already active.");
+        if(request.Operation is HardwareOperation.Effects or HardwareOperation.SetupOpenRgb or HardwareOperation.TestLighting && !PrerequisitesForm.ComponentsReadyForOpenRgb())
+        {
+            using var prerequisites=new PrerequisitesForm(french);prerequisites.ShowDialog(this);
+            if(!PrerequisitesForm.ComponentsReadyForOpenRgb())throw new IOException(T("Install Visual C++ x64 in Prerequisites before starting OpenRGB.","Installez Visual C++ x64 dans les prérequis avant de démarrer OpenRGB."));
+        }
         busy=true;effectActive=isEffect;lastError="";job=new();if(updates!=null)updates.HardwareBusy=true;SendState();
         try
         {

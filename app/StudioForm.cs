@@ -93,7 +93,7 @@ internal sealed partial class StudioForm:Form
     object Snapshot()=>new
     {
         app=new{version=UpdateSession.CurrentVersion.ToString(),language=french?"fr":"en",dirty,busy=Transitioning||busy&&!effectActive||updates?.Installing==true,preview,error=StudioText.Localize(lastError,french,true)},keyboard=new{status=connection,firmware=firmware.StartsWith("Stock / legacy",StringComparison.Ordinal)?T("Stock / legacy (version unavailable)","D’origine / ancien (version indisponible)"):firmware,version=installedVersion?.ToString()},
-        setup=new{openRgbStatus,redbladeFound,sdkPort},
+        setup=new{openRgbStatus,redbladeFound,sdkPort,startWithWindows=!preview&&StartupIntegration.Enabled,hardwareSessionReady=!preview&&(HardwareBroker.Ready||!HardwareJobs.RequiresElevation())},
         firmware=new{bundledVersion=BundledVersion.ToString(),latestVersion=updates?.Firmware.GetValueOrDefault("full")?.Version.ToString(),recommendedSource=updates?.Firmware.GetValueOrDefault("full")?.Version>=BundledVersion?"latest":"bundled",edition="full"},
         capabilities=new{studio=connection=="connected",extendedOptions=preview||installedVersion==null||installedVersion>=new Version(0,10,0),reactiveStyles=preview||installedVersion==null||installedVersion>=new Version(0,11,0),extendedReaction=preview||installedVersion==null||installedVersion>=new Version(0,12,0),softwareEffects=!preview},
         editor=new{history.CanUndo,history.CanRedo},

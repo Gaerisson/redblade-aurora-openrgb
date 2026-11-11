@@ -84,6 +84,9 @@ internal static class SelfTests
             Reject(()=>HardwareJobs.Folder(jobId,jobId),"worker rejects a relative job directory");
             var layout = KeyboardLayout.Load();
             foreach(string resource in new[]{"shortcuts.png","shortcuts.fr.png"})Check(Embedded.Read(resource).AsSpan(0,8).SequenceEqual(new byte[]{137,80,78,71,13,10,26,10}),"shortcut PNG in primary assembly: "+resource);
+            byte[] bootstrapper=Embedded.Read("webview2-bootstrapper.exe");
+            string bootstrapperHash=Encoding.ASCII.GetString(Embedded.Read("webview2-bootstrapper.sha256")).Trim();
+            Check(bootstrapper.Length==1897688&&bootstrapper[0]=='M'&&bootstrapper[1]=='Z'&&Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bootstrapper)).Equals(bootstrapperHash,StringComparison.OrdinalIgnoreCase),"pinned WebView2 prerequisite is embedded and intact");
             Check(layout.Length == 109 && layout.Select(k => k.Led).Distinct().Count() == 109, "109 unique physical keys");
             Check(layout.Single(k => k.Led == 102).Label == "Fn", "physical Fn");
             Check(layout.Count(k => k.Kind == "media") == 4, "four media keys");
@@ -91,7 +94,7 @@ internal static class SelfTests
             Check(KeyboardLayout.Legend(layout[43],true)=="Z"&&KeyboardLayout.Legend(layout[43],false)=="W","independent AZERTY/QWERTY legends preserve physical forward key");
             Check(FirmwareImage.Load("full").Bytes.Length==65536&&FirmwareImage.Load("core").Bytes.Length==65536,"bundled firmware SHA/identity/length");
             var helpers=FirmwareImage.ValidateHelpers();Check(helpers.Helper.Length>0&&helpers.Usb.Length>0,"bundled fixed flasher/DLL hashes");
-            await UpdateTests.Run();SoftwareUpdateTests.Run();HardwareDiagnostics.Test();StudioBridgeTests.Run();StudioTextTests.Run();await EffectsTests.RunAsync();await ReconnectTests.Run();await IdentityTests.Run();await ViaBackupTests.Run();await OpenRgbSetupTests.RunAsync();EditorTests.Run();
+            await UpdateTests.Run();SoftwareUpdateTests.Run();HardwareDiagnostics.Test();HardwareBrokerTests.Run();StudioBridgeTests.Run();StudioTextTests.Run();await EffectsTests.RunAsync();await ReconnectTests.Run();await IdentityTests.Run();await ViaBackupTests.Run();await OpenRgbSetupTests.RunAsync();EditorTests.Run();
             var report = $"PASS {assertions} hardware-free assertions plus update discovery/download/install regression suites. No HID, service or UAC operations were used; update launches were simulated.";
             Console.WriteLine(report); File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "self-test-results.txt"), report + Environment.NewLine); return 0;
         }

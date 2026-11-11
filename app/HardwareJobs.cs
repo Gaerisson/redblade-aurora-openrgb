@@ -82,10 +82,17 @@ internal static class HardwareJobs
         request.RequestingUserSid=WindowsIdentity.GetCurrent().User?.Value??throw new IOException("Cannot identify requesting user.");
         Validate(request);var id=Guid.NewGuid().ToString("N");string directory=Folder(id);Directory.CreateDirectory(directory);
         File.WriteAllBytes(Path.Combine(directory,"request.json"),JsonSerializer.SerializeToUtf8Bytes(request,Json));
-        var start=new ProcessStartInfo(Environment.ProcessPath??throw new IOException("Cannot locate Studio executable.")){UseShellExecute=true,Verb="runas",WindowStyle=ProcessWindowStyle.Hidden};
-        start.ArgumentList.Add("--worker");start.ArgumentList.Add(id);start.ArgumentList.Add(directory);
-        try{return(id,Process.Start(start)??throw new IOException("Worker did not start."));}
+        try
+        {
+            // Both normal and already-elevated windows use an owner-bound broker.
+            return(id,HardwareBroker.Submit(id));
+        }
         catch{File.Delete(Path.Combine(directory,"request.json"));Directory.Delete(directory);throw;}
+    }
+    internal static bool RequiresElevation()
+    {
+        using var identity=WindowsIdentity.GetCurrent();
+        return !new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator);
     }
     internal static void Validate(JobRequest request)
     {
@@ -127,7 +134,7 @@ internal static class HardwareJobs
         File.WriteAllBytes(temporary,JsonSerializer.SerializeToUtf8Bytes(result,Json));
         if(File.Exists(target))File.Replace(temporary,target,null);else File.Move(temporary,target);
     }
-    internal static async Task<int> RunWorker(string id,string inputDirectoryPath)
+    internal static async Task<int> RunWorker(string id,string inputDirectoryPath,CancellationToken ownerLifetime=default,string? expectedSid=null)
     {
         string directory;
         try{directory=Folder(id,inputDirectoryPath);if(!Directory.Exists(directory))return 2;}catch{return 2;}
@@ -140,6 +147,8 @@ internal static class HardwareJobs
             var path=Path.Combine(inputDirectory,"request.json");if((File.GetAttributes(path)&FileAttributes.ReparsePoint)!=0)throw new InvalidDataException("Linked request refused.");
             var bytes=BoundedFile.Read(path,131072);
             var request=JsonSerializer.Deserialize<JobRequest>(bytes,Json)??throw new InvalidDataException("Empty job.");Validate(request);
+            if(expectedSid!=null&&!string.Equals(expectedSid,request.RequestingUserSid,StringComparison.OrdinalIgnoreCase))throw new InvalidDataException("Job user differs from broker session owner.");
+            ownerLifetime.ThrowIfCancellationRequested();
             protectedJob=new ProtectedStaging(id,request.RequestingUserSid);directory=protectedJob.Path;
             using var singleUse=new FileStream(Path.Combine(directory,"started"),FileMode.CreateNew,FileAccess.Write,FileShare.None);
             object progressLock=new();
@@ -147,7 +156,7 @@ internal static class HardwareJobs
             FirmwareImage? firmware=request.Operation==HardwareOperation.Flash?(request.FirmwareBase64.Length==0?FirmwareImage.Load(request.Edition):FirmwareImage.Validate(Convert.FromBase64String(request.FirmwareBase64),Convert.FromBase64String(request.FirmwareManifestBase64),request.Edition,request.FirmwareSha256)):null;
             if(request.Operation is HardwareOperation.SetupOpenRgb or HardwareOperation.TestOpenRgb)
             {
-                using var sdkCancel=new CancellationTokenSource(TimeSpan.FromMinutes(8));result.Stage="openrgb";Progress("Checking OpenRGB and the RedBlade…");
+                using var sdkCancel=CancellationTokenSource.CreateLinkedTokenSource(ownerLifetime);sdkCancel.CancelAfter(TimeSpan.FromMinutes(8));result.Stage="openrgb";Progress("Checking OpenRGB and the RedBlade…");
                 int found=await FindRunningKeyboard(sdkCancel.Token);
                 if(found!=0){result.RedbladeFound=true;result.SdkPort=found;result.OpenRgbStatus="ready";result.Message=$"RedBlade detected in OpenRGB on port {found}.";result.Success=true;return 0;}
                 if(request.Operation==HardwareOperation.TestOpenRgb){result.OpenRgbStatus="not_detected";throw new IOException("No OpenRGB server detected the RedBlade with 109 LEDs. Run OpenRGB setup and check the keyboard connection.");}
@@ -157,7 +166,7 @@ internal static class HardwareJobs
                 result.Success=true;return 0;
             }
             Progress("Pausing current RGB clients for this operation…");using var rgb=new RgbSession();
-            using var cancel=new CancellationTokenSource(request.Operation==HardwareOperation.Effects?TimeSpan.FromHours(12):request.Operation==HardwareOperation.Flash?TimeSpan.FromMinutes(10):TimeSpan.FromMinutes(3));
+            using var cancel=CancellationTokenSource.CreateLinkedTokenSource(ownerLifetime);cancel.CancelAfter(request.Operation==HardwareOperation.Effects?TimeSpan.FromHours(12):request.Operation==HardwareOperation.Flash?TimeSpan.FromMinutes(10):TimeSpan.FromMinutes(3));
             await JobSafety.WithCleanup(async()=>
             {
                 int selectedPort=request.Operation is HardwareOperation.Effects or HardwareOperation.TestLighting?await FindRunningKeyboard(cancel.Token):0;
@@ -632,9 +641,16 @@ internal sealed class RgbSession:IDisposable
     internal Task EnsureSdkStopped(CancellationToken ct)=>EnsurePortStopped(port,ct);
     static async Task EnsurePortStopped(int selectedPort,CancellationToken ct)
     {
-        using var probe=CancellationTokenSource.CreateLinkedTokenSource(ct);probe.CancelAfter(1000);using var client=new TcpClient();
-        try{await client.ConnectAsync("127.0.0.1",selectedPort,probe.Token);throw new IOException($"Another OpenRGB SDK provider is still active on port {selectedPort}; exclusive keyboard control refused.");}
-        catch(OperationCanceledException) when(!ct.IsCancellationRequested){}catch(SocketException){}
+        // A stopped GUI/service can briefly retain its listener while child threads
+        // exit. Allow it to settle; never terminate an unknown provider to take a port.
+        for(int attempt=0;attempt<12;attempt++)
+        {
+            ct.ThrowIfCancellationRequested();using var probe=CancellationTokenSource.CreateLinkedTokenSource(ct);probe.CancelAfter(500);using var client=new TcpClient();
+            try{await client.ConnectAsync("127.0.0.1",selectedPort,probe.Token);}
+            catch(OperationCanceledException) when(!ct.IsCancellationRequested){return;}catch(SocketException){return;}
+            await Task.Delay(250,ct);
+        }
+        throw new IOException($"Another OpenRGB SDK provider is still active on port {selectedPort}; exclusive keyboard control refused.");
     }
     internal async Task StartManagedForSetup(string sid,int selectedPort,Action<string> progress,CancellationToken ct)
     {

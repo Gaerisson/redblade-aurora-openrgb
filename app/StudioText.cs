@@ -5,6 +5,9 @@ internal static class StudioText
 {
     static readonly Dictionary<string,string> French = new(StringComparer.Ordinal)
     {
+        ["OpenRGB devices changed; checking the keyboard again..."]="Les périphériques OpenRGB ont changé ; nouvelle vérification du clavier…",
+        ["OpenRGB keyboard rediscovered; effects resumed."]="Clavier OpenRGB retrouvé ; reprise de l’animation.",
+        ["OpenRGB device list keeps changing; effects stopped safely."]="La liste des périphériques OpenRGB change sans cesse ; l’effet a été arrêté.",
         ["Preparing hardware operation…"]="Préparation de l’opération sur le clavier…",
         ["Pausing current RGB clients for this operation…"]="Mise en pause des applications RVB pendant l’opération…",
         ["Starting OpenRGB effects…"]="Démarrage des effets OpenRGB…",

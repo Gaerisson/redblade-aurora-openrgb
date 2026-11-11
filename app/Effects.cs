@@ -95,6 +95,11 @@ internal static class EffectRenderer
 }
 
 // OpenRGB SDK protocol 0–3: https://gitlab.com/CalcProgrammer1/OpenRGB/-/blob/master/Documentation/OpenRGBSDK.md
+internal sealed class OpenRgbDeviceListChangedException : IOException
+{
+    internal OpenRgbDeviceListChangedException():base("OpenRGB device list changed.") {}
+}
+
 internal sealed class OpenRgbSdk : IDisposable
 {
     TcpClient client = new(); NetworkStream stream = null!; int version; const int MaxPacket=1024*1024;
@@ -162,7 +167,7 @@ internal sealed class OpenRgbSdk : IDisposable
     }
     internal async Task WatchAsync(CancellationToken ct)
     {
-        while(true) { var p=await ReadAsync(ct); if(p.Id==100) throw new IOException("OpenRGB device list changed; streaming stopped."); }
+        while(true) { var p=await ReadAsync(ct); if(p.Id==100) throw new OpenRgbDeviceListChangedException(); }
     }
     async Task<byte[]> ReadExpectedAsync(uint device,uint id,CancellationToken ct,Action? deviceListChanged=null)
     {
@@ -204,23 +209,40 @@ internal static class OpenRgbEffects
     internal static async Task RunAsync(int port,Func<EffectSettings> settingsProvider,IProgress<string>? progress,CancellationToken ct)
     {
         if(port is <1 or >65535) throw new ArgumentOutOfRangeException(nameof(port));
-        var layout=KeyboardLayout.Load(); settingsProvider().Validate(); using var sdk=new OpenRgbSdk(); await sdk.ConnectAsync(port,ct); uint device=await sdk.FindKeyboardAsync(ct); await sdk.DirectAsync(device,ct);
-        using var watcherCts=new CancellationTokenSource(); var watch=sdk.WatchAsync(watcherCts.Token); var clock=Stopwatch.StartNew(); using var activity=new KeyboardActivity(() => clock.ElapsedMilliseconds); bool safe=true;
-        try
+        var layout=KeyboardLayout.Load(); settingsProvider().Validate(); var clock=Stopwatch.StartNew();
+        using var activity=new KeyboardActivity(() => clock.ElapsedMilliseconds);
+        int rediscoveries=0;long lastChange=-30000;
+        while(true)
         {
-            progress?.Report("OpenRGB connected");
-            while(true)
+            ct.ThrowIfCancellationRequested();
+            using var sdk=new OpenRgbSdk(); await sdk.ConnectAsync(port,ct); uint device=await sdk.FindKeyboardAsync(ct); await sdk.DirectAsync(device,ct);
+            using var watcherCts=new CancellationTokenSource(); var watch=sdk.WatchAsync(watcherCts.Token); bool safe=true;
+            try
             {
-                ct.ThrowIfCancellationRequested(); if(watch.IsCompleted) { safe=false; await watch; throw new IOException("OpenRGB disconnected."); }
-                var current=settingsProvider(); activity.SetEnabled(current.ReactiveEnabled || current.Preset=="reactive");
-                await sdk.FrameAsync(device,EffectRenderer.Render(current,clock.ElapsedMilliseconds,layout,activity.Events),ct);
-                var delay=Task.Delay(34,ct); if(await Task.WhenAny(delay,watch)==watch) { safe=false; await watch; throw new IOException("OpenRGB disconnected."); } await delay;
+                progress?.Report(rediscoveries==0?"OpenRGB connected":"OpenRGB keyboard rediscovered; effects resumed.");
+                while(true)
+                {
+                    ct.ThrowIfCancellationRequested(); if(watch.IsCompleted) { safe=false; await watch; throw new IOException("OpenRGB disconnected."); }
+                    var current=settingsProvider(); activity.SetEnabled(current.ReactiveEnabled || current.Preset=="reactive");
+                    await sdk.FrameAsync(device,EffectRenderer.Render(current,clock.ElapsedMilliseconds,layout,activity.Events),ct);
+                    var delay=Task.Delay(34,ct); if(await Task.WhenAny(delay,watch)==watch) { safe=false; await watch; throw new IOException("OpenRGB disconnected."); } await delay;
+                }
             }
-        }
-        finally
-        {
-            if(safe && !watch.IsCompleted) { try { using var timeout=new CancellationTokenSource(500); await sdk.FrameAsync(device,new byte[327],timeout.Token); } catch(Exception e) when(e is IOException or SocketException or OperationCanceledException or ObjectDisposedException) { } }
-            watcherCts.Cancel(); try { await watch; } catch(Exception e) when(e is IOException or SocketException or OperationCanceledException or ObjectDisposedException) { }
+            catch(OpenRgbDeviceListChangedException)
+            {
+                safe=false;
+                // Never reuse a controller index after the server changes its list.
+                // Reconnect and revalidate identity/count before sending another frame.
+                if(clock.ElapsedMilliseconds-lastChange>30000)rediscoveries=0;
+                lastChange=clock.ElapsedMilliseconds;
+                if(++rediscoveries>5)throw new IOException("OpenRGB device list keeps changing; effects stopped safely.");
+                progress?.Report("OpenRGB devices changed; checking the keyboard again...");
+            }
+            finally
+            {
+                if(safe && !watch.IsCompleted) { try { using var timeout=new CancellationTokenSource(500); await sdk.FrameAsync(device,new byte[327],timeout.Token); } catch(Exception e) when(e is IOException or SocketException or OperationCanceledException or ObjectDisposedException) { } }
+                watcherCts.Cancel(); try { await watch; } catch(Exception e) when(e is IOException or SocketException or OperationCanceledException or ObjectDisposedException) { }
+            }
         }
     }
 }

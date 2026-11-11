@@ -8,7 +8,7 @@
     <AssemblyName>RedBladePlus-Studio</AssemblyName>
     <RootNamespace>RedBladePlus.Studio</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Version>0.12.0</Version>
+    <Version>0.12.1</Version>
     <ApplicationIcon>Resources/redblade.ico</ApplicationIcon>
     <PublishSingleFile>true</PublishSingleFile>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
@@ -17,10 +17,12 @@
     <DebugType>embedded</DebugType>
     <PathMap>$(MSBuildProjectDirectory)=/_/studio</PathMap>
     <HelperDirectory Condition="'$(HelperDirectory)' == ''">$(MSBuildProjectDirectory)/../../../work/sonixflasher-3.1.0</HelperDirectory>
+    <WebView2Bootstrapper Condition="'$(WebView2Bootstrapper)' == ''">$(MSBuildProjectDirectory)/../../../work/studio-prerequisites/MicrosoftEdgeWebview2Setup.exe</WebView2Bootstrapper>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4314.35" />
     <EmbeddedResource Include="Resources/keyboard-layout.json" LogicalName="layout.json" />
+    <EmbeddedResource Include="$(WebView2Bootstrapper)" LogicalName="webview2-bootstrapper.exe" />
     <EmbeddedResource Include="../assets/redblade-plus.png" LogicalName="brand.png" />
     <EmbeddedResource Include="Web/index.html" LogicalName="web.index.html" />
     <EmbeddedResource Include="Web/styles.css" LogicalName="web.styles.css" />
@@ -38,6 +40,18 @@
     <EmbeddedResource Include="$(HelperDirectory)/sonixflasher.exe" LogicalName="sonixflasher.exe" Condition="Exists('$(HelperDirectory)/sonixflasher.exe')" />
     <EmbeddedResource Include="$(HelperDirectory)/libusb-1.0.dll" LogicalName="libusb-1.0.dll" Condition="Exists('$(HelperDirectory)/libusb-1.0.dll')" />
   </ItemGroup>
+  <Target Name="VerifyWebView2Bootstrapper" BeforeTargets="PrepareForBuild">
+    <Error Condition="!Exists('$(WebView2Bootstrapper)')" Text="Pinned WebView2 bootstrapper is required: $(WebView2Bootstrapper)" />
+    <GetFileHash Files="$(WebView2Bootstrapper)" Algorithm="SHA256">
+      <Output TaskParameter="Items" ItemName="_WebView2BootstrapperHash" />
+    </GetFileHash>
+    <Error Condition="'%(_WebView2BootstrapperHash.FileHash)' != 'CF2F2445FEF0C5C14E372045F84998771EEB8BB01D59BE4AFD00692FA160082E'" Text="WebView2 bootstrapper SHA-256 mismatch." />
+    <MakeDir Directories="$(IntermediateOutputPath)" />
+    <WriteLinesToFile File="$(IntermediateOutputPath)webview2-bootstrapper.sha256" Lines="CF2F2445FEF0C5C14E372045F84998771EEB8BB01D59BE4AFD00692FA160082E" Overwrite="true" WriteOnlyWhenDifferent="true" />
+    <ItemGroup>
+      <EmbeddedResource Include="$(IntermediateOutputPath)webview2-bootstrapper.sha256" LogicalName="webview2-bootstrapper.sha256" />
+    </ItemGroup>
+  </Target>
   <Target Name="RemoveUnusedWebView2Wpf" BeforeTargets="ResolveAssemblyReferences">
     <ItemGroup>
       <Reference Remove="@(Reference)" Condition="'%(Reference.FileName)' == 'Microsoft.Web.WebView2.Wpf'" />

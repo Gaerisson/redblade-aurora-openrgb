@@ -119,6 +119,40 @@ internal static class EffectsTests
             try { await run; throw new Exception("cancellation ignored"); } catch(OperationCanceledException) { }
         }
         finally { server.Stop(); }
+        // A late rescan must trigger a new connection and verified selection,
+        // never reuse the previous controller index blindly.
+        var rescan=new TcpListener(IPAddress.Loopback,0);rescan.Start();
+        try
+        {
+            using var timeout=new CancellationTokenSource(15000);
+            var run=OpenRgbEffects.RunAsync(((IPEndPoint)rescan.LocalEndpoint).Port,()=>s,null,timeout.Token);
+            using var first=await rescan.AcceptTcpClientAsync(timeout.Token);var stream=first.GetStream();
+            await ReadPacket(stream);await Reply(stream,0,40,new byte[]{3,0,0,0});await ReadPacket(stream);await ReadPacket(stream);await Reply(stream,0,0,new byte[]{1,0,0,0});await ReadPacket(stream);await Reply(stream,0,1,ControllerData());await ReadPacket(stream);await ReadPacket(stream);
+            await Reply(stream,0,100,Array.Empty<byte>());
+            using var second=await rescan.AcceptTcpClientAsync(timeout.Token);var newStream=second.GetStream();
+            await ReadPacket(newStream);await Reply(newStream,0,40,new byte[]{3,0,0,0});await ReadPacket(newStream);await ReadPacket(newStream);await Reply(newStream,0,0,new byte[]{1,0,0,0});await ReadPacket(newStream);await Reply(newStream,0,1,ControllerData());
+            Check((await ReadPacket(newStream)).id==1100,"direct mode restored after rediscovery");
+            Check((await ReadPacket(newStream)).id==1050,"frames resume after verified rediscovery");
+            timeout.Cancel();try{await run;throw new Exception("rescan cancellation ignored");}catch(OperationCanceledException){}
+        }
+        finally{rescan.Stop();}
+        var removed=new TcpListener(IPAddress.Loopback,0);removed.Start();
+        try
+        {
+            using var timeout=new CancellationTokenSource(15000);
+            var run=OpenRgbEffects.RunAsync(((IPEndPoint)removed.LocalEndpoint).Port,()=>s,null,timeout.Token);
+            using var first=await removed.AcceptTcpClientAsync(timeout.Token);var stream=first.GetStream();
+            await ReadPacket(stream);await Reply(stream,0,40,new byte[]{3,0,0,0});await ReadPacket(stream);await ReadPacket(stream);await Reply(stream,0,0,new byte[]{1,0,0,0});await ReadPacket(stream);await Reply(stream,0,1,ControllerData());await ReadPacket(stream);await ReadPacket(stream);await Reply(stream,0,100,Array.Empty<byte>());
+            using var second=await removed.AcceptTcpClientAsync(timeout.Token);var newStream=second.GetStream();
+            await ReadPacket(newStream);await Reply(newStream,0,40,new byte[]{3,0,0,0});await ReadPacket(newStream);
+            while(!run.IsCompleted)
+            {
+                var read=ReadPacket(newStream);if(await Task.WhenAny(read,run)==run)break;
+                Check((await read).id==0,"removed keyboard cannot receive frames");await Reply(newStream,0,0,new byte[4]);
+            }
+            bool missing=false;try{await run;}catch(TimeoutException){missing=true;}Check(missing,"removed keyboard stops safely after rediscovery timeout");
+        }
+        finally{removed.Stop();}
         var duplicate=new TcpListener(IPAddress.Loopback,0);duplicate.Start();
         try
         {

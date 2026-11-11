@@ -122,10 +122,18 @@ jobs:
           Invoke-WebRequest https://github.com/SonixQMK/SonixFlasherC/releases/download/3.1.0/sonixflasher-windows-x86_64.zip -OutFile $archive
           if ((Get-FileHash $archive -Algorithm SHA256).Hash -ne '2958CA8DE3021BF96D5C900B6BB5021A2D4C1A528D8DA2516598FD067BBF0619') { throw 'Unexpected helper archive' }
           Expand-Archive $archive (Join-Path $env:RUNNER_TEMP 'sonixflasher')
+      - name: Fetch and verify pinned Microsoft WebView2 bootstrapper
+        shell: pwsh
+        run: |
+          $bootstrapper = Join-Path $env:RUNNER_TEMP 'MicrosoftEdgeWebview2Setup.exe'
+          Invoke-WebRequest 'https://msedge.sf.dl.delivery.mp.microsoft.com/filestreamingservice/files/068be74d-a831-494f-8f57-c173756d5a33/MicrosoftEdgeWebview2Setup.exe' -OutFile $bootstrapper
+          if ((Get-Item $bootstrapper).Length -ne 1897688 -or (Get-FileHash $bootstrapper -Algorithm SHA256).Hash -ne 'CF2F2445FEF0C5C14E372045F84998771EEB8BB01D59BE4AFD00692FA160082E') { throw 'Unexpected WebView2 bootstrapper' }
+          $signature = Get-AuthenticodeSignature -FilePath $bootstrapper
+          if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -notmatch '(^|,\s*)O=Microsoft Corporation(,|$)') { throw 'WebView2 bootstrapper signature is not valid Microsoft Authenticode' }
       - name: Publish and run hardware-free Studio self-test
         shell: pwsh
         run: |
-          ./app/build.ps1 -HelperDirectory (Join-Path $env:RUNNER_TEMP 'sonixflasher')
+          ./app/build.ps1 -HelperDirectory (Join-Path $env:RUNNER_TEMP 'sonixflasher') -WebView2Bootstrapper (Join-Path $env:RUNNER_TEMP 'MicrosoftEdgeWebview2Setup.exe')
           if ($LASTEXITCODE) { throw 'Studio build or self-test failed' }
 
       - name: Require Microsoft Edge WebView2 Runtime

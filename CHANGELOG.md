@@ -2,6 +2,14 @@
 
 All new release notes are written in English. Version 0.x is experimental; hardware validation is recorded separately from build and host-test results.
 
+## 0.12.1 — Studio software patch
+
+- The normal-user GUI can optionally start with Windows via the current user’s HKCU Run setting, off by default. Startup does not take RGB control or request elevation. The first hardware operation may request UAC; an owner-lifetime broker reuses access for subsequent operations in the Studio session.
+- The native prerequisites window checks WebView2, Visual C++ x64 and bundled firmware, flasher and layout. The embedded WebView2 bootstrapper obtains the full runtime from Microsoft; Visual C++ is also downloaded from Microsoft. First-time installation requires internet. OpenRGB 1.1 is downloaded and verified from its official source as needed, not bundled; Setup detects the custom 109-LED VialRGB controller.
+- Software effects rediscover the controller after SDK device-list changes and resume only with strict identity checks. Playback status and errors are visible in Effects. The update notice appears within the visible idle app, with installation guidance; Later and Escape defer automatic installation until the next launch.
+- Software-only update: Full/Core firmware and BINs remain 0.12.0; no reflash is necessary. The release has ten assets: EXE, ZIP, two firmware BINs, two manifests, SHA256SUMS and three source archives. Benchmarks and images remain in the repository and source packages.
+- Managed OpenRGB 1.1 twinkle animation was confirmed on the preparation keyboard. Stop/restore and a second wave job succeeded with the same broker and no second UAC prompt. Terminating Studio cancelled the effect, exited the broker and restored OpenRGB. Clean-PC installation and physical Core acceptance remain unverified; Full 0.12.0 hardware results are described below.
+
 ## 0.12.0 preview — Reactive lighting and contextual helpers
 
 - New bilingual Setup page guides identification, Full/Core flashing, verified OpenRGB installation, 109-LED SDK detection and a six-second lighting test. The pinned portable OpenRGB 1.1 download is hash-checked, bounded and installed with protected permissions. Existing RGB applications are restored; a separate local SDK port is reported when an existing server cannot expose the keyboard.

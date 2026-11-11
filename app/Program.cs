@@ -6,6 +6,7 @@ internal static class Program
     {
         if (args.SequenceEqual(new[] { "--self-test" })) return SelfTests.Run().GetAwaiter().GetResult();
         if(args.SequenceEqual(new[]{"--diagnose-rgb"}))return HardwareDiagnostics.Run();
+        if(args.Length==6&&args[0]=="--broker")return HardwareBroker.Run(args[1],args[2],args[3],args[4],args[5]).GetAwaiter().GetResult();
         if (args.Length == 3 && args[0] == "--worker") return HardwareJobs.RunWorker(args[1],args[2]).GetAwaiter().GetResult();
         if(args.Length==4&&args[0]=="--finish-update")
         {
@@ -33,6 +34,11 @@ internal static class Program
         Application.ThreadException+=(_,e)=>Diagnostics.UiError(e.Exception);
         try
         {
+            if(!PrerequisitesForm.RuntimeAvailable())
+            {
+                using var prerequisites=new PrerequisitesForm();prerequisites.ShowDialog();
+                if(!PrerequisitesForm.RuntimeAvailable())return 0;
+            }
             using var form=new StudioForm(preview:false);
             using var updates=new UpdateSession(form);
             form.AttachUpdates(updates);
