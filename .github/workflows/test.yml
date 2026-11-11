@@ -119,7 +119,7 @@ jobs:
       - name: Require Microsoft Edge WebView2 Runtime
         shell: pwsh
         run: |
-          $paths = @('HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F1E7E32D-4B76-4B0B-9CE8-DB97D23C9E88}', 'HKCU:\SOFTWARE\Microsoft\EdgeUpdate\Clients\{F1E7E32D-4B76-4B0B-9CE8-DB97D23C9E88}')
+          $paths = @('HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}', 'HKCU:\SOFTWARE\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}')
           $runtimes = @($paths | ForEach-Object { Get-ItemProperty $_ -ErrorAction SilentlyContinue } | Where-Object { $_.pv -and $_.pv -ne '0.0.0.0' })
           if ($runtimes.Count -eq 0) { throw 'WebView2 Runtime is required for the UI self-test' }
       - name: Exercise Studio interface interactions
