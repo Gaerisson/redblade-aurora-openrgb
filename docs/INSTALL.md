@@ -1,6 +1,6 @@
 # Installation & Technical Reference
 
-**Studio and firmware 0.12 preview:** Start with Studio's **Setup** page for identification, guided flashing, OpenRGB preparation and LED tests. Full/Core 0.12 are build/host-tested; physical 0.12 acceptance is pending. Previous physical checks concern Full 0.11, not this release. Studio requires Microsoft Edge WebView2 Runtime. See [Studio](../app/README.md) and the [audit](AUDIT.md).
+**Studio and firmware 0.12 preview:** Start with Studio's **Setup** page for identification, guided flashing, OpenRGB preparation and LED tests. Full/Core are build/host-tested. Full 0.12 was flashed and restored with complete verification; the owner confirmed typing, numpad, Fn lighting during Full Off and Aurora. Core and first-time managed OpenRGB installation remain physically unverified. Studio requires Microsoft Edge WebView2 Runtime. See [Studio](../app/README.md) and the [audit](AUDIT.md).
 
 **English** · [Français](INSTALL.fr.md) · [Project](../README.md) · [Shortcuts](SHORTCUTS.md)
 
