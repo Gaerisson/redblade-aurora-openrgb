@@ -10,4 +10,7 @@ extern unsigned responses, eeprom_writes, keyboard_reports, bootloader_calls, ke
 extern uint8_t mouse_buttons;
 extern bool indicator_pin_high;
 extern unsigned mouse_downs,mouse_reports;
+extern unsigned mouse_moves;
+extern int mouse_x_total;
+extern int8_t mouse_last_x;
 bool via_command_kb(uint8_t *data, uint8_t length);

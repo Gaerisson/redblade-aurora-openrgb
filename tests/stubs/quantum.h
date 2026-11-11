@@ -32,7 +32,9 @@ void gpio_write_pin(uint32_t pin,bool high);
 #define KC_MPLY 0xAE
 #define MOD_MASK_SHIFT 0x22
 #define MOD_MASK_GUI 0x88
-#include "../../firmware/aurora_via/config.h"
+#ifndef REDBLADE_VERSION_MAJOR
+#    include "../../firmware/aurora_via/config.h"
+#endif
 #include "../upstream/color.h"
 typedef struct { uint8_t col, row; } keypos_t;
 typedef struct { bool num_lock, caps_lock, scroll_lock; } led_t;

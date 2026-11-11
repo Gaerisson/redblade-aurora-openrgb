@@ -4,7 +4,7 @@
 
 Per-key lighting, onboard profiles and practical shortcuts for the **Designed by GG Red Blade Full Size ISO**. RedBlade+ Studio brings the keyboard, lighting and setup together in a portable Windows x64 application.
 
-[Download Studio 0.12.1 for Windows (EXE)](https://github.com/Gaerisson/redblade-aurora-openrgb/releases/tag/v0.12.1) · [Installation](docs/INSTALL.md) · [Shortcuts](docs/SHORTCUTS.md) · [Studio guide](app/README.md) · [Changelog](CHANGELOG.md)
+[Download Studio 0.13.0 for Windows (EXE)](https://github.com/Gaerisson/redblade-aurora-openrgb/releases/tag/v0.13.0) · [Installation](docs/INSTALL.md) · [Shortcuts](docs/SHORTCUTS.md) · [Studio guide](app/README.md) · [Changelog](CHANGELOG.md)
 
 <p align="center"><img src="docs/assets/studio-keyboard.png" alt="RedBlade+ Studio Color Lab keyboard editor" width="900"></p>
 
@@ -49,11 +49,11 @@ Close VIA when using RGB applications: they share the keyboard's Raw HID interfa
 
 ## Updates and validation
 
-Studio 0.12.1 is a software-only update: Full and Core firmware remain 0.12.0, their BINs are unchanged, and no reflash is needed. Setup offers optional start with Windows for the current user. The first hardware operation may request UAC once; subsequent operations reuse access during the Studio session. The native prerequisites window checks WebView2, Visual C++ x64 and bundled resources; first-time Microsoft runtime installation requires internet.
+Studio 0.13 includes Full 0.13 and the unchanged Core 0.12.0 firmware. Full 0.13 adds synchronized Turbo indicators, middle-click Turbo (Fn + T then Mute) and optional Anti-AFK (Fn + I). Anti-AFK alternates a small mouse movement every 30 seconds and stops on keyboard activity, Esc, Fn + I, reset, suspension or another helper. It shares the Auto-W module switch. New factory Turbo rate is 60/s; saved profiles keep their rate. Setup offers optional start with Windows for the current user. The first hardware operation may request UAC once; subsequent operations reuse access during the Studio session. The native prerequisites window checks WebView2, Visual C++ x64 and bundled resources; first-time Microsoft runtime installation requires internet.
 
 Studio can check official GitHub releases and offer a verified software update. The update notice is shown when Studio is visible and idle, without interrupting editing or hardware work. The startup dialog's **Later** choice defers automatic installation until the next launch. Firmware is never flashed automatically: installation uses the guided flow and requires physical bootloader entry.
 
-**0.12.0 firmware status:** Studio and Full/Core compile and pass host tests, including real WebView2 checks. Full 0.12 programming, checksum, identity and complete VIA/macros/profile restoration passed on the preparation keyboard. The owner confirmed typing, numpad, Fn lighting after Fn+F4, darkness on Fn release, and Aurora after Fn+F1. SDK detection and the six-second lighting job also passed with the existing OpenRGB server. First-time managed OpenRGB installation on a clean PC and Core physical acceptance remain unverified. Power-cycle persistence, sustained load and physical input latency have not been measured. Studio 0.12.1 hardware acceptance is still pending. See the [audit](docs/AUDIT.md) and 0.12.0 validation records for scope.
+**0.12.0 firmware status:** Studio and Full/Core compile and pass host tests, including real WebView2 checks. Full 0.12 programming, checksum, identity and complete VIA/macros/profile restoration passed on the preparation keyboard. The owner confirmed typing, numpad, Fn lighting after Fn+F4, darkness on Fn release, and Aurora after Fn+F1. SDK detection and the six-second lighting job also passed with the existing OpenRGB server. First-time managed OpenRGB installation on a clean PC and Core physical acceptance remain unverified. Power-cycle persistence, sustained load and physical input latency have not been measured. Full/Studio 0.13 hardware acceptance is pending. See the [audit](docs/AUDIT.md) and 0.12.0 validation records for scope.
 
 The [brightness audit](docs/RGB_BRIGHTNESS.md) found no hidden software gain: color channels reach 255 and driver multipliers default to 1. Electrical or multiplexing changes have not been measured or implemented, so no additional brightness gain is claimed. The project retains requested 1 ms USB polling; [performance tools](docs/PERFORMANCE.md) report host measurements, not physical key latency.
 

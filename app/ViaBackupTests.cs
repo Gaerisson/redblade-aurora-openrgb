@@ -26,6 +26,21 @@ internal static class ViaBackupTests
     }
     internal static async Task Run()
     {
+        var oldVersion=new Version(0,12,0);var newVersion=new Version(0,13,0);
+        foreach(byte blank in new byte[]{0,1})
+        {
+            var source=new ViaBackup{Layers=2,Keymap=new byte[504],Macros=new byte[]{9,8}};
+            source.Keymap[353]=blank;source.Keymap[100]=42;
+            var upgraded=source.ForFirmware(oldVersion,newVersion,false);
+            if(upgraded.Keymap[352]!=0x7e||upgraded.Keymap[353]!=0x62||upgraded.Keymap[100]!=42||!upgraded.Macros.SequenceEqual(source.Macros)||source.Keymap[352]!=0||source.Keymap[353]!=blank)
+                throw new Exception("Fn+I migration failed or changed the original backup.");
+            if(source.ForFirmware(oldVersion,newVersion,true).Keymap[353]!=blank||source.ForFirmware(newVersion,newVersion,false).Keymap[353]!=blank||source.ForFirmware(newVersion,oldVersion,false).Keymap[353]!=blank)
+                throw new Exception("Fn+I migration applied to Core, same version or downgrade.");
+        }
+        var custom=new ViaBackup{Layers=2,Keymap=new byte[504],Macros=new byte[]{7}};custom.Keymap[352]=0x12;custom.Keymap[353]=0x34;
+        if(!custom.ForFirmware(oldVersion,newVersion,false).Keymap.SequenceEqual(custom.Keymap))throw new Exception("Custom Fn+I mapping was overwritten.");
+        custom.Keymap[352]=0;custom.Keymap[353]=2;
+        if(!custom.ForFirmware(oldVersion,newVersion,false).Keymap.SequenceEqual(custom.Keymap))throw new Exception("Nonblank Fn+I mapping was overwritten.");
         var identity=new KeyboardIdentity(new Version(0,11,0),false,13);
         using var original=new Hid(1,4);original.Keys[0]=42;original.Macros[0]=1;
         var backup=await ViaBackup.Read(original,identity,CancellationToken.None);

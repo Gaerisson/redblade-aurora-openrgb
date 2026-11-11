@@ -3,11 +3,15 @@
 #include "host.h"
 uint8_t mouse_buttons;
 unsigned mouse_downs,mouse_reports;
+unsigned mouse_moves;
+int mouse_x_total;
+int8_t mouse_last_x;
 bool indicator_pin_high=true;
 void gpio_write_pin(uint32_t pin,bool high) { assert(pin==LED_FN_PIN);indicator_pin_high=high; }
 void host_mouse_send(report_mouse_t *r) {
-    assert(!r->x && !r->y && !r->v && !r->h);
-    assert(r->buttons<=2);if(r->buttons && !mouse_buttons) ++mouse_downs;
+    assert(!r->y && !r->v && !r->h);
+    assert(r->buttons<=4);if(r->buttons && !mouse_buttons) ++mouse_downs;
+    if(r->x){assert(!r->buttons && (r->x==1 || r->x==-1));++mouse_moves;mouse_x_total+=r->x;mouse_last_x=r->x;}
     mouse_buttons=r->buttons;++mouse_reports;
 }
 led_config_t g_led_config = {.matrix_co = {

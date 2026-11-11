@@ -59,7 +59,7 @@ int main(void) {
     // Live speed changes, including boundaries and recorder/Turbo context.
     control(RB_REC_1,1,1);tick(0);assert(key_down[4]);
     for(unsigned i=0;i<4;++i) control(RB_TURBO_FASTER,2,20);
-    assert(redblade_recorder_speed_quarters()==8 && redblade_turbo_rate()==50);
+    assert(redblade_recorder_speed_quarters()==8 && redblade_turbo_rate()==60);
     tick(17);assert(key_down[4]);tick(1);assert(!key_down[4]);
     tick(350);assert(key_down[5]);tick(30);no_keys();
     for(unsigned i=0;i<30;++i) redblade_recorder_speed_step(-1);

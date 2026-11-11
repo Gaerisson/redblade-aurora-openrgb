@@ -1,6 +1,14 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { hsvToHex, hexToHsv, canStartEffect, capsWordOptions, findShortcuts, createBridge, selectedLeds } = require('../app.js');
+test('firmware versions follow the selected edition independently', () => {
+  const {firmwareForEdition}=require('../app.js');
+  const info={bundledVersion:'0.13.0',latestVersion:'0.13.0',recommendedSource:'latest',bundledCoreVersion:'0.12.0',latestCoreVersion:'0.12.0',recommendedCoreSource:'bundled'};
+  assert.equal(firmwareForEdition(info,'full').bundledVersion,'0.13.0');
+  const core=firmwareForEdition(info,'core');
+  assert.equal(core.bundledVersion,'0.12.0');assert.equal(core.latestVersion,'0.12.0');assert.equal(core.recommendedSource,'bundled');
+  assert.equal(info.bundledVersion,'0.13.0');
+});
 test('converts HSV keyboard colours to RGB', () => {
   assert.equal(hsvToHex({h:0,s:255,v:255}), '#ff0000');
   assert.equal(hsvToHex({h:0,s:0,v:64}), '#404040');

@@ -38,8 +38,8 @@ static void record_a(void) {
 static void persistent_turbo_hold_and_fraction(void) {
     reset();tap(RB_TURBO_E,2,3);
     assert(!edge(RB_TURBO_FASTER,true,2,20));
-    tick(399);assert(redblade_turbo_rate()==55);
-    tick(1);assert(redblade_turbo_rate()==60);
+    tick(399);assert(redblade_turbo_rate()==65);
+    tick(1);assert(redblade_turbo_rate()==70);
     for(unsigned i=0;i<30;++i) tick(150);
     assert(redblade_turbo_rate()==250);
     // Fn goes up first: the base-key release must be swallowed, without reset.
@@ -124,7 +124,7 @@ static void mouse_turbo_uses_own_report_colors_and_stops(void) {
     assert(redblade_controls_indicator(RB_LED_FN,false,&c) && c.h==32);
     unsigned downs=mouse_downs;
     for(unsigned i=0;i<1000;++i) tick(1);
-    assert(mouse_downs-downs>=49 && mouse_downs-downs<=51);
+    assert(mouse_downs-downs>=59 && mouse_downs-downs<=61);
     tap(RB_TURBO_SELECT,2,5);assert(!mouse_buttons && !redblade_turbo_key());
     tap(RB_TURBO_SELECT,2,5);tap(RB_NEXT,0,20);
     assert(mouse_buttons==2 && redblade_turbo_key()==0xD2);

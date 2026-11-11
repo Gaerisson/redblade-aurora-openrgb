@@ -8,9 +8,9 @@
   "qmk_commit": "62973ee48a976c6f7cc6d4f7b198bd48a2fdfe60",
   "toolchain": "arm-none-eabi-gcc (crosstool-NG 1.27.0.82_7f9d704 - qmk/qmk_toolchains @ a55a2b0) 15.2.0",
   "binary_bytes": 65536,
-  "sha256": "d744864c5c5c6092f8e49b086ca77c0c0d28922a837b97afd948b1d2e45c179e",
-  "ram_bytes_including_reserved_stacks": 8104,
-  "ram_remaining_bytes": 88,
+  "sha256": "daeea93c7993090559e781c0561e614c231d2e083f7e7241cf4f6a664d336af4",
+  "ram_bytes_including_reserved_stacks": 8112,
+  "ram_remaining_bytes": 80,
   "keyboard_usb_poll_interval_ms": 1,
   "shared_timer_clock_hz": 720896,
   "rgb_process_leds_per_task": 8,
@@ -18,7 +18,7 @@
   "via_layers": 3,
   "protocol_host_tests": "passed",
   "hardware_latency_measured": false,
-  "release": "v0.12.0",
+  "release": "v0.13.0",
   "hardware_validation": null,
   "rgb_data_timeout_ms": 5000,
   "boot_animation_ms": 2000,
@@ -74,7 +74,7 @@
     },
     "turbo_targets": "VIA base-layer basic keyboard usages 0x04..0xA4, excluding Esc and keyboard power; no modifiers/system/consumer/layer/macro actions",
     "catch_up_bursts": false,
-    "default_target_presses_per_second": 50,
+    "default_target_presses_per_second": 60,
     "forward_usage": "KC_W (QWERTY W / AZERTY Z)",
     "default": "off",
     "stop": [
@@ -88,14 +88,25 @@
     "mouse_targets": {
       "left": "Fn+T then Volume-",
       "right": "Fn+T then Volume+",
-      "output": "button-only shared QMK HID mouse report",
-      "indicators": "blinking amber left / purple right, matching Fn"
+      "output": "shared QMK HID mouse report; left/right/middle buttons",
+      "indicators": "shared Fn/target phase: amber left, purple right, cyan middle",
+      "middle": "Fn+T then Mute"
+    },
+    "turbo_indicator": "actual press/release at up to 12/s; grouped actual presses above 12/s; same per-frame phase on Fn and target",
+    "anti_afk": {
+      "shortcut": "Fn+I",
+      "interval_ms": 30000,
+      "movement": "alternating relative X +1/-1",
+      "startup": "off",
+      "stop": "typing including advanced VIA actions, Esc, Fn+I, another helper, suspend, defaults or configured safety timeout",
+      "module": "shared Auto-W / Anti-AFK, bit 256",
+      "game_detection_guaranteed": false
     }
   },
   "bootloader_shortcut": "Fn+Esc held for 2000 ms; Shift optional; short press stops helpers/unlocks",
   "native_benchmark": {
     "physical_key_latency_measured": false,
-    "sha256": "2a3f77c157b9f8b5fb3490d6125afdf6450d75f07d3af55551c7ad83e9b53571",
+    "sha256": "504f015aa966fa6ebb7ee5ae82af5b9fc86990606df94efadeed1d21b976caaf",
     "file": "redblade-plus-benchmark-windows.exe"
   },
   "fn_rgb_status": {
@@ -106,7 +117,7 @@
     "turbo": "red",
     "forward_hold": "green",
     "game_mode": "purple",
-    "mouse_turbo": "amber left / purple right"
+    "mouse_turbo": "amber left / purple right / cyan middle"
   },
   "direct_scalar_fields": "ignored; per-pixel brightness and master setting apply",
   "custom_color_conversion": "QMK hsv_to_rgb_nocie",

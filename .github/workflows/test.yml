@@ -17,7 +17,7 @@ jobs:
       - name: Test firmware and controls with sanitizers
         run: |
           set -e
-          for suite in protocol controls rendering recorder speed_typing keymap_hooks configuration custom_colors options reactive_extended; do
+          for suite in protocol controls rendering recorder speed_typing turbo_helpers keymap_hooks configuration custom_colors options reactive_extended; do
             cc -std=c11 -Wall -Wextra -Werror -O1 -g -DUSE_CIE1931_CURVE -fsanitize=address,undefined \
               -I tests/stubs -I tests -I tests/upstream -I firmware/aurora_via \
               tests/${suite}_test.c tests/qmk_fixture.c tests/store_flash_fixture.c tests/upstream/color.c tests/upstream/led_tables.c \

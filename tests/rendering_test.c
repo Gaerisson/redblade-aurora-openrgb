@@ -21,8 +21,8 @@ static unsigned red_center(void) {
     assert(total>1000); return weighted/total;
 }
 static bool fn_key(unsigned i) {
-    // Shipped 33 bindings plus Fn itself; independently checked against the map.
-    const uint8_t keys[]={0,1,2,3,4,5,6,7,8,9,15,16,17,18,19,21,22,23,33,36,40,43,44,45,46,56,60,65,97,99,101,102,104,106};
+    // Factory shortcut positions, including the new anti-AFK key and Fn.
+    const uint8_t keys[]={0,1,2,3,4,5,6,7,8,9,15,16,17,18,19,21,22,23,33,36,40,43,44,45,46,49,56,60,65,97,99,101,102,104,106};
     for (unsigned k=0;k<sizeof(keys);++k) if (keys[k]==i) return true;
     return false;
 }
@@ -36,7 +36,7 @@ static void assert_fn_focus(void) {
         assert(on==fn_key(i));
         lit+=on;
     }
-    assert(lit==34);
+    assert(lit==35);
 }
 int main(void) {
     redblade_rgb_init(true); redblade_controls_init();

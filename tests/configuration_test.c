@@ -58,7 +58,7 @@ int main(void) {
     assert(caps[8]==0xA0 && caps[9]==6 && caps[10]==0xA0 && caps[11]==1);
     assert(!memcmp(caps+24,"RDBLFS01",8));
     uint8_t payload[1696];read_config(payload);
-    assert(!payload[0] && payload[32]==255 && payload[33]==3 && payload[34]==255 && payload[37]==50);
+    assert(!payload[0] && payload[32]==255 && payload[33]==3 && payload[34]==255 && payload[37]==60);
     assert(!eeprom_writes);
 
     // An app save stops helpers but retains completed temporary Recorder slots.

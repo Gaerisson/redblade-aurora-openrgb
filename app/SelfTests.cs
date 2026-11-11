@@ -11,7 +11,7 @@ internal static class SelfTests
         {
             Check(ConfigCodec.Crc32(Encoding.ASCII.GetBytes("123456789")) == 0xcbf43926, "IEEE CRC vector");
             var config = StudioConfig.Default(); var bytes = ConfigCodec.Encode(config);
-            Check(bytes.Length == 1696 && bytes[32] == 255 && bytes[33] == 3 && bytes[34] == 255 && bytes[37] == 50, "wire defaults");
+            Check(bytes.Length == 1696 && bytes[32] == 255 && bytes[33] == 3 && bytes[34] == 255 && bytes[37] == 60, "wire defaults");
             Check(ConfigCodec.Encode(ConfigCodec.Decode(bytes)).SequenceEqual(bytes), "four profiles wire roundtrip");
             var varied=StudioConfig.Default();varied.Active=3;varied.Profiles[3].Keys[108]=new(2,3,4);varied.Profiles[3].Effects[23]=new(5,6,7);var encoded=ConfigCodec.Encode(varied);
             Check(encoded[0]==3&&encoded[32+3*416+16+108*3]==2&&encoded[32+3*416+343+23*3]==5,"last profile/key/effect offsets");

@@ -44,19 +44,24 @@ Playback owns only its generated keys and releases them on stop. A loop has a mi
 | Shortcut | Action |
 | --- | --- |
 | Fn + T, then press/release a key | Choose a basic key to repeat; amber selection, then red Fn/target |
-| Fn + T, then Volume − / + | Start left / right click Turbo on release; amber / purple volume-key indicator and matching Fn |
+| Fn + T, then Volume − / + / Mute | Start left / right / middle click Turbo on release; amber / violet / cyan target and matching Fn (middle requires Full 0.13) |
 | Fn + E / F / Space | Toggle a quick Turbo target |
 | Fn + R / Fn + Shift + R | Next / previous preset: **25, 50, 100 presses/s**; selects Turbo context |
 | Fn + numpad − / + in Turbo context | **5–100/s in steps of 5, then 125/150/175/200/225/250/s**; hold to step repeatedly, release keeps the value |
+| Fn + I | Toggle Anti-AFK (Full 0.13); alternating horizontal mouse movement every 30 seconds |
 | Fn + W on QWERTY / Fn + Z on AZERTY | Toggle forward hold; green target |
 | Fn + either Windows key | Toggle Game Mode; **both Windows keys turn red and the upper-right Windows indicator lights** |
 | Fn + Shift + either Windows key | Explicitly unlock Windows |
 | Esc | Stop helpers; Escape is still sent to the application |
 | Fn + Esc, short press | Stop helpers and unlock Windows; no Escape is sent |
 
-Mouse Turbo shares the same target rate and replaces keyboard Turbo. It emits button-only HID reports, with no cursor movement. **Esc**, Fn + T, Calculator/slot selection, F8, USB suspension or pressing the active volume target stops it and releases the generated button. Outside selection/running click Turbo, volume/media controls work normally. The Recorder does not record mouse clicks.
+Mouse Turbo shares the same target rate and replaces keyboard Turbo. It emits button-only HID reports, with no cursor movement. **Esc**, Fn + T, Calculator/slot selection, F8, USB suspension or pressing the active target stops it and releases the generated button. Outside selection/running click Turbo, volume/media controls work normally. The Recorder does not record mouse clicks.
 
-Default Turbo rate is 50/s. One Turbo target can coexist with forward hold. Ordinary target presses give control back to your finger. Rates are targets, subject to USB scheduling and application behavior. The engine emits at most one edge per cooperative pass, with no busy wait or catch-up queue.
+Factory default Turbo rate is 60/s in Full 0.13; saved profiles retain their rate. Fn + R presets remain 25/50/100/s. One Turbo target can coexist with forward hold. Ordinary target presses give control back to your finger. Rates are targets, subject to USB scheduling and application behavior. The engine emits at most one edge per cooperative pass, with no busy wait or catch-up queue.
+
+Fn and the active target pulse together with actual output: at up to 12 actions/s they follow press and release; faster output is grouped into visible pulses of about 6 Hz maximum. Middle click uses cyan; left and right remain amber and violet. Brightness follows the master setting.
+
+Anti-AFK emits alternating +1/−1 horizontal mouse movement every 30 seconds and types no letters. Fn + I, Esc, suspend, reset, keyboard activity or starting another helper stops it. It does not observe other mice. The existing Auto-W / Anti-AFK module checkbox enables both functions; it adds no profile bit.
 
 Turbo selection uses the chosen VIA base-layer basic key, even with Fn held. Fn/layers, modifiers, Esc, system/power/media actions and macros are excluded. Selection expires after 10 seconds. Fn + T while running stops Turbo. E/F/R positions are the same on usual AZERTY/QWERTY layouts; W/Z names identify the same physical forward position. Game Mode blocks standalone Windows keys and simple QMK GUI chords, not arbitrary VIA macros or every advanced modifier action.
 
@@ -83,7 +88,7 @@ Local profiles keep their colors while host packets continue arriving. F1 return
 | **Fn + F5** | Automatic red startup/resume wave | On; F9 saves this option |
 | **Fn + F6** | White fallback for Calculator, Mute, Volume −/+ when host leaves them black | On; F9 saves this option |
 | **Fn + F7** | After 5 seconds without RGB, choose white fallback / dark | White; F9 saves this option |
-| **Fn + F8** | Lighting defaults, stop helpers, unlock Windows, Turbo 50/s, Recorder 1× | RAM only; keeps VIA keys/macros and current recorded slots |
+| **Fn + F8** | Lighting defaults, stop helpers, unlock Windows, Turbo 60/s, Recorder 1× | RAM only; keeps VIA keys/macros and current recorded slots |
 | **Fn + F9** | Save profile, brightness and F5/F6/F7 lighting options | Explicit EEPROM write; does not save recordings, Game Mode or helpers |
 
 F5/F6/F7 show green hints while enabled. F8 restores QMK engine brightness too, for recovery from external brightness zero. F9 briefly flashes Calculator green when no higher-priority recorder indicator is active. Ordinary controls and RGB streaming do not write EEPROM. At Off or zero master brightness the status backlights are dark too; Esc still works.
@@ -118,7 +123,7 @@ White fallback and the explicit White profile also reflect lock state:
 
 Fresh RGB packets regain priority over Caps/Num/Scroll fallback. Red/native effects, dark idle, Off, zero master brightness and USB suspension remain authoritative. Four-media-key fallback is separate: nonblack host colors win; F6 toggles fallback when they are black. This also replaces intentionally black media colors, since the protocol cannot distinguish them from missing assignments.
 
-Calculator/Fn/active slot breathe red while recording, green for one-shot, cyan for loops, amber during selection/wait/feedback. Otherwise Fn is dim blue idle, cyan held, red during keyboard Turbo, amber for left-click Turbo, purple for right-click Turbo, green during forward hold, purple in Game Mode, with helper priority over ordinary Fn status. These are RGB key backlights; the separate monochrome upper-right Windows indicator shows Game Mode, not Fn held. It stays on with Windows locked even when RGB is Off; unlock/defaults/USB suspension turn it off.
+Calculator/Fn/active slot breathe red while recording, green for one-shot, cyan for loops, amber during selection/wait/feedback. Otherwise Fn is dim blue idle, cyan held, red during keyboard Turbo, amber for left-click Turbo, purple for right-click Turbo, cyan for middle-click Turbo, green during forward hold, purple in Game Mode, with helper priority over ordinary Fn status. These are RGB key backlights; the separate monochrome upper-right Windows indicator shows Game Mode, not Fn held. It stays on with Windows locked even when RGB is Off; unlock/defaults/USB suspension turn it off.
 
 ## Bootloader
 
@@ -133,4 +138,4 @@ python tools/install-fn-layer.py
 python tools/install-fn-layer.py --apply --backup C:\private-path\before-redblade-plus.json
 ```
 
-Applying requires 0.7.0+, makes a complete private VIA backup before any write, installs **33 bindings** and explicitly clears the **3 removed Fn commands** (Up, Down, Enter), verifies writes and attempts rollback after errors. Base keys, VIA macros and other Fn cells are retained. RAM recordings are not VIA macros and are not part of the backup. Keep backups private.
+Applying requires Full 0.13.0+, makes a complete private VIA backup before any write, installs **35 bindings** and explicitly clears the **3 removed Fn commands** (Up, Down, Enter), verifies writes and attempts rollback after errors. Base keys, VIA macros and other Fn cells are retained. RAM recordings are not VIA macros and are not part of the backup. Keep backups private.

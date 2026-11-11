@@ -57,7 +57,7 @@ def package(qmk, destination, native):
     with zipfile.ZipFile(bundle,'w',zipfile.ZIP_DEFLATED,compresslevel=6) as archive:
         with zipfile.ZipFile(project) as source:
             for entry in source.infolist():
-                if not entry.is_dir() and not entry.filename.endswith('.exe'):
+                if not entry.is_dir() and (not entry.filename.endswith('.exe') or entry.filename==f'redblade-plus-{tag}/dist/redblade-plus-benchmark-windows.exe'):
                     archive.writestr(entry.filename,source.read(entry.filename))
         sources=list(tracked_sources(qmk,qmk))
         sources.extend((keymap/source.name,(keymap/source.name).relative_to(qmk)) for source in (ROOT/'firmware/aurora_via').iterdir() if source.is_file())

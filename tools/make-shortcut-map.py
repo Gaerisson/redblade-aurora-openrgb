@@ -42,7 +42,7 @@ def generate(qmk=None):
         rect(64,220,2272,584,'#15161c','#2c2d34',20)
         text(96,264,t('YOUR KEYBOARD','VOTRE CLAVIER'),'tag',RED)
         text(96,301,t('Colored outlines: factory Fn hints  •  Fn is between right Windows and Ctrl', 'Contours colorés : repères Fn d’usine  •  Fn est entre Windows droit et Ctrl'),'small')
-        highlights={0,1,2,3,4,5,6,7,8,9,15,16,17,18,19,21,22,23,33,36,40,43,44,45,46,56,60,61,65,97,99,101,102,104,106}
+        highlights={0,1,2,3,4,5,6,7,8,9,15,16,17,18,19,21,22,23,33,36,40,43,44,45,46,49,56,60,61,65,97,99,101,102,104,106}
         labels={0:'ESC',15:'PAUSE',16:'CALC',17:'MUTE',18:'VOL−',19:'VOL+',102:'FN',33:'← BACK',61:'CAPS',97:'WIN',101:'WIN',99:'SPACE',40:'−',60:'+'}
         sublabels=[t('HOST','HÔTE'),t('WHITE','BLANC'),t('RED','ROUGE'),'OFF',t('WAVE','VAGUE'),'MEDIA',t('IDLE','REPOS'),t('RESET','RAZ'),t('SAVE','SAUVER')]
         for i,k in enumerate(layout):
@@ -52,8 +52,8 @@ def generate(qmk=None):
             if len(label)>8:label=label[:7]
             if i==99:label=t('SPACE','ESPACE')
             # Default Fn-held hints in redblade_controls.c / redblade_recorder.c.
-            # Slots are shown empty; -/+ and R show the default 50/s Turbo context.
-            palette={102:'#41d6df',1:'#658fff',2:'#e4e8ec',3:'#f35465',4:'#777981',5:'#65d995',6:'#65d995',7:'#65d995',8:'#b589ef',9:'#65d995',0:'#f35465',15:'#f35465',16:'#41d6df',17:'#41d6df',18:'#658fff',19:'#658fff',21:'#777981',22:'#777981',23:'#777981',33:'#e4e8ec',36:'#e4e8ec',40:'#e9c25a',43:'#65d995',44:'#f35465',45:'#e9c25a',46:'#e5a34d',56:'#e4e8ec',60:'#e9c25a',61:'#65d995',65:'#f35465',97:'#65d995',99:'#f35465',101:'#65d995',104:'#e4e8ec',106:'#e4e8ec'}
+            # Slots are shown empty; -/+ and R show the default 60/s Turbo context.
+            palette={102:'#41d6df',1:'#658fff',2:'#e4e8ec',3:'#f35465',4:'#777981',5:'#65d995',6:'#65d995',7:'#65d995',8:'#b589ef',9:'#65d995',0:'#f35465',15:'#f35465',16:'#41d6df',17:'#41d6df',18:'#658fff',19:'#658fff',21:'#777981',22:'#777981',23:'#777981',33:'#e4e8ec',36:'#e4e8ec',40:'#e9c25a',43:'#65d995',44:'#f35465',45:'#e9c25a',46:'#e5a34d',49:'#65d995',56:'#e4e8ec',60:'#e9c25a',61:'#65d995',65:'#f35465',97:'#65d995',99:'#f35465',101:'#65d995',104:'#e4e8ec',106:'#e4e8ec'}
             stroke=palette.get(i,'#3d3d45');fill='#202127' if i not in highlights else '#28262c'
             if i==102:fill='#15383d'
             rect(round(x,1),round(y,1),round(w,1),round(h,1),fill,stroke,7)
@@ -65,7 +65,7 @@ def generate(qmk=None):
         legend=[('#41d6df',t('Cyan: Fn / recorder','Cyan : Fn / enregistreur')),('#f35465',t('Red: Turbo','Rouge : Turbo')),('#65d995',t('Green: game / options','Vert : jeu / options')),('#e5a34d',t('Amber: selection','Ambre : sélection')),('#658fff',t('Blue: host / media','Bleu : hôte / média')),('#e4e8ec',t('White: lighting','Blanc : éclairage')),('#b589ef',t('Violet: reset / context','Violet : reset / contexte'))]
         for n,(color,label) in enumerate(legend):
             x=96+(n%4)*550;y=893+(n//4)*36;rect(x,y,20,20,color,'none',10);text(x+31,y+18,label,'small')
-        text(96,989,t('Fn held, default 50/s: empty slots gray; F5–F7 green if on. R and −/+ change with context. Colors are configurable.', 'Fn maintenue, Turbo à 50/s : emplacements vides gris ; F5–F7 verts si actifs. R et −/+ varient. Couleurs personnalisables.'),'small')
+        text(96,989,t('Fn held, default 60/s: empty slots gray; F5–F7 green if on. R and −/+ change with context. Colors are configurable.', 'Fn maintenue, Turbo à 60/s : emplacements vides gris ; F5–F7 verts si actifs. R et −/+ varient. Couleurs personnalisables.'),'small')
         card(64,1036,1118,600,t('Record in three steps','Enregistrer en trois étapes'),t('01  /  RECORDER','01  /  ENREGISTREUR'),'#41d6df')
         steps=[('1','Fn + CALC',t('Select recording','Préparer l’enregistrement')),('2','Fn + 1 / 2 / 3',t('Choose a slot, then type','Choisir un emplacement, puis taper')),('3','Fn + CALC',t('Finish and keep the sequence','Terminer et conserver la séquence'))]
         for n,(number,shortcut,description) in enumerate(steps):
@@ -75,12 +75,12 @@ def generate(qmk=None):
         text(96,1568,t('Red recording  ·  green playback  ·  cyan loop', 'Rouge capture  ·  vert lecture  ·  cyan boucle'),'small')
         text(96,1598,t('3 RAM slots: erased on USB reset or power loss.', '3 emplacements en mémoire : effacés à la réinitialisation USB ou à la coupure.'),'small')
         card(1200,1036,1136,600,t('Turbo and game','Turbo et jeu'),t('02  /  REPEAT','02  /  RÉPÉTITION'),'#f35465')
-        bullet(1232,1184,'Fn + T → '+t('key','touche'),t('Choose a key. Volume − / + selects left / right mouse click.', 'Choisir une touche. Volume − / + : clic souris gauche / droit.'))
+        bullet(1232,1184,'Fn + T → '+t('key','touche'),t('Choose a key. Volume − / + / Mute: left / right / middle click.', 'Choisir une touche. Volume − / + / Muet : clic gauche / droit / milieu.'))
         bullet(1232,1270,'Fn + E / F / '+t('Space','Espace'),t('Toggle a quick keyboard Turbo target.', 'Activer ou arrêter un Turbo clavier direct.'))
         bullet(1232,1356,'Fn + R  /  Fn + '+t('Shift','Maj')+' + R',t('Next / previous preset: 25, 50, 100 presses/s.', 'Préréglage suivant / précédent : 25, 50, 100 appuis/s.'))
         bullet(1232,1442,t('Fn + numpad − / +','Fn + pavé − / +'),t('Adjust the rate; Esc stops the helper.', 'Régler la cadence ; Échap arrête la fonction.'))
         text(1232,1540,t('Active target and Fn: keyboard red  ·  left click amber', 'Cible et Fn actives : clavier rouge  ·  clic gauche ambre'),'small')
-        text(1232,1575,t('Right click violet; colors may change while choosing a target.', 'Clic droit violet ; les couleurs changent pendant la sélection.'),'small')
+        text(1232,1575,t('Right click violet · middle click cyan; Fn and target pulse together.', 'Clic droit violet · milieu cyan ; Fn et cible pulsent ensemble.'),'small')
         card(64,1666,1118,423,t('Lighting profiles','Profils d’éclairage'),'03  /  F1–F4','#e4e8ec')
         for n,(key,en,frtxt) in enumerate([('F1','Host / OpenRGB','Logiciel / OpenRGB'),('F2','Reactive white','Blanc réactif'),('F3','Local red','Rouge autonome'),('F4','Lighting off','Éclairage éteint')]):
             yy=1821+n*56;rect(96,yy-32,72,43,'#25262d',['#658fff','#e4e8ec','#f35465','#777981'][n],7);text(132,yy,key,'key');text(192,yy,t(en,frtxt),'body')
@@ -92,7 +92,7 @@ def generate(qmk=None):
         bullet(96,2248,'Fn + WIN  /  Fn + '+t('Shift','Maj')+' + WIN',t('Lock / explicitly unlock Windows keys.', 'Verrouiller / déverrouiller les touches Windows.'))
         bullet(96,2331,'Fn + ESC  /  Fn + ESC 2 s',t('Stop helpers and unlock / enter bootloader.', 'Arrêter et déverrouiller / ouvrir le mode flash.'))
         bullet(1220,2248,'Fn + '+t('W (QWERTY) / Z (AZERTY)','Z (AZERTY) / W (QWERTY)'),t('Toggle forward hold.', 'Activer ou arrêter le maintien avant.'))
-        bullet(1220,2331,'Fn + CAPS  /  Fn + MUTE',t('Caps Word (optional) / play or pause media.', 'Mot en majuscules (option) / lecture ou pause média.'))
+        bullet(1220,2331,'Fn + I',t('Anti-AFK: alternate mouse movement every 30 s; typing stops it.', 'Anti-AFK : mouvement alterné toutes les 30 s ; frappe pour arrêter.'))
         text(64,2455,t('Hold Fn to reveal shortcuts, even after Fn + F4; USB suspend keeps the keyboard dark.', 'Maintenez Fn pour afficher les raccourcis, même après Fn + F4 ; la veille USB garde le clavier éteint.'),'small')
         text(64,2493,t('Factory bindings may differ after VIA remapping  ·  Studio includes an interactive Fn explorer', 'Les raccourcis d’usine peuvent changer dans VIA  ·  Studio propose un explorateur Fn interactif'),'small')
         parts.append('</svg>')

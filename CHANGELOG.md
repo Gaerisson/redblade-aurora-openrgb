@@ -2,6 +2,16 @@
 
 All new release notes are written in English. Version 0.x is experimental; hardware validation is recorded separately from build and host-test results.
 
+## 0.13.0 — Turbo indicators, middle-click and optional Anti-AFK
+
+- Fn and the Turbo target share the same color and sampled output phase in Direct and standard lighting modes. At up to 12 actions/s the cue follows press/release; faster rates group actual presses into visible pulses instead of using an unrelated blink timer. The RGB frame interval remains 33 ms.
+- Fn + T, then Mute selects middle-click Turbo on release. Mute and Fn use cyan, Volume Down stays amber for left click, and Volume Up stays violet for right click. Selection does not change audio. The target key, Esc, another helper and suspension stop/release generated clicks.
+- The factory Turbo rate is now 60 actions/s instead of 50; saved profiles retain their selected rate. This shortens the nominal repeat period from 20 to about 16.67 ms, without claiming lower first-input latency or universal game detection. USB polling stays 1 ms and no missed actions are replayed in a burst.
+- Optional Fn + I toggles Anti-AFK: one alternating +1/-1 horizontal mouse movement every 30 seconds. It starts off, stops on keyboard activity including advanced VIA actions, Esc, Fn + I, another helper, suspension, reset or the optional helper timeout, and shares the Auto-W module switch. Game compatibility varies. It neither logs input nor observes another mouse.
+- Full 0.13 keeps the profile wire format unchanged and retains 80 usable SRAM bytes after linking. Core remains 0.12.0 with the same BIN. Studio 0.13 embeds both editions and displays each edition's actual version.
+- Guided upgrades add Fn + I only if that Fn-layer cell was empty or transparent; custom bindings, other keys, macros and saved profile rates are preserved. English/French maps and the interactive Fn guide document the new controls.
+- Build and host checks are recorded separately from physical acceptance of the new firmware.
+
 ## 0.12.1 — Studio software patch
 
 - The normal-user GUI can optionally start with Windows via the current user’s HKCU Run setting, off by default. Startup does not take RGB control or request elevation. The first hardware operation may request UAC; an owner-lifetime broker reuses access for subsequent operations in the Studio session.

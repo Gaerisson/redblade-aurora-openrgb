@@ -84,11 +84,11 @@ int main(void) {
 
     // Turbo is edge-driven, bounded, and never catches up with a burst.
     now=10000; assert(!event(RB_TURBO_E,true,2,3));
-    assert(redblade_turbo_key()==KC_E && redblade_turbo_rate()==50 && key_down[KC_E]);
+    assert(redblade_turbo_key()==KC_E && redblade_turbo_rate()==60 && key_down[KC_E]);
     assert(!event(KC_E,false,2,3)); // Releasing Fn first must not release the generated key.
-    now+=9; redblade_controls_task(false); assert(key_down[KC_E]);
+    now+=7; redblade_controls_task(false); assert(key_down[KC_E]);
     ++now; redblade_controls_task(false); assert(!key_down[KC_E]);
-    now+=10; redblade_controls_task(false); assert(key_down[KC_E]);
+    now+=8; redblade_controls_task(false); assert(key_down[KC_E]);
     const unsigned edges=key_up_calls;
     now+=1000; redblade_controls_task(false); assert(key_up_calls==edges+1 && !key_down[KC_E]);
     assert(event(KC_E,true,2,3) && !redblade_turbo_key()); // Physical target takes over.
@@ -137,6 +137,7 @@ int main(void) {
     assert(data[2]==1 && data[4]==REDBLADE_VERSION_MINOR && data[6]==1 && data[7]==RB_PROFILE_OFF);
     assert(eeprom_writes==1); // All actions except explicit Save remain RAM-only.
     redblade_rgb_defaults(); redblade_controls_init(); mods=0;
+    press(RB_TURBO_SLOWER);press(RB_TURBO_SLOWER); // Retain explicit 50/s regression vectors.
     base_keymap[2][5]=0x17; base_keymap[3][5]=0x0A; // T and G, actual physical positions.
     base_keymap[0][2]=0x3A; base_keymap[0][18]=0xA8;
     assert(!event(RB_TURBO_SELECT,true,2,5) && redblade_turbo_selecting());
@@ -162,8 +163,9 @@ int main(void) {
     assert(!event(RB_TURBO_SELECT,true,2,5) && !redblade_turbo_key() && !redblade_turbo_selecting());
     assert(!event(0x17,false,2,5));
     assert(!event(RB_TURBO_SELECT,true,2,5)); assert(!event(0x17,false,2,5));
-    assert(!event(RB_PLAY,true,0,18) && !key_down[KC_MPLY] && redblade_turbo_selecting());
-    assert(!event(0xA8,false,0,18)); // Unsupported consumer choice does not play music.
+    base_keymap[0][17]=0xA6; // Calculator remains an unsupported consumer target.
+    assert(!event(0xA6,true,0,17) && !key_down[KC_MPLY] && redblade_turbo_selecting());
+    assert(!event(0xA6,false,0,17));
     base_keymap[1][0]=0x66;
     assert(!event(0x66,true,1,0) && redblade_turbo_selecting());
     assert(!event(0x66,false,1,0)); // Keyboard power is not a repeat target either.

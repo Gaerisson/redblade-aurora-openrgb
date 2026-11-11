@@ -15,6 +15,7 @@ internal sealed partial class StudioForm:Form
     readonly EditHistory history=new();
     string firmware="",connection="offline",currentPage="keyboard",previewPage="keyboard",lastError="",openRgbStatus="";bool redbladeFound;int sdkPort=6742;Version? installedVersion;
     static readonly Version BundledVersion=FirmwareImage.Load("full").Version;
+    static readonly Version BundledCoreVersion=FirmwareImage.Load("core").Version;
     UpdateSession? updates;JobResult? job;string? jobId;Task? runningJob;EffectSettings effect=new("wave","#DD002B","#FFFFFF",40,180);
     internal bool IsHardwareBusy=>busy||Transitioning;
     internal bool HasUnsavedChanges=>dirty;
@@ -94,7 +95,7 @@ internal sealed partial class StudioForm:Form
     {
         app=new{version=UpdateSession.CurrentVersion.ToString(),language=french?"fr":"en",dirty,busy=Transitioning||busy&&!effectActive||updates?.Installing==true,preview,error=StudioText.Localize(lastError,french,true)},keyboard=new{status=connection,firmware=firmware.StartsWith("Stock / legacy",StringComparison.Ordinal)?T("Stock / legacy (version unavailable)","D’origine / ancien (version indisponible)"):firmware,version=installedVersion?.ToString()},
         setup=new{openRgbStatus,redbladeFound,sdkPort,startWithWindows=!preview&&StartupIntegration.Enabled,hardwareSessionReady=!preview&&(HardwareBroker.Ready||!HardwareJobs.RequiresElevation())},
-        firmware=new{bundledVersion=BundledVersion.ToString(),latestVersion=updates?.Firmware.GetValueOrDefault("full")?.Version.ToString(),recommendedSource=updates?.Firmware.GetValueOrDefault("full")?.Version>=BundledVersion?"latest":"bundled",edition="full"},
+        firmware=new{bundledVersion=BundledVersion.ToString(),latestVersion=updates?.Firmware.GetValueOrDefault("full")?.Version.ToString(),recommendedSource=updates?.Firmware.GetValueOrDefault("full")?.Version>=BundledVersion?"latest":"bundled",bundledCoreVersion=BundledCoreVersion.ToString(),latestCoreVersion=updates?.Firmware.GetValueOrDefault("core")?.Version.ToString(),recommendedCoreSource=updates?.Firmware.GetValueOrDefault("core")?.Version>=BundledCoreVersion?"latest":"bundled",edition="full"},
         capabilities=new{studio=connection=="connected",extendedOptions=preview||installedVersion==null||installedVersion>=new Version(0,10,0),reactiveStyles=preview||installedVersion==null||installedVersion>=new Version(0,11,0),extendedReaction=preview||installedVersion==null||installedVersion>=new Version(0,12,0),softwareEffects=!preview},
         editor=new{history.CanUndo,history.CanRedo},
         profile=new{Current.Modules,Current.Master,Current.DefaultMode,Current.TimeoutSeconds,Current.TurboRate,Current.RecorderSpeed,Current.TrailFrames,Current.CapsWordLayout,Current.ReactiveStyle,Current.ReactiveWidth,Current.ReactiveRate,Current.HighlightMode,safetyTimeoutSeconds=Current.SafetyTimeoutSeconds==0?30:Current.SafetyTimeoutSeconds,keys=Current.Keys,effects=Current.Effects},

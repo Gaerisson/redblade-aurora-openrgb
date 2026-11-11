@@ -22,8 +22,8 @@ def sha(path):
 
 def package(exe, sonix_source, libusb_source, helper_dir, output, webview2_bootstrapper):
     full, core = validate_full(), validate_core()
-    if full['release'] != core['release']:
-        raise ValueError('Firmware releases differ')
+    # Each edition has its own validated version and digest. A Full-only
+    # feature release can keep the previous Core binary unchanged.
     if output.is_relative_to(ROOT):
         raise ValueError('Output must be outside the project checkout')
     if subprocess.check_output(['git', '-C', str(ROOT), 'status', '--porcelain'], text=True).strip():
@@ -84,7 +84,7 @@ def package(exe, sonix_source, libusb_source, helper_dir, output, webview2_boots
         release_assets.append(destination)
     sums = output / 'SHA256SUMS'
     sums.write_text(''.join(f'{sha(p)}  {p.name}\n' for p in (*release_assets, target, source)), encoding='utf-8')
-    return {'assets': [str(p) for p in (*release_assets, target, source, sums)], 'commit': commit, 'studio_version': version, 'firmware_release': full['release']}
+    return {'assets': [str(p) for p in (*release_assets, target, source, sums)], 'commit': commit, 'studio_version': version, 'firmware_release': full['release'], 'core_release': core['release']}
 
 
 if __name__ == '__main__':

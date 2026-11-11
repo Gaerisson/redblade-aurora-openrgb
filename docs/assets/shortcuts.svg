@@ -115,7 +115,7 @@
 <text x="723.0" y="506.8" class="key">Y</text>
 <rect x="771.5" y="471.2" width="81" height="57" rx="7" fill="#202127" stroke="#3d3d45" stroke-width="2"/>
 <text x="812.0" y="506.8" class="key">U</text>
-<rect x="860.5" y="471.2" width="81" height="57" rx="7" fill="#202127" stroke="#3d3d45" stroke-width="2"/>
+<rect x="860.5" y="471.2" width="81" height="57" rx="7" fill="#28262c" stroke="#65d995" stroke-width="2"/>
 <text x="901.0" y="506.8" class="key">I</text>
 <rect x="949.5" y="471.2" width="81" height="57" rx="7" fill="#202127" stroke="#3d3d45" stroke-width="2"/>
 <text x="990.0" y="506.8" class="key">O</text>
@@ -252,7 +252,7 @@
 <text x="677" y="947" class="small">White: lighting</text>
 <rect x="1196" y="929" width="20" height="20" rx="10" fill="#b589ef" stroke="none" stroke-width="2"/>
 <text x="1227" y="947" class="small">Violet: reset / context</text>
-<text x="96" y="989" class="small">Fn held, default 50/s: empty slots gray; F5–F7 green if on. R and −/+ change with context. Colors are configurable.</text>
+<text x="96" y="989" class="small">Fn held, default 60/s: empty slots gray; F5–F7 green if on. R and −/+ change with context. Colors are configurable.</text>
 <rect x="64" y="1036" width="1118" height="600" rx="20" fill="#18191f" stroke="#303039" stroke-width="2"/>
 <rect x="64" y="1036" width="6" height="600" rx="3" fill="#41d6df" stroke="none" stroke-width="2"/>
 <text x="94" y="1079" class="tag" fill="#41d6df" style="fill:#41d6df">01  /  RECORDER</text>
@@ -282,7 +282,7 @@
 <text x="1230" y="1123" class="section">Turbo and game</text>
 <path d="M1230 1146h1076" stroke="#303039" stroke-width="2"/>
 <text x="1232" y="1184" class="body" fill="#f2f1f4" style="fill:#f2f1f4">Fn + T → key</text>
-<text x="1232" y="1214" class="small">Choose a key. Volume − / + selects left / right mouse click.</text>
+<text x="1232" y="1214" class="small">Choose a key. Volume − / + / Mute: left / right / middle click.</text>
 <text x="1232" y="1270" class="body" fill="#f2f1f4" style="fill:#f2f1f4">Fn + E / F / Space</text>
 <text x="1232" y="1300" class="small">Toggle a quick keyboard Turbo target.</text>
 <text x="1232" y="1356" class="body" fill="#f2f1f4" style="fill:#f2f1f4">Fn + R  /  Fn + Shift + R</text>
@@ -290,7 +290,7 @@
 <text x="1232" y="1442" class="body" fill="#f2f1f4" style="fill:#f2f1f4">Fn + numpad − / +</text>
 <text x="1232" y="1472" class="small">Adjust the rate; Esc stops the helper.</text>
 <text x="1232" y="1540" class="small">Active target and Fn: keyboard red  ·  left click amber</text>
-<text x="1232" y="1575" class="small">Right click violet; colors may change while choosing a target.</text>
+<text x="1232" y="1575" class="small">Right click violet · middle click cyan; Fn and target pulse together.</text>
 <rect x="64" y="1666" width="1118" height="423" rx="20" fill="#18191f" stroke="#303039" stroke-width="2"/>
 <rect x="64" y="1666" width="6" height="423" rx="3" fill="#e4e8ec" stroke="none" stroke-width="2"/>
 <text x="94" y="1709" class="tag" fill="#e4e8ec" style="fill:#e4e8ec">03  /  F1–F4</text>
@@ -340,8 +340,8 @@
 <text x="96" y="2361" class="small">Stop helpers and unlock / enter bootloader.</text>
 <text x="1220" y="2248" class="body" fill="#f2f1f4" style="fill:#f2f1f4">Fn + W (QWERTY) / Z (AZERTY)</text>
 <text x="1220" y="2278" class="small">Toggle forward hold.</text>
-<text x="1220" y="2331" class="body" fill="#f2f1f4" style="fill:#f2f1f4">Fn + CAPS  /  Fn + MUTE</text>
-<text x="1220" y="2361" class="small">Caps Word (optional) / play or pause media.</text>
+<text x="1220" y="2331" class="body" fill="#f2f1f4" style="fill:#f2f1f4">Fn + I</text>
+<text x="1220" y="2361" class="small">Anti-AFK: alternate mouse movement every 30 s; typing stops it.</text>
 <text x="64" y="2455" class="small">Hold Fn to reveal shortcuts, even after Fn + F4; USB suspend keeps the keyboard dark.</text>
 <text x="64" y="2493" class="small">Factory bindings may differ after VIA remapping  ·  Studio includes an interactive Fn explorer</text>
 </svg>

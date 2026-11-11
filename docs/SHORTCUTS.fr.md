@@ -44,19 +44,24 @@ La lecture ne possède que ses touches générées et les libère à l’arrêt.
 | Raccourci | Action |
 | --- | --- |
 | Fn + T, puis appuyer/relâcher une touche | Choisir la cible ; choix ambre, puis Fn/cible rouges |
-| Fn + T, puis Volume − / + | Turbo clic gauche / droit au relâchement ; touche volume et Fn ambre / violet |
+| Fn + T, puis Volume − / + / Muet | Turbo clic gauche / droit / milieu au relâchement ; cible et Fn ambre / violet / cyan (milieu : Full 0.13) |
 | Fn + E / F / Espace | Démarrer/arrêter un Turbo direct |
 | Fn + R / Fn + Maj + R | Préréglage suivant / précédent : **25, 50, 100 appuis/s** ; sélectionner Turbo |
 | Fn + − / + du pavé, contexte Turbo | **5–100/s par pas de 5, puis 125/150/175/200/225/250/s** ; maintien pour enchaîner, valeur conservée au relâchement |
+| Fn + I | Activer ou arrêter Anti-AFK (Full 0.13) ; mouvement horizontal alterné toutes les 30 secondes |
 | Fn + Z en AZERTY / Fn + W en QWERTY | Maintenir pour avancer ; cible verte |
 | Fn + une touche Windows | Verrouiller/déverrouiller Windows ; **les deux touches sont rouges et le voyant Windows en haut à droite s’allume** |
 | Fn + Maj + une touche Windows | Déverrouiller Windows |
 | Échap | Arrêter les fonctions ; Échap est aussi envoyé à l’application |
 | Fn + Échap, appui court | Arrêter et déverrouiller Windows ; aucun Échap envoyé |
 
-Le Turbo souris partage la cadence et remplace le Turbo clavier. Il envoie uniquement des boutons HID, sans bouger le pointeur. **Échap**, Fn + T, Calculatrice/un slot, F8, suspension USB ou un appui sur la touche volume cible arrête et libère le clic. Les volumes et commandes médias restent normaux hors sélection/Turbo clic actif. Le Recorder n’enregistre pas la souris.
+Le Turbo souris partage la cadence et remplace le Turbo clavier. Il envoie uniquement des boutons HID, sans bouger le pointeur. **Échap**, Fn + T, Calculatrice/un slot, F8, suspension USB ou un appui sur la touche cible arrête et libère le clic. Les volumes et commandes médias restent normaux hors sélection/Turbo clic actif. Le Recorder n’enregistre pas la souris.
 
-Turbo démarre à 50/s. Un Turbo peut fonctionner avec le maintien pour avancer. Un appui normal sur une cible rend la main à ton doigt. La cadence est une cible, dépendante de l’USB et de l’application ; une seule transition est produite par passage, sans attente active ni rafale de rattrapage.
+La cadence d’usine est de 60/s dans Full 0.13 ; les profils enregistrés conservent leur cadence. Fn + R conserve les préréglages 25/50/100/s. Un Turbo peut fonctionner avec le maintien pour avancer. Un appui normal sur une cible rend la main à ton doigt. La cadence est une cible, dépendante de l’USB et de l’application ; une seule transition est produite par passage, sans attente active ni rafale de rattrapage.
+
+Fn et la cible active pulsent ensemble selon les sorties réelles : jusqu’à 12 actions/s, elles suivent les appuis et relâchements ; au-delà, les clics sont regroupés pour une pulsation visible d’environ 6 Hz maximum. Le clic milieu est cyan, le gauche ambre et le droit violet. La luminosité suit le réglage général.
+
+Anti-AFK alterne un déplacement horizontal de souris de +1/−1 toutes les 30 secondes, sans saisir de lettre. Fn + I, Échap, la suspension, la remise à zéro, une frappe clavier ou une autre fonction l’arrête. Les autres souris ne sont pas surveillées. La case existante Auto-W / Anti-AFK contrôle les deux fonctions ; aucun bit de profil n’est ajouté.
 
 Le choix Turbo utilise la touche standard de la couche de base VIA, même si Fn reste maintenue. Fn, modificateurs, Échap, alimentation/système, médias et macros ne sont pas des cibles. Le choix expire après 10 secondes ; Fn + T pendant un Turbo l’arrête. Le mode jeu filtre Windows et les raccourcis QMK simples utilisant Windows, pas toutes les macros ou actions avancées.
 
@@ -83,7 +88,7 @@ Les profils locaux gardent leurs couleurs pendant la réception du flux. F1 repr
 | **Fn + F5** | Vague rouge automatique au démarrage/reprise | Activée ; F9 enregistre ce choix |
 | **Fn + F6** | Blanc des quatre touches multimédias si le PC les laisse noires | Activé ; F9 enregistre ce choix |
 | **Fn + F7** | Sans RGB depuis 5 secondes : blanc de secours / sombre | Blanc ; F9 enregistre ce choix |
-| **Fn + F8** | Éclairage par défaut, arrêt, Windows déverrouillé, Turbo 50/s et Recorder 1× | RAM ; conserve VIA et les slots enregistrés |
+| **Fn + F8** | Éclairage par défaut, arrêt, Windows déverrouillé, Turbo 60/s et Recorder 1× | RAM ; conserve VIA et les slots enregistrés |
 | **Fn + F9** | Enregistrer profil, luminosité et options F5/F6/F7 | Écriture explicite ; ne sauvegarde pas les slots Recorder ni les fonctions de jeu |
 
 Avec Fn maintenue, F5/F6/F7 sont verts quand activés. F8 restaure aussi la luminosité QMK pour récupérer un réglage externe à zéro. F9 donne un bref vert sur Calculatrice si aucun indicateur Recorder prioritaire n’est actif. Les commandes ordinaires et le flux RGB n’écrivent pas en EEPROM. Éteint/luminosité zéro masque aussi les voyants, mais Échap reste utilisable.
@@ -118,7 +123,7 @@ Le blanc de secours et le profil blanc local reflètent aussi les états :
 
 Un nouveau flux reprend la priorité sur ces états. Rouge/effets autonomes, secours sombre, éteint, luminosité zéro et suspension USB restent prioritaires. Le secours des quatre médias est séparé : couleur non noire du PC prioritaire, F6 active/désactive le blanc s’ils sont noirs. Le protocole ne distingue pas un noir volontaire d’une affectation absente.
 
-Calculatrice/Fn/slot actif respirent en rouge pendant l’enregistrement, vert pour une lecture, cyan en boucle, ambre pendant choix/attente/limite. Sinon Fn est bleue discrète au repos, cyan enfoncée, rouge pendant Turbo clavier, ambre pour clic gauche, violette pour clic droit, verte pendant maintien, violette en mode jeu. Les fonctions actives sont prioritaires. Le voyant Windows monochrome en haut à droite indique le verrouillage, indépendamment de Fn et du RGB. Il reste allumé si Windows est bloquée même RGB éteint ; déverrouillage, remise à zéro et suspension USB l’éteignent.
+Calculatrice/Fn/slot actif respirent en rouge pendant l’enregistrement, vert pour une lecture, cyan en boucle, ambre pendant choix/attente/limite. Sinon Fn est bleue discrète au repos, cyan enfoncée, rouge pendant Turbo clavier, ambre pour clic gauche, violette pour clic droit, cyan pour clic milieu, verte pendant maintien, violette en mode jeu. Les fonctions actives sont prioritaires. Le voyant Windows monochrome en haut à droite indique le verrouillage, indépendamment de Fn et du RGB. Il reste allumé si Windows est bloquée même RGB éteint ; déverrouillage, remise à zéro et suspension USB l’éteignent.
 
 ## Bootloader
 
@@ -126,4 +131,4 @@ Calculatrice/Fn/slot actif respirent en rouge pendant l’enregistrement, vert p
 
 ## Mise à jour du calque VIA
 
-Fermer OpenRGB, Aurora et VIA puis utiliser l’[installateur avec sauvegarde privée](SHORTCUTS.md#upgrading-an-existing-via-layer). Il demande la 0.7.0, installe **33 commandes**, efface explicitement les **3 anciens raccourcis** Haut/Bas/Entrée et vérifie les écritures avec tentative de retour arrière en cas d’erreur. Les touches de base, les macros VIA et les autres affectations Fn sont conservées. Les slots Recorder sont distincts des macros VIA et ne figurent pas dans la sauvegarde.
+Fermer OpenRGB, Aurora et VIA puis utiliser l’[installateur avec sauvegarde privée](SHORTCUTS.md#upgrading-an-existing-via-layer). Il demande Full 0.13.0, installe **35 commandes**, efface explicitement les **3 anciens raccourcis** Haut/Bas/Entrée et vérifie les écritures avec tentative de retour arrière en cas d’erreur. Les touches de base, les macros VIA et les autres affectations Fn sont conservées. Les slots Recorder sont distincts des macros VIA et ne figurent pas dans la sauvegarde.

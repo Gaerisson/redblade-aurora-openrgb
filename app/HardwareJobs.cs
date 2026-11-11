@@ -426,6 +426,9 @@ internal sealed class ViaBackup
         const int fnCaps=378;
         if(!core&&previous<new Version(0,10,0)&&target>=new Version(0,10,0)&&Layers>=2&&copy.Keymap.Length>fnCaps+1&&copy.Keymap[fnCaps]==0&&copy.Keymap[fnCaps+1]<=1)
         {copy.Keymap[fnCaps]=0x7e;copy.Keymap[fnCaps+1]=0x61;}
+        const int fnIdle=(6*21+2*21+8)*2;
+        if(!core&&previous<new Version(0,13,0)&&target>=new Version(0,13,0)&&Layers>=2&&copy.Keymap.Length>fnIdle+1&&copy.Keymap[fnIdle]==0&&copy.Keymap[fnIdle+1]<=1)
+        {copy.Keymap[fnIdle]=0x7e;copy.Keymap[fnIdle+1]=0x62;}
         return copy;
     }
     static async Task<byte[]> ReadBuffer(IHidTransport hid,byte command,int size,CancellationToken cancel)

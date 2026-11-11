@@ -1,6 +1,6 @@
 # Performance checks
 
-**0.12.0 status:** The bundled native reference measures 0.12 code on the preparation PC. Physical keyboard latency and sustained hardware effect load have not been measured. HID comparisons below are historical.
+**0.13.0 status:** The native reference measures 0.13 code on the preparation PC. USB polling stays at 1 ms and RGB frames at 33 ms. Physical keyboard latency and sustained hardware effect load have not been measured. HID comparisons below are historical.
 
 [Project](../README.md) · [Shortcuts](SHORTCUTS.md) · [Audit](AUDIT.md)
 
@@ -8,7 +8,7 @@ RedBlade+ requests 1 ms USB polling and preserves the shared Sonix matrix/PWM ti
 
 ## Run tonight on Windows
 
-Extract the release ZIP. It includes the tools and `dist/redblade-plus-benchmark-windows.exe`. Python 3.10+ and PowerShell 7 are required.
+Extract the **Full complete-source ZIP**, then open its `redblade-plus-v0.13.0` folder. It includes the tools and `dist/redblade-plus-benchmark-windows.exe`; the small Studio portable ZIP contains the app instead. Python 3.10+ and PowerShell 7 are required.
 
 ### 1. Native code check — RGB software keeps running
 

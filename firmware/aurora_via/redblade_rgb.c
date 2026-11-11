@@ -250,6 +250,7 @@ void redblade_rgb_wake(void) {
 }
 
 void redblade_rgb_begin_frame(void) {
+    redblade_controls_begin_frame();
     // Once per RGB frame, outside the keyboard scan and USB packet handler.
     const uint32_t now = timer_read32();
     render_kind = RENDER_OFF;

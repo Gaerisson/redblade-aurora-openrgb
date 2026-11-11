@@ -46,8 +46,8 @@ int main(void) {
     press(RB_TURBO_E);color(RB_LED_FN,false,42,200);color(RB_LED_E,false,42,200);press(RB_TURBO_E); // Turbo6.
     press(RB_AUTO_W);color(RB_LED_FN,false,49,200);color(RB_LED_W,false,49,200);press(RB_AUTO_W); // Forward7.
     press(RB_GAME);color(RB_LED_LGUI,false,56,200);color(RB_LED_FN,false,63,200);press(RB_GAME); // Lock8/game9.
-    now=660;click_target(19);color(RB_LED_FN,false,70,200);color(18,false,70,200);
-    assert(redblade_controls_indicator(18,false,&c) && c.v==239);redblade_controls_suspend(); // Left10 with blink scaling.
+    now=660;click_target(19);redblade_rgb_begin_frame();color(RB_LED_FN,false,70,200);color(18,false,70,200);
+    assert(redblade_controls_indicator(18,false,&c) && c.v==120);redblade_controls_suspend(); // Left10 uses the same palette peak as Fn.
     click_target(20);color(RB_LED_FN,false,77,200);color(19,false,77,200);redblade_controls_suspend(); // Right11.
     host_locks=(led_t){.caps_lock=true,.num_lock=true,.scroll_lock=true};
     color(RB_LED_CAPS,false,84,200);color(RB_LED_NUM,false,84,200);color(RB_LED_SCROLL,false,91,200); // Locks12/13.

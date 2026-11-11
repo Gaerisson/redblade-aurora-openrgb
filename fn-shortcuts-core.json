@@ -266,6 +266,13 @@
       "key": "CAPS",
       "symbol": "KC_TRNS",
       "code": 1
+    },
+    {
+      "row": 2,
+      "col": 8,
+      "key": "I",
+      "symbol": "KC_TRNS",
+      "code": 1
     }
   ]
 }

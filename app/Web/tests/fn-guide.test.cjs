@@ -7,8 +7,8 @@ const root = path.resolve(__dirname, '../../..');
 const fixture = JSON.parse(fs.readFileSync(path.join(root, 'fn-shortcuts.json'), 'utf8'));
 const geometry = JSON.parse(fs.readFileSync(path.join(root, 'led-map.json'), 'utf8'));
 const expected = fixture.bindings.map(b => geometry.findIndex(p => p.matrix[0] === b.row && p.matrix[1] === b.col)).sort((a,b) => a-b);
-assert.equal(expected.length, 34);
-assert.equal(new Set(guide.leds).size, 34);
+assert.equal(expected.length, 35);
+assert.equal(new Set(guide.leds).size, 35);
 assert.deepEqual(guide.leds, expected, 'factory Fn bindings match the firmware fixture');
 for (const led of expected) for (const lang of ['en','fr']) for (const shift of [false,true]) {
     const value = guide.helpFor(led, shift, lang, {modules:4095});
@@ -32,4 +32,7 @@ assert.equal(guide.helpFor(40, false, 'en', {modules:128}).enabled, true);
 assert.equal(guide.helpFor(40, false, 'en', {modules:0}).enabled, false);
 assert.equal(guide.helpFor(61, false, 'en').enabled, false);
 assert.equal(guide.helpFor(61, false, 'en', {modules:1024}).enabled, true);
+assert.match(guide.helpFor(49, false, 'en', {modules:256}).description, /30 seconds/);
+assert.equal(guide.helpFor(49, false, 'en', {modules:0}).enabled, false);
+assert.match(guide.helpFor(17, false, 'fr').description, /clic milieu/);
 console.log('Fn guide tests passed');

@@ -10,6 +10,7 @@
 
 _Static_assert(RB_GAME == 0x7E40 && RB_BOOT == 0x7E53, "VIA custom keycode ABI changed");
 _Static_assert(RB_TURBO_RATE == 0x7E58 && RB_TURBO_FASTER == 0x7E5B, "Game helper keycode ABI changed");
+_Static_assert(RB_CAPS_WORD == 0x7E61 && RB_ANTI_AFK == 0x7E62, "Movement helper keycode ABI changed");
 static bool game_mode, boot_armed, feedback_active;
 static bool recorder_rate_context;
 static bool caps_word, caps_weak;
@@ -18,14 +19,18 @@ static uint32_t boot_started_at, feedback_started_at;
 static keypos_t boot_key;
 static uint8_t media_held;
 static struct { uint8_t code, row, col; } media[3];
-static uint8_t turbo_key, turbo_led = 255, turbo_rate = 50, turbo_interval = 10;
+static uint8_t turbo_key, turbo_led = 255, turbo_rate = 60, turbo_interval = 8;
 static uint8_t turbo_base_ms = 10, turbo_remainder, trigger_held;
 static uint16_t turbo_fraction;
 static int8_t rate_direction;
 static bool rate_repeating;
 static keypos_t rate_key;
 static uint32_t rate_at;
-static bool turbo_down, auto_w, selecting;
+static bool turbo_down, selecting, turbo_frame_on;
+// Reuse Auto-W's state and start time; movement helpers are mutually exclusive.
+// 0: off, 1: Auto-W, 2/3: alternating anti-AFK direction.
+static uint8_t movement_mode, turbo_visual, turbo_visual_divider;
+static uint32_t movement_edge_at;
 static uint8_t pending_key, consumed_releases[(MATRIX_ROWS * MATRIX_COLS + 7) / 8];
 static uint32_t turbo_edge_at, selection_started_at;
 static keypos_t trigger[3];
@@ -33,7 +38,7 @@ static keypos_t trigger[3];
 // in the eight-LED rendering path. check_fn_map.py verifies this against VIA's
 // published default bindings and the pinned physical LED positions.
 static const uint8_t PROGMEM fn_shortcut_led_mask[] = {
-    0xFF,0x83,0xEF,0x00,0x12,0x79,0x00,0x31,0x02,0x00,0x00,0x00,0x6A,0x05
+    0xFF,0x83,0xEF,0x00,0x12,0x79,0x02,0x31,0x02,0x00,0x00,0x00,0x6A,0x05
 };
 _Static_assert(sizeof(fn_shortcut_led_mask) == (RGB_MATRIX_LED_COUNT + 7) / 8, "Fn LED mask size differs from the board");
 static bool any_turbo_enabled(void) {
@@ -43,7 +48,7 @@ static bool shortcut_enabled(uint8_t index) {
     if (index>=109 || !(pgm_read_byte(&fn_shortcut_led_mask[index/8]) & (1U<<(index%8)))) return false;
     if (index==RB_LED_E || index==RB_LED_F || index==RB_LED_SPACE) return redblade_config_feature(RB_MODULE_KEY_TURBO);
     if (index==RB_LED_CAPS) return redblade_config_feature(RB_MODULE_CAPS_WORD);
-    if (index==RB_LED_W) return redblade_config_feature(RB_MODULE_FORWARD);
+    if (index==RB_LED_W || index==49) return redblade_config_feature(RB_MODULE_FORWARD);
     if (index==RB_LED_T || index==RB_LED_R) return any_turbo_enabled();
     if (index==RB_LED_MINUS || index==RB_LED_PLUS) return any_turbo_enabled() || redblade_config_feature(RB_MODULE_RECORDER);
     if (index==16 || (index>=21 && index<=23)) return redblade_config_feature(RB_MODULE_RECORDER);
@@ -54,7 +59,7 @@ static bool action_enabled(uint16_t code) {
     if (code==RB_TURBO_E || code==RB_TURBO_F || code==RB_TURBO_SPACE) return redblade_config_feature(RB_MODULE_KEY_TURBO);
     if (code==RB_TURBO_SELECT || code==RB_TURBO_RATE) return any_turbo_enabled();
     if (code==RB_TURBO_SLOWER || code==RB_TURBO_FASTER) return any_turbo_enabled() || redblade_config_feature(RB_MODULE_RECORDER);
-    if (code==RB_AUTO_W) return redblade_config_feature(RB_MODULE_FORWARD);
+    if (code==RB_AUTO_W || code==RB_ANTI_AFK) return redblade_config_feature(RB_MODULE_FORWARD);
     if (code>=RB_REC_ARM && code<=RB_REC_3) return redblade_config_feature(RB_MODULE_RECORDER);
     if (code==RB_CAPS_WORD) return redblade_config_feature(RB_MODULE_CAPS_WORD);
     if (code==RB_GAME) return redblade_config_feature(RB_MODULE_WIN_LOCK);
@@ -65,23 +70,43 @@ uint8_t redblade_turbo_key(void) { return turbo_key; }
 uint8_t redblade_turbo_rate(void) { return turbo_rate; }
 uint8_t redblade_turbo_led(void) { return turbo_led; }
 bool redblade_turbo_selecting(void) { return selecting || pending_key; }
-bool redblade_auto_w(void) { return auto_w; }
+bool redblade_auto_w(void) { return movement_mode==1; }
+bool redblade_anti_afk(void) { return movement_mode>=2; }
+void redblade_controls_begin_frame(void) { turbo_frame_on=(turbo_visual & 128)!=0; }
 bool redblade_guide_active(void) { return false; } // Retired, keep diagnostic ABI.
 bool redblade_recorder_rate_context(void) { return recorder_rate_context; }
-static bool mouse_target(void) { return turbo_key == 0xD1 || turbo_key == 0xD2; }
+static bool mouse_target(void) { return turbo_key>=0xD1 && turbo_key<=0xD3; }
+static void turbo_visual_edge(bool down) {
+    if (turbo_rate<=12) turbo_visual=down ? 128 : 0;
+    else if (down) {
+        const uint8_t count=(turbo_visual & 127)+1;
+        turbo_visual=count>=turbo_visual_divider ? (turbo_visual ^ 128) & 128 : (turbo_visual & 128) | count;
+    }
+}
 static void turbo_output(bool down) {
     if (mouse_target()) {
         report_mouse_t report = {0};
-        report.buttons = down ? (turbo_key == 0xD1 ? 1 : 2) : 0;
+        report.buttons = down ? (1U << (turbo_key-0xD1)) : 0;
         host_mouse_send(&report);
     } else if (down) register_code(turbo_key); else unregister_code(turbo_key);
+    turbo_visual_edge(down);
+}
+static hsv_t turbo_color(void) {
+    const uint8_t v=turbo_frame_on ? 128 : 12;
+    if (turbo_key==0xD3) return (hsv_t){128,255,v}; // Middle button has its own cyan cue.
+    const bool mouse=mouse_target();
+    return redblade_config_effect_scaled(mouse ? (turbo_key==0xD1 ? RB_COLOR_MOUSE_LEFT : RB_COLOR_MOUSE_RIGHT) : RB_COLOR_TURBO,
+        (hsv_t){mouse ? (turbo_key==0xD1 ? 32 : 200) : 0,255,v},128);
+}
+static hsv_t afk_color(void) {
+    return redblade_config_effect_scaled(RB_COLOR_FORWARD,(hsv_t){85,255,timer_read32()-movement_edge_at<200 ? 128 : 40},128);
 }
 
 static void stop_turbo(void) {
     if (turbo_down) turbo_output(false);
-    turbo_key = 0; turbo_led = 255; turbo_down = false;
+    turbo_key = 0; turbo_led = 255; turbo_down = false; turbo_visual=0;
 }
-static void stop_w(void) { if (auto_w) unregister_code(KC_W); auto_w = false; }
+static void stop_w(void) { if (redblade_auto_w()) unregister_code(KC_W); movement_mode=0; }
 static void caps_clear_shift(void) {
     if (!caps_weak) return;
     caps_weak=false;
@@ -96,6 +121,7 @@ static void set_rate(uint8_t rate) {
     // later edges so a requested 60/s does not become 62.5/s.
     turbo_base_ms = 500 / rate; turbo_remainder = 500 % rate;
     turbo_interval = turbo_base_ms; turbo_fraction = 0; turbo_edge_at = timer_read32();
+    turbo_visual_divider=(rate+11)/12; turbo_visual=turbo_down ? 128 : 0;
 }
 static void rate_step(int8_t direction) {
     if (recorder_rate_context) redblade_recorder_speed_step(direction);
@@ -110,12 +136,13 @@ static uint8_t led_at(keypos_t pos) {
     return pos.row < MATRIX_ROWS && pos.col < MATRIX_COLS ? g_led_config.matrix_co[pos.row][pos.col] : 255;
 }
 static void start_turbo(uint8_t key, uint8_t led) {
-    if (key == KC_W) stop_w(); // Exactly one owner for a generated usage.
+    if (key == KC_W || redblade_anti_afk()) stop_w(); // Exactly one owner for a generated usage.
     if (is_key_pressed(key)) return; // Never steal a physically held target.
     stop_turbo(); caps_stop();
     turbo_started_at = timer_read32();
     turbo_key = key; turbo_led = led; turbo_down = true;
     turbo_fraction = 0; turbo_interval = turbo_base_ms; turbo_edge_at = timer_read32();
+    turbo_visual=128;
     turbo_output(true);
     redblade_rgb_key_flash(led);
 }
@@ -140,13 +167,13 @@ void redblade_controls_init(void) {
     redblade_recorder_init(); recorder_rate_context = false;
     media_held = trigger_held = 0;
     for (uint8_t i = 0; i < sizeof(consumed_releases); ++i) consumed_releases[i] = 0;
-    set_rate(redblade_config_byte(5,50));
+    set_rate(redblade_config_byte(5,60));
     redblade_recorder_speed_configure(redblade_config_byte(6,2));
     recorder_rate_context=!any_turbo_enabled() && redblade_config_feature(RB_MODULE_RECORDER);
 }
 void redblade_controls_apply_config(void) {
     redblade_controls_suspend();
-    set_rate(redblade_config_byte(5,50));
+    set_rate(redblade_config_byte(5,60));
     redblade_recorder_speed_configure(redblade_config_byte(6,2));
     recorder_rate_context=!any_turbo_enabled() && redblade_config_feature(RB_MODULE_RECORDER);
 }
@@ -173,10 +200,15 @@ void redblade_controls_task(bool fn_active) {
         uint8_t seconds=redblade_config_byte(8,30); if (!seconds) seconds=30;
         const uint32_t limit=(uint32_t)seconds*1000UL;
         if (turbo_key && now-turbo_started_at>=limit) stop_turbo();
-        if (auto_w && now-forward_started_at>=limit) stop_w();
+        if (movement_mode && now-forward_started_at>=limit) stop_w();
         if (redblade_recorder_state()==RB_REC_PLAYING && now-playback_started_at>=limit) redblade_recorder_stop(true);
     }
     redblade_recorder_task(fn_active);
+    if (redblade_anti_afk() && timer_read32()-movement_edge_at>=30000UL) {
+        // One report only after actual inactivity; no queued catch-up movements.
+        report_mouse_t report={0};report.x=movement_mode==2 ? 1 : -1;
+        host_mouse_send(&report);movement_mode^=1;movement_edge_at=timer_read32();
+    }
     if (!boot_armed && !turbo_key && !selecting && !pending_key) return;
     const uint32_t now = timer_read32();
     if ((selecting || pending_key) && now - selection_started_at >= REDBLADE_TURBO_SELECT_TIMEOUT_MS) {
@@ -229,16 +261,18 @@ bool redblade_controls_process(uint16_t keycode, keyrecord_t *record) {
         rate_begin(keycode == 0x57 ? 1 : -1, pos); return false;
     }
     if (keycode == KC_ESC && record->event.pressed) stop_automation();
+    if (record->event.pressed && keycode>1 && keycode!=RB_ANTI_AFK &&
+        !(keycode>=QK_MOMENTARY && keycode<=QK_MOMENTARY_MAX) && redblade_anti_afk()) stop_w();
     if (selecting && record->event.pressed && keycode != RB_BOOT && keycode != RB_TURBO_SELECT && keycode != RB_REC_ARM && keycode != KC_ESC) {
         if (!valid_pos) return false;
         // Only resolve VIA's base layer while choosing; with Fn still held,
         // F1 selects F1 rather than changing the lighting profile.
         const uint16_t base = dynamic_keymap_get_keycode(0, pos.row, pos.col);
-        if (redblade_config_feature(RB_MODULE_MOUSE_TURBO) && (base == 0xAA || base == 0xA9) && pos.row == 0 && (pos.col == 19 || pos.col == 20)) {
-            selecting = false; pending_key = base == 0xAA ? 0xD1 : 0xD2;
+        if (redblade_config_feature(RB_MODULE_MOUSE_TURBO) && pos.row==0 && (((base==0xAA || base==0xA9) && (pos.col==19 || pos.col==20)) || (base==0xA8 && pos.col==18))) {
+            selecting = false; pending_key = base==0xAA ? 0xD1 : base==0xA9 ? 0xD2 : 0xD3;
             selection_started_at = timer_read32(); trigger[0] = pos;
             consumed_releases[position / 8] |= 1 << (position % 8);
-            return false; // Volume-key selection never changes audio or track.
+            return false; // Mouse selection never changes audio or track.
         }
         if (redblade_config_feature(RB_MODULE_KEY_TURBO) && base >= 4 && base <= 0xA4 && base != KC_ESC && base != 0x66 && !is_key_pressed(base)) {
             selecting = false; pending_key = base; selection_started_at = timer_read32(); trigger[0] = pos;
@@ -260,7 +294,7 @@ bool redblade_controls_process(uint16_t keycode, keyrecord_t *record) {
     if (game_mode && (keycode == KC_LGUI || keycode == KC_RGUI ||
         (keycode >= QK_MODS && keycode <= QK_MODS_MAX && ((QK_MODS_GET_MODS(keycode) & 8) ||
         QK_MODS_GET_BASIC_KEYCODE(keycode) == KC_LGUI || QK_MODS_GET_BASIC_KEYCODE(keycode) == KC_RGUI)))) return false;
-    if (keycode < RB_GAME || keycode > RB_CAPS_WORD) {
+    if (keycode < RB_GAME || keycode > RB_ANTI_AFK) {
         if (record->event.pressed && keycode >= 4 && keycode <= 255) rate_direction = 0;
         if (record->event.pressed && caps_word) {
             caps_clear_shift();
@@ -308,7 +342,7 @@ bool redblade_controls_process(uint16_t keycode, keyrecord_t *record) {
         case RB_ANIMATION: redblade_rgb_toggle_setting(RB_SETTING_ANIMATION); break;
         case RB_MEDIA_FALLBACK: redblade_rgb_toggle_setting(RB_SETTING_MEDIA); break;
         case RB_IDLE_FALLBACK: redblade_rgb_toggle_setting(RB_SETTING_IDLE_WHITE); break;
-        case RB_DEFAULTS: redblade_rgb_defaults(); game_set(false); stop_automation(); set_rate(50); redblade_recorder_speed_reset(); recorder_rate_context = false; break;
+        case RB_DEFAULTS: redblade_rgb_defaults(); game_set(false); stop_automation(); set_rate(60); redblade_recorder_speed_reset(); recorder_rate_context = false; break;
         case RB_PROFILE_NEXT: redblade_rgb_cycle(1); break;
         case RB_PROFILE_PREV: redblade_rgb_cycle(-1); break;
         case RB_SAVE:
@@ -323,6 +357,7 @@ bool redblade_controls_process(uint16_t keycode, keyrecord_t *record) {
         case RB_TURBO_F: toggle_turbo(KC_F,pos); break;
         case RB_TURBO_SPACE: toggle_turbo(KC_SPC,pos); break;
         case RB_TURBO_SELECT:
+            if (redblade_anti_afk()) stop_w();
             redblade_recorder_stop(true); recorder_rate_context = false;
             trigger[2] = pos; trigger_held |= 4;
             if (turbo_key || selecting || pending_key) { stop_turbo(); selecting = false; pending_key = 0; }
@@ -331,9 +366,14 @@ bool redblade_controls_process(uint16_t keycode, keyrecord_t *record) {
         case RB_AUTO_W:
             redblade_recorder_stop(true); recorder_rate_context = false;
             trigger[1] = pos; trigger_held |= 2;
-            if (auto_w) stop_w();
-            else { if (turbo_key == KC_W) stop_turbo(); if (!is_key_pressed(KC_W)) { caps_stop(); auto_w = true; forward_started_at=timer_read32(); register_code(KC_W); } }
+            if (redblade_auto_w()) stop_w();
+            else { if (turbo_key == KC_W) stop_turbo(); if (!is_key_pressed(KC_W)) { stop_w(); caps_stop(); movement_mode=1; forward_started_at=timer_read32(); register_code(KC_W); } }
             break;
+        case RB_ANTI_AFK: {
+            const bool was_active=redblade_anti_afk();stop_automation();
+            if (!was_active) { movement_mode=2;forward_started_at=movement_edge_at=timer_read32(); }
+            break;
+        }
         case RB_TURBO_RATE:
             redblade_recorder_stop(true); recorder_rate_context = false;
             set_rate(shift ? (turbo_rate > 50 ? 50 : turbo_rate > 25 ? 25 : 100) : (turbo_rate < 25 ? 25 : turbo_rate < 50 ? 50 : turbo_rate < 100 ? 100 : 25));
@@ -370,8 +410,9 @@ bool redblade_controls_indicator(uint8_t index, bool fn_active, hsv_t *color) {
     if (redblade_config_feature(RB_MODULE_RECORDER) && redblade_recorder_indicator(index, fn_active, color)) return true;
     if (index == RB_LED_FN) {
         if (selecting || pending_key) *color = redblade_config_effect_scaled(RB_COLOR_SELECTION,(hsv_t){32,255,(timer_read32()/250)&1 ? 128 : 40},128);
-        else if (turbo_key) *color = redblade_config_effect(mouse_target() ? (turbo_key==0xD1 ? RB_COLOR_MOUSE_LEFT : RB_COLOR_MOUSE_RIGHT) : RB_COLOR_TURBO,(hsv_t){mouse_target() ? (turbo_key==0xD1 ? 32 : 200) : 0,255,128});
-        else if (auto_w) *color = redblade_config_effect(RB_COLOR_FORWARD,(hsv_t){85,255,96});
+        else if (turbo_key) *color = turbo_color();
+        else if (redblade_anti_afk()) *color = afk_color();
+        else if (redblade_auto_w()) *color = redblade_config_effect(RB_COLOR_FORWARD,(hsv_t){85,255,96});
         else if (fn_active) *color = redblade_config_effect(RB_COLOR_FN_HELD,(hsv_t){128,255,96});
         else if (game_mode) *color = redblade_config_effect(RB_COLOR_FN_GAME,(hsv_t){200,255,80});
         else *color = redblade_config_effect(RB_COLOR_FN_IDLE,(hsv_t){170,255,24});
@@ -379,10 +420,11 @@ bool redblade_controls_indicator(uint8_t index, bool fn_active, hsv_t *color) {
     }
     if (game_mode && (index == RB_LED_LGUI || index == RB_LED_RGUI)) { *color = redblade_config_effect(RB_COLOR_WIN_LOCK,(hsv_t){0,255,128}); return true; }
     if (index == turbo_led && turbo_key) {
-        *color = redblade_config_effect_scaled(mouse_target() ? (turbo_key==0xD1 ? RB_COLOR_MOUSE_LEFT : RB_COLOR_MOUSE_RIGHT) : RB_COLOR_TURBO,
-            (hsv_t){mouse_target() ? (turbo_key==0xD1 ? 32 : 200) : 0,255,mouse_target() || turbo_rate>100 ? ((timer_read32()/60)&1 ? 255 : 40) : 128},128); return true;
+        *color=turbo_color();return true;
     }
-    if (auto_w && index == RB_LED_W) { *color = redblade_config_effect(RB_COLOR_FORWARD,(hsv_t){85,255,96}); return true; }
+    if (redblade_anti_afk() && index==49) { *color=afk_color();return true; }
+    if (redblade_auto_w() && index == RB_LED_W) { *color = redblade_config_effect(RB_COLOR_FORWARD,(hsv_t){85,255,96}); return true; }
+    if (selecting && index==17) { *color=(hsv_t){128,255,96};return true; }
     if (selecting && (index==18 || index==19)) { *color=redblade_config_effect_scaled(index==18 ? RB_COLOR_MOUSE_LEFT : RB_COLOR_MOUSE_RIGHT,(hsv_t){index==18 ? 32 : 200,255,96},128); return true; }
     if (hints && index==RB_LED_T) { *color=redblade_config_effect_scaled(RB_COLOR_SELECTION,(hsv_t){32,255,96},128);return true; }
     if (hints && (index == RB_LED_R || index == RB_LED_MINUS || index == RB_LED_PLUS)) {
@@ -433,7 +475,7 @@ bool redblade_controls_indicator(uint8_t index, bool fn_active, hsv_t *color) {
     }
     if (hints) {
         if (index==15 || index==RB_LED_E || index==RB_LED_F || index==RB_LED_SPACE || index==0) { *color=redblade_config_effect(RB_COLOR_TURBO_HINT,(hsv_t){0,255,96});return true; }
-        if (index==RB_LED_LGUI || index==RB_LED_RGUI || index==RB_LED_W) { *color=redblade_config_effect(RB_COLOR_GAME_HINT,(hsv_t){85,255,80});return true; }
+        if (index==RB_LED_LGUI || index==RB_LED_RGUI || index==RB_LED_W || index==49) { *color=redblade_config_effect(RB_COLOR_GAME_HINT,(hsv_t){85,255,80});return true; }
         if (index==1) { *color=redblade_config_effect(RB_COLOR_HOST_HINT,(hsv_t){170,255,80});return true; }
         if (index==2 || index==33 || index==36 || index==56 || index==104 || index==106) { *color=redblade_config_effect(RB_COLOR_LIGHT_HINT,(hsv_t){0,0,80});return true; }
         if (index==3) { *color=redblade_config_effect(RB_COLOR_ACCENT_HINT,(hsv_t){0,255,80});return true; }
@@ -461,6 +503,9 @@ bool redblade_controls_indicator(uint8_t index, bool fn_active, hsv_t *color) {
 }
 
 void redblade_controls_render(uint8_t led_min, uint8_t led_max, bool fn_active) {
+    // Standard QMK effects also draw these indicators. Do not depend only on
+    // the custom Direct effect to refresh their shared Turbo phase.
+    if (led_min==0) redblade_controls_begin_frame();
     if (!redblade_rgb_output_active() && !(fn_active && redblade_rgb_off_fn_available())) return;
     for (uint8_t i = led_min; i < led_max; ++i) {
         hsv_t color;

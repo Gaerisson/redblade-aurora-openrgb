@@ -14,7 +14,7 @@ def keymap_layers(root=ROOT):
 
 def check(root=ROOT):
     doc = json.loads((root/'fn-shortcuts.json').read_text(encoding='utf-8'))
-    assert doc['layer'] == 1 and doc['minimum_firmware'] == [0, 10, 0]
+    assert doc['layer'] == 1 and doc['minimum_firmware'] == [0, 13, 0]
     layers = keymap_layers(root)
     assert len(layers[0]) == len(layers[1]) == 109
     positions = [tuple(led['matrix']) for led in json.loads((root/'led-map.json').read_text(encoding='utf-8'))]

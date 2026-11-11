@@ -63,5 +63,14 @@ int main(void) {
  data[33]=3;store_fixture_seed(0,3,data);redblade_store_init();redblade_controls_init();
  assert(!event(0x7e61,true,3,0));assert(!event(0x7e61,false,3,0));assert(event(4,true,3,1));assert(!(get_weak_mods() & 2));
  now=1000;assert(!event(RB_AUTO_W,true,2,2));now+=120000;redblade_controls_task(false);assert(redblade_auto_w());redblade_controls_suspend();
+ // Anti-AFK uses the existing movement-module gate and safety timeout.
+ assert(!event(RB_ANTI_AFK,true,2,8));assert(redblade_anti_afk());
+ assert(!event(RB_ANTI_AFK,false,2,8));
+ unsigned moves=mouse_moves;now+=30000;redblade_controls_task(false);assert(mouse_moves==moves+1);
+ data[33]&=~1;store_fixture_seed(0,4,data);redblade_store_init();redblade_controls_init();
+ assert(!event(RB_ANTI_AFK,true,2,8));assert(!redblade_anti_afk());
+ data[33]=15;data[40]=5;store_fixture_seed(0,5,data);redblade_store_init();redblade_controls_init();
+ assert(!event(RB_ANTI_AFK,true,2,8));assert(redblade_anti_afk());
+ moves=mouse_moves;now+=5000;redblade_controls_task(false);assert(!redblade_anti_afk() && mouse_moves==moves);
  puts("options passed");
 }

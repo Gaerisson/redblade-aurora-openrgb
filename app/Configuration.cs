@@ -28,7 +28,7 @@ public sealed class OnboardProfile
     [JsonRequired] public byte Master { get; set; } = 255;
     [JsonRequired] public byte DefaultMode { get; set; }
     [JsonRequired] public byte TimeoutSeconds { get; set; } = 5;
-    [JsonRequired] public byte TurboRate { get; set; } = 50;
+    [JsonRequired] public byte TurboRate { get; set; } = 60;
     [JsonRequired] public byte RecorderSpeed { get; set; } = 2;
     [JsonRequired] public byte TrailFrames { get; set; } = 15;
     public byte SafetyTimeoutSeconds { get; set; }

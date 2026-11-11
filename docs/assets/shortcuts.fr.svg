@@ -115,7 +115,7 @@
 <text x="723.0" y="506.8" class="key">Y</text>
 <rect x="771.5" y="471.2" width="81" height="57" rx="7" fill="#202127" stroke="#3d3d45" stroke-width="2"/>
 <text x="812.0" y="506.8" class="key">U</text>
-<rect x="860.5" y="471.2" width="81" height="57" rx="7" fill="#202127" stroke="#3d3d45" stroke-width="2"/>
+<rect x="860.5" y="471.2" width="81" height="57" rx="7" fill="#28262c" stroke="#65d995" stroke-width="2"/>
 <text x="901.0" y="506.8" class="key">I</text>
 <rect x="949.5" y="471.2" width="81" height="57" rx="7" fill="#202127" stroke="#3d3d45" stroke-width="2"/>
 <text x="990.0" y="506.8" class="key">O</text>
@@ -252,7 +252,7 @@
 <text x="677" y="947" class="small">Blanc : éclairage</text>
 <rect x="1196" y="929" width="20" height="20" rx="10" fill="#b589ef" stroke="none" stroke-width="2"/>
 <text x="1227" y="947" class="small">Violet : reset / contexte</text>
-<text x="96" y="989" class="small">Fn maintenue, Turbo à 50/s : emplacements vides gris ; F5–F7 verts si actifs. R et −/+ varient. Couleurs personnalisables.</text>
+<text x="96" y="989" class="small">Fn maintenue, Turbo à 60/s : emplacements vides gris ; F5–F7 verts si actifs. R et −/+ varient. Couleurs personnalisables.</text>
 <rect x="64" y="1036" width="1118" height="600" rx="20" fill="#18191f" stroke="#303039" stroke-width="2"/>
 <rect x="64" y="1036" width="6" height="600" rx="3" fill="#41d6df" stroke="none" stroke-width="2"/>
 <text x="94" y="1079" class="tag" fill="#41d6df" style="fill:#41d6df">01  /  ENREGISTREUR</text>
@@ -282,7 +282,7 @@
 <text x="1230" y="1123" class="section">Turbo et jeu</text>
 <path d="M1230 1146h1076" stroke="#303039" stroke-width="2"/>
 <text x="1232" y="1184" class="body" fill="#f2f1f4" style="fill:#f2f1f4">Fn + T → touche</text>
-<text x="1232" y="1214" class="small">Choisir une touche. Volume − / + : clic souris gauche / droit.</text>
+<text x="1232" y="1214" class="small">Choisir une touche. Volume − / + / Muet : clic gauche / droit / milieu.</text>
 <text x="1232" y="1270" class="body" fill="#f2f1f4" style="fill:#f2f1f4">Fn + E / F / Espace</text>
 <text x="1232" y="1300" class="small">Activer ou arrêter un Turbo clavier direct.</text>
 <text x="1232" y="1356" class="body" fill="#f2f1f4" style="fill:#f2f1f4">Fn + R  /  Fn + Maj + R</text>
@@ -290,7 +290,7 @@
 <text x="1232" y="1442" class="body" fill="#f2f1f4" style="fill:#f2f1f4">Fn + pavé − / +</text>
 <text x="1232" y="1472" class="small">Régler la cadence ; Échap arrête la fonction.</text>
 <text x="1232" y="1540" class="small">Cible et Fn actives : clavier rouge  ·  clic gauche ambre</text>
-<text x="1232" y="1575" class="small">Clic droit violet ; les couleurs changent pendant la sélection.</text>
+<text x="1232" y="1575" class="small">Clic droit violet · milieu cyan ; Fn et cible pulsent ensemble.</text>
 <rect x="64" y="1666" width="1118" height="423" rx="20" fill="#18191f" stroke="#303039" stroke-width="2"/>
 <rect x="64" y="1666" width="6" height="423" rx="3" fill="#e4e8ec" stroke="none" stroke-width="2"/>
 <text x="94" y="1709" class="tag" fill="#e4e8ec" style="fill:#e4e8ec">03  /  F1–F4</text>
@@ -340,8 +340,8 @@
 <text x="96" y="2361" class="small">Arrêter et déverrouiller / ouvrir le mode flash.</text>
 <text x="1220" y="2248" class="body" fill="#f2f1f4" style="fill:#f2f1f4">Fn + Z (AZERTY) / W (QWERTY)</text>
 <text x="1220" y="2278" class="small">Activer ou arrêter le maintien avant.</text>
-<text x="1220" y="2331" class="body" fill="#f2f1f4" style="fill:#f2f1f4">Fn + CAPS  /  Fn + MUTE</text>
-<text x="1220" y="2361" class="small">Mot en majuscules (option) / lecture ou pause média.</text>
+<text x="1220" y="2331" class="body" fill="#f2f1f4" style="fill:#f2f1f4">Fn + I</text>
+<text x="1220" y="2361" class="small">Anti-AFK : mouvement alterné toutes les 30 s ; frappe pour arrêter.</text>
 <text x="64" y="2455" class="small">Maintenez Fn pour afficher les raccourcis, même après Fn + F4 ; la veille USB garde le clavier éteint.</text>
 <text x="64" y="2493" class="small">Les raccourcis d’usine peuvent changer dans VIA  ·  Studio propose un explorateur Fn interactif</text>
 </svg>

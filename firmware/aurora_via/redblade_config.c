@@ -40,7 +40,7 @@ hsv_t redblade_config_effect_scaled(uint8_t effect,hsv_t fallback,uint8_t nomina
 uint32_t redblade_config_timeout(void) { return (uint32_t)redblade_config_byte(4,5)*1000UL; }
 
 uint8_t redblade_store_default_byte(uint16_t offset) {
-    static const uint8_t PROGMEM metadata[16]={0xFF,3,255,0,5,50,2,15,30,0,0,0,0,0,0,0};
+    static const uint8_t PROGMEM metadata[16]={0xFF,3,255,0,5,60,2,15,30,0,0,0,0,0,0,0};
     static const uint8_t PROGMEM effects[72]={
         0,255,255, 0,255,255, 0,255,255, 0,0,64,
         170,255,24, 128,255,96, 0,255,128, 85,255,96,
