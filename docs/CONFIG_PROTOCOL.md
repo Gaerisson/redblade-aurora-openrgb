@@ -1,6 +1,6 @@
 # RedBlade+ Studio configuration protocol, schema 1
 
-Target: Full firmware 0.9.0+, board identity `RDBLFS01`, USB 320F:5136, Raw HID FF60:61. Core deliberately excludes these modules/storage. All offsets below refer to the 32-byte payload, without the Windows report-ID prefix. Integers are little-endian unless explicitly stated. Existing VIA/VialRGB commands are unchanged.
+Target: Full firmware 0.10.0 (schema 1; Full 0.9.0 supports the earlier zero-reserved form), board identity `RDBLFS01`, USB 320F:5136, Raw HID FF60:61. Core deliberately excludes these modules/storage. All offsets below refer to the 32-byte payload, without the Windows report-ID prefix. Integers are little-endian unless explicitly stated. Existing VIA/VialRGB commands are unchanged.
 
 ## Configuration payload
 
@@ -12,14 +12,16 @@ Exactly **1696 bytes**: 32 global bytes followed by four 416-byte profiles.
 
 | Profile offset | Size | Meaning |
 | --- | --- | --- |
-| 0 | 2 | Enabled module bits (LE): bit0 startup wave, 1 four-media fallback, 2 idle fallback, 3 reactive typing, 4 Fn focus, 5 keyboard Turbo, 6 mouse Turbo, 7 Recorder, 8 forward hold, 9 Windows lock. Bits10..15 zero. Default 0x03FF. |
+| 0 | 2 | Enabled module bits (LE): bit0 startup wave, 1 four-media fallback, 2 idle fallback, 3 reactive typing, 4 Fn focus, 5 keyboard Turbo, 6 mouse Turbo, 7 Recorder, 8 forward hold, 9 Windows lock. bit10 Caps Word, bit11 automatic safety timeout; bits12..15 zero. Supported mask 0x0FFF; default 0x03FF (both new options off). |
 | 2 | 1 | Master brightness 0..255, default255 |
 | 3 | 1 | Default mode: 0 Host, 1 local per-key colors, 2 accent/Red, 3 Off |
 | 4 | 1 | Host RGB timeout in seconds, 1..60, default5 |
 | 5 | 1 | Default Turbo presses/s: 5..100 in steps5, then125/150/175/200/225/250; default50 |
 | 6 | 1 | Recorder speed index0..9: 0.5,0.75,1,1.25,1.5,1.75,2,4,8,Hyper; default2 (1x) |
 | 7 | 1 | Reactive trail lifetime1..15 RGB frames, default15 |
-| 8..15 | 8 | Zero, reserved |
+| 8 | 1 | Safety timeout in seconds: 0 means legacy default 30; otherwise 5..120. New defaults use 30. |
+| 9 | 1 | Caps Word layout: 0 AZERTY, 1 QWERTY; default 0. |
+| 10..15 | 6 | Zero, reserved |
 | 16 | 327 | 109 per-key HSV8 triples, physical LED order from led-map.json; default(0,0,64) |
 | 343 | 72 | 24 effect HSV8 triples in the order below |
 | 415 | 1 | Zero, reserved |
@@ -27,6 +29,8 @@ Exactly **1696 bytes**: 32 global bytes followed by four 416-byte profiles.
 Effects, index and default HSV8:
 
 0 startup wave (0,255,255); 1 reactive peak (0,255,255); 2 accent/Red profile (0,255,255); 3 media fallback (0,0,64); 4 Fn idle (170,255,24); 5 Fn held (128,255,96); 6 keyboard Turbo (0,255,128); 7 forward hold (85,255,96); 8 locked Windows keys (0,255,128); 9 Fn Game Mode (200,255,80); 10 left-click Turbo (32,255,128); 11 right-click Turbo (200,255,128); 12 Caps/Num active (85,255,128); 13 Scroll active (32,255,128); 14 Recorder recording (0,255,128); 15 Recorder one-shot (85,255,128); 16 Recorder loop (128,255,128); 17 selection/error (32,255,128); 18 Fn lighting hints (0,0,80); 19 Fn game hints (85,255,80); 20 Fn Turbo hints (0,255,96); 21 Fn Host hint (170,255,80); 22 Fn accent hint (0,255,80); 23 enabled option hints (85,255,64).
+
+Full 0.9 applications reject nonzero new bits or metadata; use the legacy zero form for compatibility. Full 0.10 accepts legacy values and maps timeout 0 to 30 seconds. Caps Word uses Fn + Caps (keycode `0x7E61`) and 34 basic Latin bindings; layout selects AZERTY or QWERTY. When enabled, the safety timeout stops Turbo, mouse Turbo, forward hold and Recorder playback, not recording capture; completed slots remain in RAM.
 
 RGB pickers convert RGB8 to HSV8 before encoding. Some RGB values quantize to the nearest HSV8 color. Dynamic brightness/breathing/blink still applies to these base colors. Master brightness and RGB Off/USB suspension remain authoritative. Fn focus follows the supplied shortcut positions and hides disabled helper shortcuts; it does not reclassify arbitrary VIA layer edits.
 

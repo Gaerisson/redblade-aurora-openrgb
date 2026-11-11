@@ -16,7 +16,7 @@
 #define REDBLADE_RGB_TIMEOUT_MS 5000UL
 #define DYNAMIC_KEYMAP_LAYER_COUNT 3
 #define REDBLADE_VERSION_MAJOR 0
-#define REDBLADE_VERSION_MINOR 9
+#define REDBLADE_VERSION_MINOR 10
 #define REDBLADE_VERSION_PATCH 0
 
 // No native effect event buffers in the Core edition.

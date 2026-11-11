@@ -88,7 +88,8 @@ internal static class SelfTests
             Check(KeyboardLayout.Legend(layout[43],true)=="Z"&&KeyboardLayout.Legend(layout[43],false)=="W","independent AZERTY/QWERTY legends preserve physical forward key");
             Check(FirmwareImage.Load("full").Bytes.Length==65536&&FirmwareImage.Load("core").Bytes.Length==65536,"bundled firmware SHA/identity/length");
             var helpers=FirmwareImage.ValidateHelpers();Check(helpers.Helper.Length>0&&helpers.Usb.Length>0,"bundled fixed flasher/DLL hashes");
-            var report = $"PASS {assertions} hardware-free assertions. No HID, process, service or UAC operations were used.";
+            await UpdateTests.Run();SoftwareUpdateTests.Run();HardwareDiagnostics.Test();StudioBridgeTests.Run();await EffectsTests.RunAsync();await ReconnectTests.Run();
+            var report = $"PASS {assertions} hardware-free assertions plus update discovery/download/install regression suites. No HID, service or UAC operations were used; update launches were simulated.";
             Console.WriteLine(report); File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "self-test-results.txt"), report + Environment.NewLine); return 0;
         }
         catch (Exception error) { Console.Error.WriteLine(error); File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "self-test-results.txt"), error.ToString()); return 1; }

@@ -10,18 +10,25 @@ using System.Text.RegularExpressions;
 using Microsoft.Win32;
 namespace RedBladePlus.Studio;
 
-internal enum HardwareOperation { Read, Save, Preview, Flash }
+internal enum HardwareOperation { Read, Save, Preview, Flash, Control, Effects }
+internal enum HardwareControl { StopHelpers, Host, Local, Off }
 internal sealed class JobRequest
 {
     public int Schema{get;set;}=1;
     public HardwareOperation Operation{get;set;}
+    public HardwareControl Control{get;set;}
+    public EffectSettings? EffectSettings{get;set;}
     public string Payload{get;set;}="";
     public uint ExpectedGeneration{get;set;}
     public string Edition{get;set;}="full";
     public string RequestingUserSid{get;set;}="";
+    public string FirmwareBase64{get;set;}="";
+    public string FirmwareManifestBase64{get;set;}="";
+    public string FirmwareSha256{get;set;}="";
 }
 internal sealed class JobResult
 {
+    public string Stage{get;set;}="prepare";
     public bool Done{get;set;}
     public bool Success{get;set;}
     public bool Programming{get;set;}
@@ -44,6 +51,13 @@ internal static class JobSafety
 internal static class FlashVerification
 {
     internal static bool IsComplete(int exitCode,bool checksum,bool reconnected,bool settingsVerified)=>exitCode==0&&checksum&&reconnected&&settingsVerified;
+    internal static bool CanRestoreTarget(byte[] payload,Version target)
+    {
+        if(payload.Length!=ConfigCodec.Length)throw new InvalidDataException("Invalid profile backup size.");
+        if(target>=new Version(0,10,0))return true;
+        for(int i=0;i<4;i++){int b=32+i*416;if((payload[b+1]&0x0c)!=0||payload[b+8]!=0||payload[b+9]!=0)return false;}
+        return true;
+    }
     internal static bool SamePort(string original,string[] locations)=>locations.Length==1&&string.Equals(locations[0],original,StringComparison.OrdinalIgnoreCase);
 }
 internal static class HardwareJobs
@@ -74,6 +88,15 @@ internal static class HardwareJobs
     {
         if(request.Schema!=1||!Enum.IsDefined(request.Operation)||request.Edition is not("full" or "core")||request.Payload.Length>3000)throw new InvalidDataException("Invalid fixed hardware operation.");
         try{if(string.IsNullOrEmpty(request.RequestingUserSid)||request.RequestingUserSid.Length>184||new SecurityIdentifier(request.RequestingUserSid).Value!=request.RequestingUserSid)throw new InvalidDataException("Invalid requesting user SID.");}catch(ArgumentException error){throw new InvalidDataException("Invalid requesting user SID.",error);}
+        if(!Enum.IsDefined(request.Control)||(request.Operation!=HardwareOperation.Control&&request.Control!=HardwareControl.StopHelpers))throw new InvalidDataException("Invalid hardware control.");
+        if(request.Operation==HardwareOperation.Effects) { if(request.EffectSettings==null)throw new InvalidDataException("Missing effect settings."); try{request.EffectSettings.Validate();}catch(ArgumentException error){throw new InvalidDataException("Invalid effect settings.",error);} }
+        else if(request.EffectSettings!=null)throw new InvalidDataException("Unexpected effect settings.");
+        bool external=request.FirmwareBase64.Length>0||request.FirmwareManifestBase64.Length>0||request.FirmwareSha256.Length>0;
+        if(external)
+        {
+            if(request.Operation!=HardwareOperation.Flash||request.FirmwareBase64.Length!=87384||request.FirmwareManifestBase64.Length>21848||request.FirmwareManifestBase64.Length==0||request.FirmwareSha256.Length!=64)throw new InvalidDataException("Invalid firmware job payload bounds.");
+            FirmwareImage.Validate(Convert.FromBase64String(request.FirmwareBase64),Convert.FromBase64String(request.FirmwareManifestBase64),request.Edition,request.FirmwareSha256);
+        }
         if(request.Operation is HardwareOperation.Save or HardwareOperation.Preview)ConfigCodec.Decode(Convert.FromBase64String(request.Payload));
         else if(request.Payload!="")throw new InvalidDataException("Unexpected job payload.");
     }
@@ -81,6 +104,17 @@ internal static class HardwareJobs
     {
         Folder(id);string path=Path.Combine(ProtectedStaging.JobPath(id),"result.json");if(!File.Exists(path))return null;
         try{return JsonSerializer.Deserialize<JobResult>(BoundedFile.Read(path,16384,snapshot:true),Json);}catch(Exception error) when(error is IOException or JsonException or UnauthorizedAccessException){return null;}
+    }
+    internal static void UpdateEffect(string id,EffectSettings settings)
+    {
+        settings.Validate();string directory=Folder(id),target=Path.Combine(directory,"effect.json"),temp=Path.Combine(directory,"effect-"+Guid.NewGuid().ToString("N")+".tmp");
+        try{File.WriteAllBytes(temp,JsonSerializer.SerializeToUtf8Bytes(settings,Json));File.Move(temp,target,true);}finally{if(File.Exists(temp))File.Delete(temp);}
+    }
+    internal static EffectSettings ReadEffectFile(string path)
+    {
+        if((File.GetAttributes(path)&FileAttributes.ReparsePoint)!=0)throw new InvalidDataException("Linked effect settings refused.");
+        var settings=JsonSerializer.Deserialize<EffectSettings>(BoundedFile.Read(path,4096,snapshot:true),Json)??throw new InvalidDataException("Empty effect settings.");
+        settings.Validate();return settings;
     }
     internal static void Cancel(string id)=>File.WriteAllText(Path.Combine(Folder(id),"cancel"),"");
     internal static void WriteResult(string directory,JobResult result)
@@ -100,17 +134,24 @@ internal static class HardwareJobs
             using var identity=WindowsIdentity.GetCurrent();if(!new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator))throw new IOException("This explicit hardware job requires administrator access to pause the OpenRGB service.");
             gate=new JobGate();
             var path=Path.Combine(inputDirectory,"request.json");if((File.GetAttributes(path)&FileAttributes.ReparsePoint)!=0)throw new InvalidDataException("Linked request refused.");
-            var bytes=BoundedFile.Read(path,8192);
+            var bytes=BoundedFile.Read(path,131072);
             var request=JsonSerializer.Deserialize<JobRequest>(bytes,Json)??throw new InvalidDataException("Empty job.");Validate(request);
             protectedJob=new ProtectedStaging(id,request.RequestingUserSid);directory=protectedJob.Path;
             using var singleUse=new FileStream(Path.Combine(directory,"started"),FileMode.CreateNew,FileAccess.Write,FileShare.None);
-            void Progress(string message){result.Message=message;WriteResult(directory,result);}
+            object progressLock=new();
+            void Progress(string message){lock(progressLock){result.Message=message;WriteResult(directory,result);}}
+            FirmwareImage? firmware=request.Operation==HardwareOperation.Flash?(request.FirmwareBase64.Length==0?FirmwareImage.Load(request.Edition):FirmwareImage.Validate(Convert.FromBase64String(request.FirmwareBase64),Convert.FromBase64String(request.FirmwareManifestBase64),request.Edition,request.FirmwareSha256)):null;
             Progress("Pausing current RGB clients for this operation…");using var rgb=new RgbSession();
-            using var cancel=new CancellationTokenSource(request.Operation==HardwareOperation.Flash?TimeSpan.FromMinutes(10):TimeSpan.FromMinutes(3));
+            using var cancel=new CancellationTokenSource(request.Operation==HardwareOperation.Effects?TimeSpan.FromHours(12):request.Operation==HardwareOperation.Flash?TimeSpan.FromMinutes(10):TimeSpan.FromMinutes(3));
             await JobSafety.WithCleanup(async()=>
             {
                 await rgb.Pause(cancel.Token);
-                if(request.Operation==HardwareOperation.Flash){await Flash(request,directory,inputDirectory,result,Progress,cancel.Token);return;}
+                if(request.Operation==HardwareOperation.Effects)
+                {
+                    result.Stage="effects"; Progress("Starting OpenRGB effects…");
+                    await RunOwnedEffects(rgb,request.EffectSettings!,inputDirectory,Progress,cancel.Token);return;
+                }
+                if(request.Operation==HardwareOperation.Flash){await Flash(request,firmware!,directory,inputDirectory,result,Progress,cancel.Token);return;}
                 using var hid=NativeHid.OpenKeyboard();var installed=await KeyboardProtocol.Identify(hid,cancel.Token);result.Firmware=(installed.Core?"Core ":"Full ")+installed.Version;
                 if(installed.Core||installed.Version<new Version(0,9,0))
                 {
@@ -121,6 +162,21 @@ internal static class HardwareJobs
                 var protocol=new ConfigProtocol(hid);
                 switch(request.Operation)
                 {
+                    case HardwareOperation.Control:
+                        Progress("Applying temporary keyboard control…");
+                        if(request.Control==HardwareControl.StopHelpers)
+                        {
+                            var command=Wire.Packet(8);var response=await hid.ExchangeAsync(command,cancel.Token);
+                            if(response.Length!=32||!response.AsSpan(0,3).SequenceEqual(command.AsSpan(0,3))||response[3]!=0)throw new InvalidDataException("Keyboard rejected stop command.");
+                        }
+                        else
+                        {
+                            var prior=await KeyboardProtocol.Via(hid,new byte[]{0xfe,0x81},cancel.Token,2);Wire.CheckSignature(prior);
+                            if(prior[2]!=1||prior[7]>3||(prior[9]&~7)!=0)throw new InvalidDataException("Unsupported runtime lighting snapshot.");
+                            byte mode=request.Control switch {HardwareControl.Host=>0,HardwareControl.Local=>1,HardwareControl.Off=>3,_=>throw new InvalidDataException("Invalid control.")};
+                            await protocol.Temporary(mode,prior[8],(byte)(prior[9]&7),cancel.Token);
+                        }
+                        Progress("Temporary keyboard control applied.");break;
                     case HardwareOperation.Read:
                         Progress("Reading four onboard profiles…");var read=await protocol.Read(cancel.Token);result.Payload=Convert.ToBase64String(read.Bytes);result.Generation=read.Caps.Generation;Progress("Four profiles read. RGB control is being returned to your applications.");break;
                     case HardwareOperation.Save:
@@ -131,8 +187,60 @@ internal static class HardwareJobs
             },()=>rgb.Restore());
             result.Success=true;return 0;
         }
-        catch(Exception error){result.Success=false;result.Message=error is AggregateException?error.Message+" "+string.Join(" ",((AggregateException)error).InnerExceptions.Select(e=>e.Message)):error.Message;return 1;}
-        finally{try{result.Done=true;if(protectedJob!=null)WriteResult(directory,result);}finally{try{gate?.Dispose();}finally{protectedJob?.Dispose();}}}
+        catch(Exception error){result.Success=false;result.Message=string.IsNullOrWhiteSpace(error.Message)?error.GetType().Name:error.Message;try{if(protectedJob!=null)File.WriteAllText(Path.Combine(directory,"diagnostic.log"),Diagnostic(error,result.Stage));}catch{}return 1;}
+        finally{try{result.Done=true;if(result.Success)result.Stage="done";if(protectedJob!=null)WriteResult(directory,result);}finally{try{gate?.Dispose();}finally{protectedJob?.Dispose();}}}
+    }
+    static async Task RunOwnedEffects(RgbSession rgb,EffectSettings settings,string inputDirectory,Action<string> progress,CancellationToken cancel)
+    {
+        await rgb.EnsureSdkStopped(cancel);
+        EffectLightingSnapshot snapshot;using(var hid=NativeHid.OpenKeyboard())snapshot=await EffectLightingSnapshot.Capture(hid,cancel);
+        bool resumeAttempted=false;
+        await JobSafety.WithCleanup(async()=>
+        {
+            using(var hid=NativeHid.OpenKeyboard())await snapshot.Acquire(hid,cancel);
+            resumeAttempted=true;await rgb.ResumeOpenRgbForEffects(cancel);
+            await RunEffects(rgb.SdkPort,settings,inputDirectory,progress,cancel);
+        },async()=>
+        {
+            using var restore=new CancellationTokenSource(TimeSpan.FromSeconds(35));
+            if(resumeAttempted)await rgb.PauseOpenRgbForEffects(restore.Token);
+            using var hid=NativeHid.OpenKeyboard();await snapshot.Restore(hid,restore.Token);
+        });
+    }
+    sealed class InlineProgress(Action<string> report):IProgress<string> { public void Report(string value)=>report(value); }
+    internal static async Task RunEffects(int port,EffectSettings initial,string inputDirectory,Action<string> progress,CancellationToken lifetime)
+    {
+        EffectSettings current=initial;using var stop=CancellationTokenSource.CreateLinkedTokenSource(lifetime);
+        string path=Path.Combine(inputDirectory,"effect.json"),cancelPath=Path.Combine(inputDirectory,"cancel");
+        async Task PollInputs()
+        {
+            DateTime last=DateTime.MinValue;long length=-1;
+            while(!stop.IsCancellationRequested)
+            {
+                if(File.Exists(cancelPath)){stop.Cancel();return;}
+                try
+                {
+                    var info=new FileInfo(path);
+                    if(info.Exists&&(info.LastWriteTimeUtc!=last||info.Length!=length))
+                    {
+                        last=info.LastWriteTimeUtc;length=info.Length;
+                        try{current=ReadEffectFile(path);}catch(Exception e) when(e is IOException or InvalidDataException or UnauthorizedAccessException or JsonException or ArgumentException){progress("Invalid effect update ignored; the previous settings remain active.");}
+                    }
+                }
+                catch(Exception e) when(e is IOException or UnauthorizedAccessException){progress("Effect update could not be read; the previous settings remain active.");}
+                await Task.Delay(100,stop.Token);
+            }
+        }
+        var poll=PollInputs();
+        try{await OpenRgbEffects.RunAsync(port,()=>current,new InlineProgress(progress),stop.Token);}
+        catch(OperationCanceledException) when(!lifetime.IsCancellationRequested&&File.Exists(cancelPath)){progress("Effect stopped. Restoring your RGB applications…");}
+        finally{stop.Cancel();try{await poll;}catch(OperationCanceledException){}}
+    }
+    static string Diagnostic(Exception error,string stage)
+    {
+        var lines=new List<string>{"Stage: "+stage};
+        void Add(Exception e){lines.Add(e.GetType().FullName+" HRESULT=0x"+e.HResult.ToString("X8"));lines.Add(e.StackTrace??"(no stack)");if(e is AggregateException aggregate)foreach(var inner in aggregate.InnerExceptions)Add(inner);else if(e.InnerException!=null)Add(e.InnerException);}
+        Add(error);return string.Join(Environment.NewLine,lines);
     }
     static async Task SaveWithRecovery(ConfigProtocol protocol,StudioConfig config,uint generation,Action<string> progress,CancellationToken cancel)
     {
@@ -170,9 +278,11 @@ internal static class HardwareJobs
         });
         progress("Temporary preview finished; original runtime lighting restored.");
     }
-    static async Task Flash(JobRequest request,string directory,string inputDirectory,JobResult result,Action<string> progress,CancellationToken cancel)
+    static async Task Flash(JobRequest request,FirmwareImage image,string directory,string inputDirectory,JobResult result,Action<string> progress,CancellationToken cancel)
     {
-        var image=FirmwareImage.Load(request.Edition);using var protectedStaging=new ProtectedStaging();string staging=protectedStaging.Path;image.Extract(staging);
+        using var protectedStaging=new ProtectedStaging();string staging=protectedStaging.Path;image.Extract(staging);
+        if(!CryptographicOperations.FixedTimeEquals(SHA256.HashData(BoundedFile.Read(Path.Combine(staging,"firmware.bin"),65536)),SHA256.HashData(image.Bytes)))throw new InvalidDataException("Protected firmware copy verification failed.");
+        result.Stage="backup";progress("Preparing private backup…");
         ViaBackup backup;ReadConfiguration? custom=null;KeyboardIdentity previous;
         using(var hid=NativeHid.OpenKeyboard())
         {
@@ -183,11 +293,12 @@ internal static class HardwareJobs
         await File.WriteAllBytesAsync(Path.Combine(backupDirectory,"via.json"),JsonSerializer.SerializeToUtf8Bytes(backup),cancel);
         if(custom!=null)await File.WriteAllBytesAsync(Path.Combine(backupDirectory,"onboard.bin"),custom.Bytes,cancel);
         result.BackupDirectory=backupDirectory;
+        if(custom!=null&&request.Edition=="full"&&!FlashVerification.CanRestoreTarget(custom.Bytes,image.Version))throw new InvalidDataException("The backed-up profiles contain settings unsupported by this older Full firmware. Flashing stopped; the private backup was retained.");
         var originalLocations=NativeHid.UsbLocations("320f&pid_5136");
         if(originalLocations.Length!=1)throw new IOException("A unique Redblade USB port could not be identified. Flashing refused.");
         string originalLocation=originalLocations[0];
         if(NativeHid.CountBootloaders()!=0)throw new IOException("A Sonix bootloader is already connected. Disconnect it before starting the flash.");
-        progress("Backup complete. Hold Fn + Esc for 2 seconds now. Waiting up to 2 minutes for the bootloader…");
+        result.Stage="waitingboot";progress("Backup complete. Hold Fn + Esc for 2 seconds now. Waiting up to 2 minutes for the bootloader…");
         var deadline=DateTime.UtcNow.AddMinutes(2);bool found=false;
         while(DateTime.UtcNow<deadline)
         {
@@ -199,21 +310,19 @@ internal static class HardwareJobs
         if(info.Exit!=0||!info.Output.Contains("SN32F24XB",StringComparison.Ordinal)||!Regex.IsMatch(info.Output,@"ROM size:\s+64 KB")||!Regex.IsMatch(info.Output,@"Security level:\s+CS0"))throw new InvalidDataException("Bootloader must identify SN32F24XB, 64 KB and CS0. Programming refused.");
         var finalLocations=NativeHid.UsbLocations("0c45&pid_7040");if(NativeHid.CountBootloaders()!=1||!FlashVerification.SamePort(originalLocation,finalLocations))throw new IOException("Bootloader identity became ambiguous.");
         if(File.Exists(Path.Combine(inputDirectory,"cancel")))throw new OperationCanceledException("Flash cancelled before programming.");
-        result.Programming=true;progress("Programming and verifying firmware. Keep the keyboard connected; this operation cannot be cancelled.");
+        result.Stage="program";result.Programming=true;progress("Programming and verifying firmware. Keep the keyboard connected; this operation cannot be cancelled.");
         // Once started, cancellation never kills the programming process.
         var flashed=await RunFlasher(helper,new[]{"-v","0c45/7040","-f",Path.Combine(staging,"firmware.bin"),"-o","0"},staging,true,progress,CancellationToken.None);
         result.Programming=false;bool checksums=flashed.Output.Contains("Programming verified successfully",StringComparison.Ordinal)&&flashed.Output.Contains("Checksum verified successfully",StringComparison.Ordinal);
         await File.WriteAllTextAsync(Path.Combine(directory,"flash.log"),flashed.Output);
         if(flashed.Exit!=0||!checksums)throw new IOException("Firmware programming/checksum verification failed. Private backups and flash log were retained; use recovery guidance.");
-        progress("Firmware checksum verified. Waiting for the normal keyboard interface…");
-        NativeHid? reconnected=null;deadline=DateTime.UtcNow.AddSeconds(30);
-        while(DateTime.UtcNow<deadline){try{reconnected=NativeHid.OpenKeyboard();break;}catch(IOException){await Task.Delay(500);}}
-        if(reconnected==null)throw new IOException("Flasher exited successfully, but the keyboard did not reconnect. Firmware success is not confirmed. Backups retained.");
+        result.Stage="verify";progress("Firmware checksum verified. Waiting for the normal keyboard interface…");
+        var connection=await ReconnectVerifiedAsync(()=>NativeHid.OpenKeyboard(),image.Version,request.Edition=="core",TimeSpan.FromSeconds(30),TimeSpan.FromMilliseconds(500),CancellationToken.None);
+        var reconnected=connection.Hid;
         using(reconnected)
         {
-            using var verify=new CancellationTokenSource(TimeSpan.FromMinutes(2));var current=await KeyboardProtocol.Identify(reconnected,verify.Token);result.Firmware=(current.Core?"Core ":"Full ")+current.Version;result.Unsupported=current.Core||current.Version<new Version(0,9,0);
-            if(current.Core!=(request.Edition=="core")||current.Version!=image.Version)throw new InvalidDataException("Reconnected firmware edition/version does not match the bundled image.");
-            progress("Firmware identity verified. Checking VIA preservation…");await backup.RestoreIfChanged(reconnected,current,progress,verify.Token);
+            using var verify=new CancellationTokenSource(TimeSpan.FromMinutes(2));var current=connection.Identity;result.Firmware=(current.Core?"Core ":"Full ")+current.Version;result.Unsupported=current.Core||current.Version<new Version(0,9,0);
+            result.Stage="restore";progress("Firmware identity verified. Checking VIA preservation…");await backup.ForFirmware(previous.Version,current.Version,previous.Core||current.Core).RestoreIfChanged(reconnected,current,progress,verify.Token);
             if(custom!=null&&!current.Core)
             {
                 var protocol=new ConfigProtocol(reconnected);var actual=await protocol.Read(verify.Token);
@@ -223,6 +332,29 @@ internal static class HardwareJobs
             if(!FlashVerification.IsComplete(flashed.Exit,checksums,true,true))throw new IOException("Flash verification did not finish.");
         }
         progress(custom!=null&&request.Edition=="core"?"Core flashed and verified. Full profile backup retained privately; Core cannot restore Full settings.":"Firmware, reconnection, VIA and supported onboard profiles verified. RGB applications are being restored.");
+    }
+    // Only identification reads are retried. Each attempt uses a fresh handle; no restore or programming is replayed.
+    internal static async Task<(IHidTransport Hid,KeyboardIdentity Identity)> ReconnectVerifiedAsync(Func<IHidTransport> open,Version expectedVersion,bool expectedCore,TimeSpan timeout,TimeSpan delay,CancellationToken cancel)
+    {
+        using var deadline=CancellationTokenSource.CreateLinkedTokenSource(cancel);deadline.CancelAfter(timeout);Exception? last=null;
+        try
+        {
+            while(true)
+            {
+                deadline.Token.ThrowIfCancellationRequested();IHidTransport? hid=null;
+                try
+                {
+                    hid=open();var identity=await KeyboardProtocol.Identify(hid,deadline.Token);
+                    if(identity.Core!=expectedCore||identity.Version!=expectedVersion)throw new InvalidDataException("Reconnected firmware edition/version does not match the flashed image. Backups retained.");
+                    return(hid,identity);
+                }
+                catch(IOException error){last=error;hid?.Dispose();}
+                catch{hid?.Dispose();throw;}
+                await Task.Delay(delay,deadline.Token);
+            }
+        }
+        catch(OperationCanceledException) when(!cancel.IsCancellationRequested)
+        {throw new TimeoutException("Flasher checksum passed, but keyboard identity could not be verified within the reconnect window. Backups retained. Last HID error: "+last?.Message,last);}
     }
     static async Task<(int Exit,string Output)> RunFlasher(string helper,string[] arguments,string directory,bool programming,Action<string> progress,CancellationToken cancel)
     {
@@ -243,6 +375,14 @@ internal static class HardwareJobs
 internal sealed class ViaBackup
 {
     public int Schema{get;set;}=1;public string Board{get;set;}="RDBLFS01";public int ViaProtocol{get;set;}public int Layers{get;set;}public string Firmware{get;set;}="";public byte[] Keymap{get;set;}=Array.Empty<byte>();public byte[] Macros{get;set;}=Array.Empty<byte>();
+    internal ViaBackup ForFirmware(Version previous,Version target,bool core)
+    {
+        var copy=new ViaBackup { Schema=Schema,Board=Board,ViaProtocol=ViaProtocol,Layers=Layers,Firmware=Firmware,Keymap=(byte[])Keymap.Clone(),Macros=(byte[])Macros.Clone() };
+        const int fnCaps=378;
+        if(!core&&previous<new Version(0,10,0)&&target>=new Version(0,10,0)&&Layers>=2&&copy.Keymap.Length>fnCaps+1&&copy.Keymap[fnCaps]==0&&copy.Keymap[fnCaps+1]<=1)
+        {copy.Keymap[fnCaps]=0x7e;copy.Keymap[fnCaps+1]=0x61;}
+        return copy;
+    }
     static async Task<byte[]> ReadBuffer(IHidTransport hid,byte command,int size,CancellationToken cancel)
     {
         var bytes=new byte[size];for(int offset=0;offset<size;offset+=28){int count=Math.Min(28,size-offset);var r=await KeyboardProtocol.Via(hid,new[]{command,(byte)(offset>>8),(byte)offset,(byte)count},cancel,4);r.AsSpan(4,count).CopyTo(bytes.AsSpan(offset));}return bytes;
@@ -336,10 +476,16 @@ internal sealed class FirmwareImage
     internal byte[] Bytes=Array.Empty<byte>();internal Version Version=new(0,0,0);internal string Edition="full";
     internal static FirmwareImage Load(string edition)
     {
-        if(edition is not("full" or "core"))throw new InvalidDataException("Unsupported firmware edition.");
-        using var manifest=JsonDocument.Parse(Embedded.Read(edition+".manifest.json"));var m=manifest.RootElement;var bytes=Embedded.Read(edition+".bin");
-        if(m.GetProperty("board").GetString()!="Designed by GG Redblade FS ISO"||m.GetProperty("mcu").GetString()!="SN32F248B"||m.GetProperty("usb_vid").GetString()!="320f"||m.GetProperty("usb_pid").GetString()!="5136"||m.GetProperty("led_count").GetInt32()!=109||m.GetProperty("binary_bytes").GetInt32()!=65536||bytes.Length!=65536||!Convert.ToHexString(SHA256.HashData(bytes)).Equals(m.GetProperty("sha256").GetString(),StringComparison.OrdinalIgnoreCase))throw new InvalidDataException("Bundled firmware identity, length or SHA-256 failed.");
-        return new(){Bytes=bytes,Edition=edition,Version=Version.Parse(m.GetProperty("release").GetString()!.TrimStart('v'))};
+        return Validate(Embedded.Read(edition+".bin"),Embedded.Read(edition+".manifest.json"),edition);
+    }
+    internal static FirmwareImage Validate(byte[] bytes,byte[] manifest,string edition,string? expectedSha256=null)
+    {
+        if(edition is not("full" or "core")||manifest.Length is 0 or >16384||bytes.Length!=65536)throw new InvalidDataException("Invalid firmware edition or size.");
+        using var document=JsonDocument.Parse(manifest);var m=document.RootElement;
+        string hash=Convert.ToHexString(SHA256.HashData(bytes));
+        if(m.GetProperty("board").GetString()!="Designed by GG Redblade FS ISO"||m.GetProperty("mcu").GetString()!="SN32F248B"||m.GetProperty("usb_vid").GetString()!="320f"||m.GetProperty("usb_pid").GetString()!="5136"||m.GetProperty("edition").GetString()!=edition||m.GetProperty("led_count").GetInt32()!=109||m.GetProperty("binary_bytes").GetInt32()!=65536||!bytes.AsSpan(bytes.Length-4).SequenceEqual(new byte[]{0x55,0x55,0xaa,0xaa})||!hash.Equals(m.GetProperty("sha256").GetString(),StringComparison.OrdinalIgnoreCase)||(expectedSha256!=null&&!hash.Equals(expectedSha256,StringComparison.OrdinalIgnoreCase)))throw new InvalidDataException("Firmware identity, Sonix flag or SHA-256 failed.");
+        if(!System.Version.TryParse(m.GetProperty("release").GetString()?.TrimStart('v'),out var version))throw new InvalidDataException("Invalid firmware version.");
+        return new(){Bytes=bytes,Edition=edition,Version=version};
     }
     internal void Extract(string directory)
     {
@@ -354,15 +500,50 @@ internal sealed class FirmwareImage
     }
 }
 
+// Snapshot and restore the Full runtime profile and VialRGB state before SDK ownership.
+internal sealed class EffectLightingSnapshot(KeyboardIdentity identity,byte[] runtime,byte[] vial)
+{
+    internal static async Task<EffectLightingSnapshot> Capture(IHidTransport hid,CancellationToken ct)
+    {
+        var identity=await KeyboardProtocol.Identify(hid,ct);
+        if(!identity.Core&&identity.Version<new Version(0,8,0))throw new InvalidDataException("Unsupported firmware. Upgrade Full firmware to use effects.");
+        byte[] runtime=Array.Empty<byte>();
+        if(!identity.Core)
+        {
+            runtime=await KeyboardProtocol.Via(hid,new byte[]{0xfe,0x81},ct,2);Wire.CheckSignature(runtime);
+            if(runtime[2]!=1||runtime[7]>3||(runtime[9]&~7)!=0)throw new InvalidDataException("Unsupported runtime lighting snapshot.");
+            if(identity.Version<new Version(0,9,0)&&(runtime[7]!=0||runtime[8]==0))throw new InvalidDataException("Select Host with Fn+F1 or upgrade to Full 0.10 before starting software effects.");
+        }
+        var vial=await KeyboardProtocol.Via(hid,new byte[]{8,0x41},ct,2);
+        if(Wire.U16(vial,2)>(identity.Core?1:2))throw new InvalidDataException("Unsupported prior VialRGB mode.");
+        return new(identity,runtime,vial);
+    }
+    internal async Task Acquire(IHidTransport hid,CancellationToken ct)
+    {
+        if(identity.Core)return; // Core implements Direct and Off only, with no standalone scalar mode.
+        await KeyboardProtocol.Via(hid,new byte[]{7,0x41,2,0,vial[4],vial[5],vial[6],255},ct,2);
+        if(identity.Version>=new Version(0,9,0))await new ConfigProtocol(hid).Temporary(0,255,(byte)(runtime[9]&7),ct);
+    }
+    internal async Task Restore(IHidTransport hid,CancellationToken ct)
+    {
+        var errors=new List<Exception>();
+        if(!identity.Core)try{await KeyboardProtocol.Via(hid,new byte[]{7,0x41,2,0,vial[4],vial[5],vial[6],vial[7]},ct,2);}catch(Exception e){errors.Add(e);}
+        if(!identity.Core&&identity.Version>=new Version(0,9,0))try{await new ConfigProtocol(hid).Temporary(runtime[7],runtime[8],(byte)(runtime[9]&7),ct);}catch(Exception e){errors.Add(e);}
+        try{var original=new byte[8];original[0]=7;original[1]=0x41;vial.AsSpan(2,6).CopyTo(original.AsSpan(2));await KeyboardProtocol.Via(hid,original,ct,2);}catch(Exception e){errors.Add(e);}
+        if(errors.Count>0)throw new AggregateException("Original keyboard lighting could not be fully restored.",errors);
+    }
+}
+
 internal sealed class RgbSession:IDisposable
 {
     sealed record RunningApp(string Name,string Path,string[] Arguments,Microsoft.Win32.SafeHandles.SafeAccessTokenHandle Token);
-    readonly List<RunningApp> apps=new();bool serviceWasRunning,paused,sdkWasReachable;int port=6742;
-    internal async Task Pause(CancellationToken cancel)
+    readonly List<RunningApp> apps=new();bool serviceWasRunning,paused,sdkWasReachable,serviceStartedForEffects;int port=6742;
+    internal int SdkPort=>port;
+    internal async Task Pause(CancellationToken cancel,bool keepOpenRgb=false)
     {
         int session=Process.GetCurrentProcess().SessionId;
         serviceWasRunning=OpenRgbService.IsRunning();
-        if(serviceWasRunning){using var key=Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Services\OpenRGB");port=PortFromArgs(Arguments(key?.GetValue("ImagePath") as string??""));}
+        using(var key=Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Services\OpenRGB"))port=PortFromArgs(Arguments(key?.GetValue("ImagePath") as string??""));
         // Capture every original command before stopping anything. Commands never enter logs/job JSON.
         foreach(string name in new[]{"OpenRGB","AuroraRgb","AuroraDeviceManager"})
             foreach(var process in Process.GetProcessesByName(name))using(process)
@@ -370,7 +551,7 @@ internal sealed class RgbSession:IDisposable
                 if(process.SessionId!=session)continue;
                 string path=process.MainModule?.FileName??throw new IOException("Cannot preserve RGB executable path.");
                 int processId=process.Id;string[] args=Arguments(await Task.Run(()=>CommandLine(processId),cancel).WaitAsync(TimeSpan.FromSeconds(8),cancel));if(args.Length==0||!File.Exists(path))throw new IOException("Cannot preserve RGB startup command. No clients were paused.");
-                var arguments=args.Skip(1).ToArray();apps.Add(new(name,path,arguments,PreserveToken(process)));if(name=="OpenRGB")port=PortFromArgs(arguments,port);
+                var arguments=args.Skip(1).ToArray();if(name=="OpenRGB")port=PortFromArgs(arguments,port);if(!keepOpenRgb||name!="OpenRGB")apps.Add(new(name,path,arguments,PreserveToken(process)));
             }
         // Only require SDK recovery if it was actually reachable before interruption.
         // A running OpenRGB GUI does not imply that its SDK server is enabled.
@@ -381,18 +562,51 @@ internal sealed class RgbSession:IDisposable
             catch(OperationCanceledException) when(!cancel.IsCancellationRequested){}
             catch(SocketException){}
         }
-        paused=true;if(serviceWasRunning)await OpenRgbService.SetRunning(false,cancel);
-        foreach(var app in apps)foreach(var process in Process.GetProcessesByName(app.Name))using(process)
+        paused=true;
+        if(!keepOpenRgb&&serviceWasRunning)await OpenRgbService.SetRunning(false,cancel);
+        if(keepOpenRgb&&!sdkWasReachable&&!serviceWasRunning&&OpenRgbService.Exists())
+        {
+            serviceStartedForEffects=true;await OpenRgbService.SetRunning(true,cancel);
+            bool ready=false;for(int n=0;n<50&&!ready;n++){using var probe=new TcpClient();try{await probe.ConnectAsync("127.0.0.1",port,cancel);ready=true;}catch(SocketException){await Task.Delay(200,cancel);}}
+            if(!ready)throw new IOException($"OpenRGB SDK did not start on port {port}.");
+        }
+        foreach(var app in apps.Where(a=>!keepOpenRgb||a.Name!="OpenRGB"))foreach(var process in Process.GetProcessesByName(app.Name))using(process)
         {
             if(process.SessionId!=session)continue;try{process.CloseMainWindow();using var grace=CancellationTokenSource.CreateLinkedTokenSource(cancel);grace.CancelAfter(1200);await process.WaitForExitAsync(grace.Token);}catch(OperationCanceledException){if(!process.HasExited)process.Kill();await process.WaitForExitAsync(cancel);}
         }
+    }
+    internal async Task EnsureSdkStopped(CancellationToken ct)
+    {
+        using var probe=CancellationTokenSource.CreateLinkedTokenSource(ct);probe.CancelAfter(1000);using var client=new TcpClient();
+        try{await client.ConnectAsync("127.0.0.1",port,probe.Token);throw new IOException("Another OpenRGB SDK provider is still active; exclusive keyboard control refused.");}
+        catch(OperationCanceledException) when(!ct.IsCancellationRequested){}catch(SocketException){}
+    }
+    internal async Task ResumeOpenRgbForEffects(CancellationToken ct)
+    {
+        if(serviceWasRunning)await OpenRgbService.SetRunning(true,ct);
+        if(!serviceWasRunning&&!sdkWasReachable&&OpenRgbService.Exists()){serviceStartedForEffects=true;await OpenRgbService.SetRunning(true,ct);}
+        int session=Process.GetCurrentProcess().SessionId;
+        var existing=apps.Where(a=>a.Name=="OpenRGB").Select(a=>a.Name).Distinct().ToDictionary(name=>name,name=>Process.GetProcessesByName(name).Count(p=>{using(p)return p.SessionId==session;}));
+        foreach(var app in apps.Where(a=>a.Name=="OpenRGB"))Start(app,existing);
+        for(int n=0;n<50;n++){using var client=new TcpClient();try{await client.ConnectAsync("127.0.0.1",port,ct);return;}catch(SocketException){await Task.Delay(200,ct);}}
+        throw new IOException($"OpenRGB SDK did not start on port {port}.");
+    }
+    internal async Task PauseOpenRgbForEffects(CancellationToken ct)
+    {
+        if(serviceWasRunning||serviceStartedForEffects)await OpenRgbService.SetRunning(false,ct);
+        int session=Process.GetCurrentProcess().SessionId;
+        foreach(var process in Process.GetProcessesByName("OpenRGB"))using(process)
+        {
+            if(process.SessionId!=session)continue;try{process.CloseMainWindow();using var grace=CancellationTokenSource.CreateLinkedTokenSource(ct);grace.CancelAfter(1200);await process.WaitForExitAsync(grace.Token);}catch(OperationCanceledException) when(!ct.IsCancellationRequested){if(!process.HasExited)process.Kill();await process.WaitForExitAsync(ct);}
+        }
+        await EnsureSdkStopped(ct);
     }
     internal async Task Restore()
     {
         if(!paused)return;var errors=new List<Exception>();using var timeout=new CancellationTokenSource(TimeSpan.FromSeconds(45));
         int session=Process.GetCurrentProcess().SessionId;
         var existing=apps.Select(a=>a.Name).Distinct().ToDictionary(name=>name,name=>Process.GetProcessesByName(name).Count(p=>{using(p)return p.SessionId==session;}));
-        try{if(serviceWasRunning)await OpenRgbService.SetRunning(true,timeout.Token);foreach(var app in apps.Where(a=>a.Name=="OpenRGB"))Start(app,existing);}catch(Exception error){errors.Add(error);}
+        try{if(serviceStartedForEffects)await OpenRgbService.SetRunning(false,timeout.Token);if(serviceWasRunning)await OpenRgbService.SetRunning(true,timeout.Token);foreach(var app in apps.Where(a=>a.Name=="OpenRGB"))Start(app,existing);}catch(Exception error){errors.Add(error);}
         if(ShouldWaitForSdk(sdkWasReachable))
         {
             bool ready=false;for(int n=0;n<60&&!timeout.IsCancellationRequested;n++){using var client=new TcpClient();try{await client.ConnectAsync("127.0.0.1",port,timeout.Token);ready=true;break;}catch{await Task.Delay(300);}}if(!ready)errors.Add(new IOException($"OpenRGB SDK did not return on port {port}."));
@@ -427,11 +641,23 @@ internal sealed class RgbSession:IDisposable
     [DllImport("advapi32.dll",CharSet=CharSet.Unicode,SetLastError=true)][return:MarshalAs(UnmanagedType.Bool)]static extern bool CreateProcessWithTokenW(Microsoft.Win32.SafeHandles.SafeAccessTokenHandle token,uint logon,string application,System.Text.StringBuilder command,uint flags,IntPtr environment,string? directory,ref StartupInfo startup,out ProcessInfo process);
     [DllImport("kernel32.dll")][return:MarshalAs(UnmanagedType.Bool)]static extern bool CloseHandle(IntPtr handle);
     static int PortFromArgs(string[] args,int fallback=6742){for(int n=0;n<args.Length;n++){string argument=args[n];if(argument=="--server-port"&&n+1<args.Length&&int.TryParse(args[n+1],out int p)&&p is >0 and <65536)return p;if(argument.StartsWith("--server-port=")&&int.TryParse(argument[14..],out int q)&&q is >0 and <65536)return q;}return fallback;}
-    static string CommandLine(int pid)
+    [StructLayout(LayoutKind.Sequential)]struct UnicodeString{internal ushort Length,MaximumLength;internal IntPtr Buffer;}
+    [DllImport("ntdll.dll")]static extern int NtQueryInformationProcess(Microsoft.Win32.SafeHandles.SafeProcessHandle process,int informationClass,IntPtr buffer,int length,out int returnLength);
+    internal static string CommandLine(int pid)
     {
-        var type=Type.GetTypeFromProgID("WbemScripting.SWbemLocator")??throw new IOException("Windows process inspection is unavailable.");dynamic locator=Activator.CreateInstance(type)!;dynamic? service=null;dynamic? results=null;
-        try{service=locator.ConnectServer(".","root\\cimv2");results=service.ExecQuery($"SELECT CommandLine FROM Win32_Process WHERE ProcessId={pid}");foreach(dynamic item in results)return (string?)item.CommandLine??throw new IOException("Cannot preserve RGB process arguments.");throw new IOException("RGB process exited during inspection.");}
-        finally{if(results!=null)Marshal.FinalReleaseComObject(results);if(service!=null)Marshal.FinalReleaseComObject(service);Marshal.FinalReleaseComObject(locator);}
+        using var process=Process.GetProcessById(pid);
+        int size=0;int status=NtQueryInformationProcess(process.SafeHandle,60,IntPtr.Zero,0,out size);
+        if(size<Marshal.SizeOf<UnicodeString>()||size>131072)throw new IOException($"Cannot inspect RGB process command line (NTSTATUS 0x{status:X8}). No clients were paused.");
+        IntPtr buffer=Marshal.AllocHGlobal(size);
+        try
+        {
+            status=NtQueryInformationProcess(process.SafeHandle,60,buffer,size,out int returned);
+            if(status<0||returned>size)throw new IOException($"Cannot inspect RGB process command line (NTSTATUS 0x{status:X8}). No clients were paused.");
+            var text=Marshal.PtrToStructure<UnicodeString>(buffer);long offset=text.Buffer.ToInt64()-buffer.ToInt64();
+            if((text.Length&1)!=0||text.Length>text.MaximumLength||offset<Marshal.SizeOf<UnicodeString>()||offset+text.Length>size)throw new IOException("Invalid RGB process command line. No clients were paused.");
+            return Marshal.PtrToStringUni(text.Buffer,text.Length/2)??throw new IOException("Cannot preserve RGB process arguments.");
+        }
+        finally{Marshal.FreeHGlobal(buffer);}
     }
     static string[] Arguments(string command)
     {
@@ -443,6 +669,7 @@ internal sealed class RgbSession:IDisposable
 internal static class OpenRgbService
 {
     [StructLayout(LayoutKind.Sequential)]struct Status{internal uint Type,State,Accepted,Win32,Specific,Checkpoint,WaitHint,Pid,Flags;}
+    internal static bool Exists(){using var service=Open(4,false);return service!=null;}
     internal static bool IsRunning(){using var service=Open(4,false);if(service==null)return false;return Query(service.DangerousGetHandle()).State==4;}
     internal static async Task SetRunning(bool running,CancellationToken cancel)
     {

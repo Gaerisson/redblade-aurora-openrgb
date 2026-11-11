@@ -8,7 +8,8 @@
     <AssemblyName>RedBladePlus-Studio</AssemblyName>
     <RootNamespace>RedBladePlus.Studio</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Version>0.9.0</Version>
+    <Version>0.10.0</Version>
+    <ApplicationIcon>Resources/redblade.ico</ApplicationIcon>
     <PublishSingleFile>true</PublishSingleFile>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
@@ -18,8 +19,15 @@
     <HelperDirectory Condition="'$(HelperDirectory)' == ''">$(MSBuildProjectDirectory)/../../../work/sonixflasher-3.1.0</HelperDirectory>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4314.35" />
     <EmbeddedResource Include="Resources/keyboard-layout.json" LogicalName="layout.json" />
     <EmbeddedResource Include="../assets/redblade-plus.png" LogicalName="brand.png" />
+    <EmbeddedResource Include="Web/index.html" LogicalName="web.index.html" />
+    <EmbeddedResource Include="Web/styles.css" LogicalName="web.styles.css" />
+    <EmbeddedResource Include="Web/app.js" LogicalName="web.app.js" />
+    <EmbeddedResource Include="Resources/redblade.ico" LogicalName="app.ico" />
+    <EmbeddedResource Include="../docs/assets/shortcuts.png" LogicalName="shortcuts.png" />
+    <EmbeddedResource Include="../docs/assets/shortcuts.fr.png" LogicalName="shortcuts.fr.png" />
     <EmbeddedResource Include="../dist/manifest.json" LogicalName="full.manifest.json" />
     <EmbeddedResource Include="../dist/manifest-core.json" LogicalName="core.manifest.json" />
     <EmbeddedResource Include="../dist/redblade-fs-aurora-via.bin" LogicalName="full.bin" />
@@ -27,4 +35,9 @@
     <EmbeddedResource Include="$(HelperDirectory)/sonixflasher.exe" LogicalName="sonixflasher.exe" Condition="Exists('$(HelperDirectory)/sonixflasher.exe')" />
     <EmbeddedResource Include="$(HelperDirectory)/libusb-1.0.dll" LogicalName="libusb-1.0.dll" Condition="Exists('$(HelperDirectory)/libusb-1.0.dll')" />
   </ItemGroup>
+  <Target Name="RemoveUnusedWebView2Wpf" BeforeTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <Reference Remove="@(Reference)" Condition="'%(Reference.FileName)' == 'Microsoft.Web.WebView2.Wpf'" />
+    </ItemGroup>
+  </Target>
 </Project>

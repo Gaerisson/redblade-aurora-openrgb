@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1540" viewBox="0 0 1600 1540">
 <rect width="1600" height="1540" fill="#0c1019"/>
 <style>text{font-family:Arial,DejaVu Sans,sans-serif;fill:#e9eef7}.title{font-size:40px;font-weight:700}.sub{font-size:19px;fill:#a5b4c9}.key{font-size:15px;font-weight:700;text-anchor:middle}.tiny{font-size:10px;font-weight:700;text-anchor:middle;fill:#a5b4c9}.card{font-size:23px;font-weight:700}.body{font-size:19px}</style>
-<text x="48" y="62" class="title">RedBlade+ 0.9.0 FULL  /  OpenRGB Firmware</text>
+<text x="48" y="62" class="title">RedBlade+ 0.10.0 FULL  /  OpenRGB Firmware</text>
 <text x="48" y="98" class="sub">Shortcuts + dynamic key lighting · AZERTY positions</text>
 <text x="48" y="128" class="sub">Fn focus: only useful keys stay lit. Customize colors and modules in Studio.</text>
 <rect x="48" y="164" width="60" height="60" rx="8" fill="#141e2c" stroke="#e13743" stroke-width="2"/>
@@ -266,9 +266,9 @@
 <rect x="1064" y="900" width="488" height="238" rx="8" fill="#141e2c" stroke="#49d68b" stroke-width="2"/>
 <text x="1082" y="932" class="card" style="fill:#49d68b">5 · CONTROLS</text>
 <text x="1082" y="965" class="body">Fn + WIN: lock (red keys + status LED)</text>
-<text x="1082" y="994" class="body">Fn + MUTE: play / pause (Shift: stop)</text>
+<text x="1082" y="994" class="body">Fn + CAPS: Caps Word (optional)</text>
 <text x="1082" y="1023" class="body">Fn + VOL −/+: previous / next track</text>
-<text x="1082" y="1052" class="body">Shift + Fn + VOL: brightness − / +</text>
+<text x="1082" y="1052" class="body">Auto stop: 5–120 s (optional)</text>
 <text x="1082" y="1081" class="body">Fn + PAUSE: stop media playback</text>
 <text x="1082" y="1110" class="body">Fn + ESC: stop; hold 2 s: bootloader</text>
 <text x="48" y="1185" class="body">−/+ adjusts the last selected function: Recorder = speed; Turbo = rate. Fn + R selects Turbo.</text>

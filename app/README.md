@@ -1,10 +1,14 @@
 # RedBlade+ Studio
 
-Portable native Windows x64 editor for RedBlade+ Full 0.9.0+. English/French, four complete onboard profiles, 109 physical ISO keys, 24 effect colors and ten built-in module enables. Core remains configurable through its existing OpenRGB/VIA interface; it does not implement the Full Studio configuration API.
+Studio 0.10.0 is a portable Windows x64 editor for RedBlade+ Full firmware 0.9.0+ (new options require Full 0.10.0). It presents the active profile, with 109 physical ISO keys, 24 effect colors and built-in modules. The four-profile wire format is preserved for compatibility. Core uses its existing OpenRGB/VIA interface and does not implement the Full Studio configuration API.
 
-Opening Studio performs no HID discovery or writes and does not inspect or stop RGB applications. JSON editing/import/export works offline. Read, Save, Preview and guided Flash are explicit hardware jobs. Read the keyboard before Save so the generation lease protects concurrent changes. Save writes all four profiles and the active index, then requires complete readback. Profile names stay in PC files. Preview sends the edited profile's per-key colors for five seconds and restores both private runtime lighting state and original VialRGB mode/speed/HSV before RGB clients return.
+The interface uses Microsoft Edge WebView2 Runtime (required on Windows), with English/French, AZERTY/QWERTY legends, a zoomable shortcut image and an application icon. Hover over modules or supported keys for explanations. Select keys, choose a color and apply the local edits after reading the keyboard. The host, saved colors, lights off and stop Turbo/Recorder controls are explicit hardware operations. Import replaces only the active profile; export preserves the compatible format.
 
-Keyboard legends default to AZERTY/ISO for this board and have an independent AZERTY/QWERTY display selector. Switching EN/FR never changes LED indices, matrix coordinates, keycodes or the selected legend layout. The physical forward-hold key is labelled Z under AZERTY and W under QWERTY. App-generated Profile/Profil names localize; names entered by the owner do not. Preview screenshots show the real factory white per-key palette, without rainbow demonstration data.
+Startup does not discover or write to HID devices or stop RGB applications. By default Studio checks official GitHub releases and can download updates. With automatic restart enabled, a verified software update applies after 30 seconds of inactivity only when no unsaved changes, open update wizard or hardware operation blocks it. The normal-user updater retains the previous executable as a `.bak` file. Update preferences are configurable. Firmware can be downloaded and verified, but installation requires the guided flow and physical Fn + Esc; there is no automatic flash at startup.
+
+Read, Apply, Preview, keyboard controls and guided Flash are explicit hardware jobs. Read before applying so the generation lease protects concurrent changes. Saving preserves all wire-format profiles and requires complete readback. Preview temporarily sends the edited profile's per-key colors and restores lighting state. Full/Core firmware images are 0.10.0. Full 0.10 is installed on the preparation keyboard: elevated identify, original VIA/macro restoration and onboard profile save/readback passed. The owner confirmed typing, numpad and Aurora. The first immediate reconnect timed out; its read-only retry fix is regression-tested but has not been exercised by another physical flash. Power-cycle persistence remains untested.
+
+Six software RGB effects stream through the local OpenRGB SDK at up to 30 fps. Studio pauses Aurora for the effect session and restores it when the session ends; real Aurora capture/restoration still requires physical validation. Full 0.10 adds optional Caps Word and an automatic safety timeout, disabled by default.
 
 The module checkboxes gate compiled-in firmware functions; they do not unload code. Saving or reconnecting never starts generated keyboard/mouse actions. Profile JSON cannot load scripts, assemblies, executable paths or serializer types. Files are limited to 128 KiB with required schema/board/profile fields and unknown fields rejected.
 
@@ -12,7 +16,7 @@ RGB pickers quantize colors to the keyboard's HSV8 representation. Dynamic effec
 
 ## Build
 
-Install the .NET 10 Windows SDK. There are no application NuGet dependencies. Self-contained publishing restores official Microsoft runtime/build packs when they are not cached.
+Install the .NET 10 Windows SDK. The project pins Microsoft.Web.WebView2 1.0.4314.35. Self-contained publishing restores official Microsoft runtime/build packs when they are not cached.
 
 ```powershell
 $env:DOTNET_CLI_HOME = Join-Path $PWD '.local/dotnet'
@@ -36,11 +40,12 @@ That directory contains `sonixflasher.exe` and `libusb-1.0.dll`, whose fixed SHA
 
 ```powershell
 ./publish/RedBladePlus-Studio.exe --self-test
+./publish/RedBladePlus-Studio.exe --ui-self-test
 ./publish/RedBladePlus-Studio.exe --preview C:/artifacts/studio-keyboard.png
 ./publish/RedBladePlus-Studio.exe --preview C:/artifacts/studio-functions-fr.png Functions fr
 ```
 
-Preview pages: `Keyboard`, `Functions`, `Colors`, `Profiles`, `Firmware`; optional language `en` or `fr`. These modes never construct a real HID transport or pause/start processes/services. Self-tests write `self-test-results.txt` beside the executable and return a failing exit code on error. With PowerShell and the GUI executable, use `Start-Process -Wait -PassThru -WindowStyle Hidden` to wait reliably and inspect `ExitCode`.
+Preview pages: `Keyboard`, `Functions`, `Colors`, `Firmware`; optional language `en` or `fr`. These modes never construct a real HID transport or pause/start processes/services. Self-tests write `self-test-results.txt` beside the executable and return a failing exit code on error. With PowerShell and the GUI executable, use `Start-Process -Wait -PassThru -WindowStyle Hidden` to wait reliably and inspect `ExitCode`.
 
 Checks cover exact offsets/reserved bytes, default palettes, CRC32, all four profiles, JSON rejection, rate validation, sequential writes/generation wrap, lost ACK without replay, wrong replies, preview restoration after failure, cleanup, image/helper hashes, physical media/Fn positions and flash exit/reconnect gates. They simulate protocol behavior; they do not establish hardware persistence or physical flash success.
 
@@ -50,8 +55,8 @@ The editor stays nonadmin. An explicit job may request UAC for the same executab
 
 Before pausing anything, capture current-session RGB processes, arguments and duplicated original user tokens in memory. Remember the OpenRGB service's original running state and whether its SDK port was reachable. Original user tokens prevent restarting normal RGB applications elevated. Restore in `finally`, OpenRGB first, wait for its SDK only if previously reachable, then restore Aurora. Startup arguments/tokens are not written to job JSON or logs. The job's process state cannot survive a machine crash; restoration failures are explicitly reported.
 
-Flashing backs up VIA and supported custom profiles to `%PROGRAMDATA%/RedBladePlusStudio-job-<GUID>/private-backup/`. These files contain private keymaps/macros; keep them private. The app requires no pre-existing Sonix bootloader, then waits for physical Fn+Esc entry and normal keyboard disappearance. It requires one bootloader at the original USB physical location and SN32F24XB/64 KB/CS0; missing or ambiguous location data blocks flashing. Only fixed embedded images with matching board/size/SHA are accepted. The helper and writable firmware copy are extracted into a separate protected ProgramData staging directory because SonixFlasherC can align its input in place. Programming is not killed on a timeout or normal window close. A checksum/exit zero is insufficient: normal-mode edition/version reconnection and VIA/settings checks must succeed.
+Flashing backs up VIA and supported custom profiles to `%PROGRAMDATA%/RedBladePlusStudio-job-<GUID>/private-backup/`. These files contain private keymaps/macros; keep them private. The app requires no pre-existing Sonix bootloader, then waits for physical Fn+Esc entry and normal keyboard disappearance. It requires one bootloader at the original USB physical location and SN32F24XB/64 KB/CS0; missing or ambiguous location data blocks flashing. Embedded images or verified official GitHub release images with matching board, edition, size and SHA are accepted. The helper and writable firmware copy are extracted into a separate protected ProgramData staging directory because SonixFlasherC can align its input in place. Programming is not killed on a timeout or normal window close. A checksum/exit zero is insufficient: normal-mode edition/version reconnection and VIA/settings checks must succeed.
 
 Known RedBlade+ VIA13 layouts with matching dimensions can be restored and read back after flash. If the previous keycode generation is unknown, changed VIA data is retained privately for manual migration rather than blindly written. Core cannot restore Full configuration payloads; the backup is retained and the result explains that limitation. The original manufacturer's recovery procedure remains the fallback for firmware failures. No physical device, UAC prompt, service stop or real flash is invoked by automated verification.
 
-Jobs and private backups are intentionally retained until the owner removes them; there is no automatic deletion of recovery data. The app has no network connection, update downloader or extension loader.
+Jobs and private backups are intentionally retained until the owner removes them; there is no automatic deletion of recovery data. Updates use official GitHub release metadata, asset digests and SHA256SUMS. The app has no extension loader.

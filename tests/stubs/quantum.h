@@ -62,6 +62,7 @@ void eeconfig_update_user(uint32_t value);
 uint8_t get_mods(void);
 uint8_t get_weak_mods(void);
 uint8_t has_anykey(void);
+void add_weak_mods(uint8_t mods);
 void del_mods(uint8_t mods);
 void del_weak_mods(uint8_t mods);
 void send_keyboard_report(void);

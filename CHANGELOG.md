@@ -2,6 +2,13 @@
 
 All new release notes are written in English. Version 0.x is experimental; hardware validation is recorded separately from build and host-test results.
 
+## 0.10.0 preview — Studio and firmware
+
+- Simplified active-profile editor, bilingual zoomable shortcut guide, application icon and explicit keyboard controls. The four-profile protocol remains compatible.
+- Replaced the 0.9 native interface, including its confirmed dropdown disposal crash path, with a WebView2 interface; hardware-free UI checks exercise the bridge and navigation.
+- Added official GitHub update checks and verified downloads, with optional automatic Studio restart when idle and no pending edits or hardware operation. Firmware flashing remains an explicit guided operation.
+- Full 0.10 adds optional Caps Word and an automatic helper timeout, disabled by default. Core is rebuilt as 0.10. Studio provides six software RGB effects through OpenRGB. Full 0.10 programming/checksum, later identity, VIA/macro restoration and profile save/readback passed on the preparation keyboard; the owner confirmed input and Aurora. Corrected immediate post-flash identification retries after the first run exposed a timeout; power-cycle persistence remains untested.
+
 ## 0.9.0 preview — Studio and Full firmware
 
 - Portable Windows x64 Studio: English/French, AZERTY/QWERTY legends, offline editing, guided Full/Core flash and explicit configuration jobs.

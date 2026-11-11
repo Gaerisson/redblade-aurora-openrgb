@@ -15,7 +15,7 @@ def generate(qmk):
      '<style>text{font-family:Arial,DejaVu Sans,sans-serif;fill:#f3f4f8}.brand{font-size:64px;font-weight:800;letter-spacing:-2px}.sub{font-size:25px;fill:#b8becb}.label{font-size:18px;font-weight:700;letter-spacing:2px}.card{font-size:28px;font-weight:700}.body{font-size:21px;fill:#b8becb}.key{font-size:12px;font-weight:700;text-anchor:middle}.small{font-size:16px;fill:#858e9f}</style>']
   def text(x,y,s,cl='body',color=None): a.append(f'<text x="{x}" y="{y}" class="{cl}"'+(f' style="fill:{color}"' if color else '')+'>'+escape(s)+'</text>')
   def rect(x,y,w,h,fill,stroke='none',r=12): a.append(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{r}" fill="{fill}" stroke="{stroke}"/>')
-  text(64,88,'RedBlade+','brand');text(444,80,'OPENRGB FIRMWARE  /  STUDIO 0.9.0','label','#ff5267')
+  text(64,88,'RedBlade+','brand');text(444,80,'OPENRGB FIRMWARE  /  STUDIO 0.10.0','label','#ff5267')
   text(64,141,'Le clavier que tu connais. Plus de possibilités.' if fr else 'Your keyboard. More capable.','sub')
   text(64,201,'109 LED PAR TOUCHE' if fr else '109 PER-KEY LEDS','label','#e9eef7')
   text(465,201,'AURORA → OPENRGB','label','#58cde8')
@@ -35,10 +35,10 @@ def generate(qmk):
    text(round(x+w/2,2),round(y+h/2+4,2),label,'key',stroke if i in red|amber|purple|cyan else '#e9ecf2')
   text(64,709,'ILLUSTRATION DES FONCTIONS · LES ÉTATS NE SONT PAS SIMULTANÉS' if fr else 'FEATURE ILLUSTRATION · STATES ARE NOT SIMULTANEOUS','small')
   cards=[
-   ('01','STUDIO','4 profils enregistrés' if fr else '4 onboard profiles','109 touches · 24 effets' if fr else '109 keys · 24 effects','#5ad0e7'),
+   ('01','STUDIO','Profil actif · 109 touches' if fr else 'Active profile · 109 keys','24 couleurs · guide intégré' if fr else '24 colors · built-in guide','#5ad0e7'),
    ('02','HYPER + TURBO','Clavier + clic gauche/droit' if fr else 'Keys + left/right click','Cadence conservée après +' if fr else 'Speed stays after release','#ffba5a'),
-   ('03','BLANC RÉACTIF' if fr else 'REACTIVE WHITE','Frappe + lettres rejouées' if fr else 'Typing + replayed letters','Traînées rouges sur blanc' if fr else 'Red trails over white','#ff5069'),
-   ('04','FN FOCUS','Raccourcis visibles avec Fn' if fr else 'Shortcuts visible with Fn','Autres touches éteintes' if fr else 'Other keys go dark','#b28af5')]
+   ('03','RGB STUDIO','6 effets logiciels' if fr else '6 software effects','OpenRGB · Aurora restauré' if fr else 'OpenRGB · Aurora restored','#ff5069'),
+   ('04','OPTIONS','Caps Word · Fn + Caps','Arrêt auto configurable' if fr else 'Configurable safety stop','#b28af5')]
   for n,(num,title,l1,l2,color) in enumerate(cards):
    x=64+n*376;rect(x,752,352,224,'#141820','#303641');text(x+22,788,num,'label',color)
    text(x+22,831,title,'card',color);text(x+22,878,l1);text(x+22,915,l2)

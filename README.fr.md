@@ -16,11 +16,15 @@ Contrôle OpenRGB touche par touche, raccourcis Fn et fonctions de jeu pour le *
 
 ![Fonctions du firmware](docs/assets/features.fr.png)
 
-## Studio 0.9.0 — aperçu
+## Studio 0.10.0 — aperçu
 
-RedBlade+ Studio est une application portable Windows x64 pour Full 0.9.0. Elle permet de modifier quatre profils enregistrés sur le clavier : 109 couleurs par touche, 24 couleurs d’effets et dix modules intégrés activables. Interface française ou anglaise et légendes AZERTY ou QWERTY. Maintenir Fn éteint les touches sans raccourci. Les enregistrements Recorder restent temporaires ; Turbo et Recorder sont conservés. Le flash guidé propose les firmwares Full et Core intégrés. Core ne possède pas l’API de configuration Full. Voir [Studio](app/README.md) et le [protocole](docs/CONFIG_PROTOCOL.md).
+RedBlade+ Studio est une application Windows x64 portable qui modifie le profil actif du firmware Full 0.10.0 : 109 couleurs de touches, 24 couleurs d’effets et des modules activables. Elle propose le français et l’anglais, les légendes AZERTY/QWERTY, un guide des raccourcis agrandissable, six effets RGB logiciels et des commandes explicites pour l’hôte, les couleurs enregistrées, l’extinction et l’arrêt des fonctions. Le format interne à quatre profils reste compatible ; l’interface modifie le profil actif. Core ne possède pas l’API de configuration Full. Voir [Studio](app/README.md).
 
-**La version 0.9.0 est un aperçu, en attente de validation physique.** [Télécharger Studio et les deux éditions du firmware](https://github.com/Gaerisson/redblade-aurora-openrgb/releases/tag/v0.9.0). La dernière version Full validée sur ce clavier est la 0.8.1. Sauvegardez VIA et les réglages personnalisés avant flash : une image complète peut effacer les profils du clavier.
+[Télécharger Studio 0.10 et les deux firmwares](https://github.com/Gaerisson/redblade-aurora-openrgb/releases/tag/v0.10.0). Full 0.10 a été programmé et identifié sur le clavier de préparation ; VIA et les macros ont été restaurés et relus intégralement, et la sauvegarde des profils a réussi. Le propriétaire a confirmé la saisie, le pavé et Aurora. Un délai dépassé à la première reconnexion a révélé un défaut de Studio, désormais couvert par des tests de reconnexion bornée en lecture seule. La persistance après coupure USB et la latence physique ne sont pas mesurées. Sauvegardez VIA et vos réglages avant tout flash.
+
+Full 0.10 ajoute Caps Word (Fn + Verr. Maj, AZERTY/QWERTY) et un délai de sécurité pour les fonctions automatiques, tous deux désactivés par défaut. Studio utilise WebView2 Runtime sous Windows et suspend Aurora pendant ses effets logiciels avant de le rétablir.
+
+Studio peut rechercher et télécharger automatiquement les mises à jour GitHub officielles, puis redémarrer après 30 secondes d’inactivité en l’absence de modifications non enregistrées et d’opération active. L’installation du firmware reste guidée et exige Fn + Échap physiquement ; aucun flash ne démarre au lancement.
 
 ![Éditeur de clavier Studio](docs/assets/studio-keyboard.fr.png)
 

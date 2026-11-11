@@ -88,8 +88,8 @@ static void crc_and_configuration_fail_closed(void) {
     old(); assert(begin(replacement, 41) == 1); ready(); replacement[60] ^= 1; write_payload(replacement); assert(send(request(5)) == 1); finish();
     assert(phase() == 4 && store_reply[5] == 4 && redblade_store_generation() == 41 && store_applies == 0);
     redblade_store_init(); assert(redblade_store_generation() == 41);
-    const unsigned offsets[] = {0, 1, 33, 35, 36, 37, 38, 39, 40, 447};
-    const uint8_t bad[] = {4, 1, 4, 4, 0, 101, 10, 0, 1, 1};
+    const unsigned offsets[] = {0, 1, 33, 35, 36, 37, 38, 39, 40, 41, 447};
+    const uint8_t bad[] = {4, 1, 16, 4, 0, 101, 10, 0, 1, 2, 1};
     for (unsigned i = 0; i < sizeof(offsets)/sizeof(offsets[0]); ++i) {
         old(); replacement[offsets[i]] = bad[i]; install(replacement, 41);
         assert(phase() == 4 && store_reply[5] == 7 && redblade_store_generation() == 41 && store_applies == 0);

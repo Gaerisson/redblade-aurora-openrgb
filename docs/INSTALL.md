@@ -1,6 +1,6 @@
 # Installation & Technical Reference
 
-**0.9.0 development status:** Studio offers guided Full/Core flashing with private VIA/settings backup and reconnect verification. A full image may erase custom profiles; export them first. Physical flash and persistence have not been validated for 0.9.0. Public/installed version remains 0.8.1. See [Studio](../app/README.md).
+**Studio and firmware 0.10 preview:** Full/Core flashing is guided; flash and persistence remain unvalidated on hardware. The physical keyboard remains on Full 0.8.1. Studio requires Microsoft Edge WebView2 Runtime. See [Studio](../app/README.md).
 
 **English** · [Français](INSTALL.fr.md) · [Project](../README.md) · [Shortcuts](SHORTCUTS.md)
 

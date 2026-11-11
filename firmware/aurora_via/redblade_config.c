@@ -20,7 +20,7 @@ uint8_t redblade_config_byte(uint16_t offset,uint8_t fallback) {
 bool redblade_config_feature(uint16_t feature) {
     if (feature<=RB_MODULE_IDLE) return (redblade_rgb_settings_get() & feature)!=0;
     const uint8_t *p=profile();
-    return !p || ((((uint16_t)p[1]<<8)|p[0]) & feature)!=0;
+    return p ? ((((uint16_t)p[1]<<8)|p[0]) & feature)!=0 : (feature & 0x03FF)!=0;
 }
 static hsv_t triple(const uint8_t *p) { return (hsv_t){p[0],p[1],p[2]}; }
 hsv_t redblade_config_key_color(uint8_t index,hsv_t fallback) {
@@ -40,7 +40,7 @@ hsv_t redblade_config_effect_scaled(uint8_t effect,hsv_t fallback,uint8_t nomina
 uint32_t redblade_config_timeout(void) { return (uint32_t)redblade_config_byte(4,5)*1000UL; }
 
 uint8_t redblade_store_default_byte(uint16_t offset) {
-    static const uint8_t PROGMEM metadata[16]={0xFF,3,255,0,5,50,2,15,0,0,0,0,0,0,0,0};
+    static const uint8_t PROGMEM metadata[16]={0xFF,3,255,0,5,50,2,15,30,0,0,0,0,0,0,0};
     static const uint8_t PROGMEM effects[72]={
         0,255,255, 0,255,255, 0,255,255, 0,0,64,
         170,255,24, 128,255,96, 0,255,128, 85,255,96,

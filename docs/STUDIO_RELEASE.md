@@ -1,12 +1,12 @@
 # Studio release packaging
 
-Build Studio only after regenerating and checking both firmware manifests and BINs. Run the Studio self-test from the freshly published executable, then package on Windows from a clean committed checkout:
+Studio and firmware versions are independent: this preview uses Studio 0.10.0 and Full/Core 0.10.0 manifests and BINs. Verify both firmware artifacts before building Studio. Run the Studio self-test from the freshly published executable, then package on Windows from a clean committed checkout:
 
 ```powershell
 python tools/package_studio_release.py --exe C:/release-build/RedBladePlus-Studio.exe --sonix-source C:/release-inputs/SonixFlasherC-3.1.0-source.zip --libusb-source C:/release-inputs/libusb-1.0.30-source.tar.bz2 --helper-dir C:/release-inputs/sonixflasher --output C:/release-output
 ```
 
-Use the official SonixFlasherC 3.1.0 tag archive (commit e6ba5db11f703f89fd29a5bc0e56ed1ae42604c3) and official libusb 1.0.30 release source tarball. The tool checks exact source and helper hashes; the matching binaries are included for rebuilding Studio. It includes Studio source, notices and firmware resources; distribute the separate Full and Core complete QMK source packages and BINs alongside it. Keep the .NET runtime licenses/notices from the self-contained publish and consult the applicable distribution terms. This command neither downloads dependencies nor publishes a release. Do not distribute an incomplete source package.
+Use the official SonixFlasherC 3.1.0 tag archive (commit e6ba5db11f703f89fd29a5bc0e56ed1ae42604c3) and official libusb 1.0.30 release source tarball. The tool checks exact source and helper hashes; the matching binaries are included for rebuilding Studio. It includes Studio source, notices and firmware resources; distribute the separate Full and Core complete QMK source packages and BINs alongside it. Include the WebView2 SDK notices and require the WebView2 Runtime on Windows. Keep the .NET runtime licenses/notices from the self-contained publish and consult the applicable distribution terms. The Studio version and archive tag come from the project Version; both firmware manifest releases must match each other. The output includes the standalone `RedBladePlus-Studio.exe`, both BINs, both manifests, binary/source ZIPs and `SHA256SUMS` covering each of those assets. Upload these exact names to the same GitHub release for the updater. This command neither downloads dependencies nor publishes a release. Do not distribute an incomplete source package.
 
 Official inputs verified for this release:
 

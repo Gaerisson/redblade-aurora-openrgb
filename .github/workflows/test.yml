@@ -17,7 +17,7 @@ jobs:
       - name: Test firmware and controls with sanitizers
         run: |
           set -e
-          for suite in protocol controls rendering recorder speed_typing keymap_hooks configuration custom_colors; do
+          for suite in protocol controls rendering recorder speed_typing keymap_hooks configuration custom_colors options; do
             cc -std=c11 -Wall -Wextra -Werror -O1 -g -DUSE_CIE1931_CURVE -fsanitize=address,undefined \
               -I tests/stubs -I tests -I tests/upstream -I firmware/aurora_via \
               tests/${suite}_test.c tests/qmk_fixture.c tests/store_flash_fixture.c tests/upstream/color.c tests/upstream/led_tables.c \
@@ -44,6 +44,8 @@ jobs:
           python3 tools/check_core_release.py
       - name: Check shortcut mapping and tooling recovery
         run: python3 -m unittest discover -s tests -p 'test_*.py'
+      - name: Test Studio web interface logic
+        run: node --test app/Web/tests/*.cjs
       - name: Verify committed firmware artifact
         run: python3 tools/check_release.py
       - name: Build and run native regression benchmark
@@ -113,3 +115,15 @@ jobs:
         run: |
           ./app/build.ps1 -HelperDirectory (Join-Path $env:RUNNER_TEMP 'sonixflasher')
           if ($LASTEXITCODE) { throw 'Studio build or self-test failed' }
+
+      - name: Require Microsoft Edge WebView2 Runtime
+        shell: pwsh
+        run: |
+          $paths = @('HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F1E7E32D-4B76-4B0B-9CE8-DB97D23C9E88}', 'HKCU:\SOFTWARE\Microsoft\EdgeUpdate\Clients\{F1E7E32D-4B76-4B0B-9CE8-DB97D23C9E88}')
+          $runtimes = @($paths | ForEach-Object { Get-ItemProperty $_ -ErrorAction SilentlyContinue } | Where-Object { $_.pv -and $_.pv -ne '0.0.0.0' })
+          if ($runtimes.Count -eq 0) { throw 'WebView2 Runtime is required for the UI self-test' }
+      - name: Exercise Studio interface interactions
+        shell: pwsh
+        run: |
+          $test = Start-Process -FilePath (Join-Path $PWD 'app/publish/RedBladePlus-Studio.exe') -ArgumentList '--ui-self-test' -Wait -PassThru -WindowStyle Hidden
+          if ($test.ExitCode -ne 0) { throw "Studio UI self-test failed: $($test.ExitCode)" }

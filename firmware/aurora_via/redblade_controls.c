@@ -12,6 +12,8 @@ _Static_assert(RB_GAME == 0x7E40 && RB_BOOT == 0x7E53, "VIA custom keycode ABI c
 _Static_assert(RB_TURBO_RATE == 0x7E58 && RB_TURBO_FASTER == 0x7E5B, "Game helper keycode ABI changed");
 static bool game_mode, boot_armed, feedback_active;
 static bool recorder_rate_context;
+static bool caps_word, caps_weak;
+static uint32_t turbo_started_at, forward_started_at, playback_started_at;
 static uint32_t boot_started_at, feedback_started_at;
 static keypos_t boot_key;
 static uint8_t media_held;
@@ -31,7 +33,7 @@ static keypos_t trigger[3];
 // in the eight-LED rendering path. check_fn_map.py verifies this against VIA's
 // published default bindings and the pinned physical LED positions.
 static const uint8_t PROGMEM fn_shortcut_led_mask[] = {
-    0xFF,0x83,0xEF,0x00,0x12,0x79,0x00,0x11,0x02,0x00,0x00,0x00,0x6A,0x05
+    0xFF,0x83,0xEF,0x00,0x12,0x79,0x00,0x31,0x02,0x00,0x00,0x00,0x6A,0x05
 };
 _Static_assert(sizeof(fn_shortcut_led_mask) == (RGB_MATRIX_LED_COUNT + 7) / 8, "Fn LED mask size differs from the board");
 static bool any_turbo_enabled(void) {
@@ -40,6 +42,7 @@ static bool any_turbo_enabled(void) {
 static bool shortcut_enabled(uint8_t index) {
     if (index>=109 || !(pgm_read_byte(&fn_shortcut_led_mask[index/8]) & (1U<<(index%8)))) return false;
     if (index==RB_LED_E || index==RB_LED_F || index==RB_LED_SPACE) return redblade_config_feature(RB_MODULE_KEY_TURBO);
+    if (index==RB_LED_CAPS) return redblade_config_feature(RB_MODULE_CAPS_WORD);
     if (index==RB_LED_W) return redblade_config_feature(RB_MODULE_FORWARD);
     if (index==RB_LED_T || index==RB_LED_R) return any_turbo_enabled();
     if (index==RB_LED_MINUS || index==RB_LED_PLUS) return any_turbo_enabled() || redblade_config_feature(RB_MODULE_RECORDER);
@@ -53,6 +56,7 @@ static bool action_enabled(uint16_t code) {
     if (code==RB_TURBO_SLOWER || code==RB_TURBO_FASTER) return any_turbo_enabled() || redblade_config_feature(RB_MODULE_RECORDER);
     if (code==RB_AUTO_W) return redblade_config_feature(RB_MODULE_FORWARD);
     if (code>=RB_REC_ARM && code<=RB_REC_3) return redblade_config_feature(RB_MODULE_RECORDER);
+    if (code==RB_CAPS_WORD) return redblade_config_feature(RB_MODULE_CAPS_WORD);
     if (code==RB_GAME) return redblade_config_feature(RB_MODULE_WIN_LOCK);
     return true;
 }
@@ -78,7 +82,13 @@ static void stop_turbo(void) {
     turbo_key = 0; turbo_led = 255; turbo_down = false;
 }
 static void stop_w(void) { if (auto_w) unregister_code(KC_W); auto_w = false; }
-static void stop_automation(void) { stop_turbo(); stop_w(); selecting = false; pending_key = 0; rate_direction = 0; redblade_recorder_stop(true); }
+static void caps_clear_shift(void) {
+    if (!caps_weak) return;
+    caps_weak=false;
+    if (get_weak_mods() & 2) { del_weak_mods(2); send_keyboard_report(); }
+}
+static void caps_stop(void) { caps_clear_shift(); caps_word=false; }
+static void stop_automation(void) { caps_stop(); stop_turbo(); stop_w(); selecting = false; pending_key = 0; rate_direction = 0; redblade_recorder_stop(true); }
 
 static void set_rate(uint8_t rate) {
     turbo_rate = rate;
@@ -102,7 +112,8 @@ static uint8_t led_at(keypos_t pos) {
 static void start_turbo(uint8_t key, uint8_t led) {
     if (key == KC_W) stop_w(); // Exactly one owner for a generated usage.
     if (is_key_pressed(key)) return; // Never steal a physically held target.
-    stop_turbo();
+    stop_turbo(); caps_stop();
+    turbo_started_at = timer_read32();
     turbo_key = key; turbo_led = led; turbo_down = true;
     turbo_fraction = 0; turbo_interval = turbo_base_ms; turbo_edge_at = timer_read32();
     turbo_output(true);
@@ -156,6 +167,14 @@ void redblade_controls_task(bool fn_active) {
     }
     if (rate_direction && timer_read32() - rate_at >= (rate_repeating ? 150UL : 400UL)) {
         rate_step(rate_direction); rate_at = timer_read32(); rate_repeating = true;
+    }
+    if (redblade_config_feature(RB_MODULE_REPEAT_TIMEOUT)) {
+        const uint32_t now=timer_read32();
+        uint8_t seconds=redblade_config_byte(8,30); if (!seconds) seconds=30;
+        const uint32_t limit=(uint32_t)seconds*1000UL;
+        if (turbo_key && now-turbo_started_at>=limit) stop_turbo();
+        if (auto_w && now-forward_started_at>=limit) stop_w();
+        if (redblade_recorder_state()==RB_REC_PLAYING && now-playback_started_at>=limit) redblade_recorder_stop(true);
     }
     redblade_recorder_task(fn_active);
     if (!boot_armed && !turbo_key && !selecting && !pending_key) return;
@@ -241,8 +260,16 @@ bool redblade_controls_process(uint16_t keycode, keyrecord_t *record) {
     if (game_mode && (keycode == KC_LGUI || keycode == KC_RGUI ||
         (keycode >= QK_MODS && keycode <= QK_MODS_MAX && ((QK_MODS_GET_MODS(keycode) & 8) ||
         QK_MODS_GET_BASIC_KEYCODE(keycode) == KC_LGUI || QK_MODS_GET_BASIC_KEYCODE(keycode) == KC_RGUI)))) return false;
-    if (keycode < RB_GAME || keycode > RB_REC_3) {
+    if (keycode < RB_GAME || keycode > RB_CAPS_WORD) {
         if (record->event.pressed && keycode >= 4 && keycode <= 255) rate_direction = 0;
+        if (record->event.pressed && caps_word) {
+            caps_clear_shift();
+            if ((get_mods() & ~(MOD_MASK_SHIFT | 0x40)) != 0) caps_stop();
+            // HID M is comma on the board's AZERTY layout; HID semicolon is M.
+            else if ((keycode >= 4 && keycode <= 29 && (keycode != 0x10 || redblade_config_byte(9,0))) ||
+                     (keycode == 0x33 && !redblade_config_byte(9,0))) { add_weak_mods(2); caps_weak=true; }
+            else if (!((keycode >= 30 && keycode <= 39) || keycode==0x2A || keycode==0x4C || keycode==0xE1 || keycode==0xE5 || keycode==0xE6 || (keycode>=QK_MOMENTARY && keycode<=QK_MOMENTARY_MAX))) caps_stop();
+        }
         if (redblade_config_feature(RB_MODULE_RECORDER)) redblade_recorder_key(keycode, record->event.pressed);
         if (record->event.pressed && keycode >= 4 && keycode < 0xA5) redblade_rgb_key_flash(led_at(pos));
         return true;
@@ -268,6 +295,7 @@ bool redblade_controls_process(uint16_t keycode, keyrecord_t *record) {
         consumed_releases[position / 8] |= 1 << (position % 8);
     }
     switch (keycode) {
+        case RB_CAPS_WORD: if (caps_word) caps_stop(); else caps_word=true; break;
         case RB_GAME: game_set(shift ? false : !game_mode); break;
         case RB_HOST: redblade_rgb_profile(RB_PROFILE_HOST); break;
         case RB_WHITE: redblade_rgb_profile(RB_PROFILE_WHITE); break;
@@ -304,7 +332,7 @@ bool redblade_controls_process(uint16_t keycode, keyrecord_t *record) {
             redblade_recorder_stop(true); recorder_rate_context = false;
             trigger[1] = pos; trigger_held |= 2;
             if (auto_w) stop_w();
-            else { if (turbo_key == KC_W) stop_turbo(); if (!is_key_pressed(KC_W)) { auto_w = true; register_code(KC_W); } }
+            else { if (turbo_key == KC_W) stop_turbo(); if (!is_key_pressed(KC_W)) { caps_stop(); auto_w = true; forward_started_at=timer_read32(); register_code(KC_W); } }
             break;
         case RB_TURBO_RATE:
             redblade_recorder_stop(true); recorder_rate_context = false;
@@ -322,7 +350,8 @@ bool redblade_controls_process(uint16_t keycode, keyrecord_t *record) {
             break;
         case RB_REC_1: case RB_REC_2: case RB_REC_3:
             stop_turbo(); stop_w(); selecting = false; pending_key = 0;
-            recorder_rate_context = true; redblade_recorder_slot(keycode - RB_REC_1, game_mode, shift);
+            recorder_rate_context = true; caps_stop(); redblade_recorder_slot(keycode - RB_REC_1, game_mode, shift);
+            playback_started_at=timer_read32();
             break;
     }
     return false;
@@ -335,6 +364,8 @@ bool redblade_controls_indicator(uint8_t index, bool fn_active, hsv_t *color) {
         *color = (hsv_t){0,0,0};
         return true;
     }
+    if (index==RB_LED_CAPS && caps_word) { *color=(hsv_t){32,255,128}; return true; }
+    if (hints && index==RB_LED_CAPS) { *color=(hsv_t){85,255,80}; return true; }
     if (redblade_config_feature(RB_MODULE_RECORDER) && redblade_recorder_indicator(index, fn_active, color)) return true;
     if (index == RB_LED_FN) {
         if (selecting || pending_key) *color = redblade_config_effect_scaled(RB_COLOR_SELECTION,(hsv_t){32,255,(timer_read32()/250)&1 ? 128 : 40},128);

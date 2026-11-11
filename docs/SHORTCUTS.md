@@ -2,6 +2,9 @@
 
 **English** · [Français](SHORTCUTS.fr.md) · [Project](../README.md) · [Installation](INSTALL.md)
 
+**Full 0.10 preview:** Fn + Caps toggles optional Caps Word (AZERTY or QWERTY); it is off by default. Optional automatic safety stops generated helpers and Recorder playback after 5–120 seconds (default 30), without stopping recording capture or erasing slots. This feature is off by default.
+
+
 Default firmware **0.8.1**, Red Blade Full Size ISO. Fn is between Right Windows and Right Ctrl. Numbers 1/2/3 below mean the **top number row**; −/+ mean the **numpad**.
 
 ![Categorized shortcut map](assets/shortcuts.png)
@@ -96,7 +99,7 @@ Fn + Pause also stops media playback. Fn/Shift can be released before the media 
 
 ## Dynamic lights and status
 
-Full 0.9 adds **Fn focus**: hold Fn to darken keys with no shipped Fn shortcut. Shortcuts for modules disabled in Studio are hidden too. Releasing Fn restores the host/local frame. Studio can disable Fn focus, customize the 109-key palette and 24 effect colors, and save four complete onboard profiles. The colors below describe factory defaults. Remapped VIA Fn assignments do not automatically change the factory-position light map.
+Full 0.9 adds **Fn focus**: hold Fn to darken keys with no shipped Fn shortcut. Shortcuts for modules disabled in Studio are hidden too. Releasing Fn restores the host/local frame. Studio can disable Fn focus, customize the 109-key palette and 24 effect colors, and edit the active onboard profile. The colors below describe factory defaults. Remapped VIA Fn assignments do not automatically change the factory-position light map.
 
 The default **host profile gives Aurora/OpenRGB priority**. After **5 seconds without RGB packets**, it becomes **white with red key trails**: physical typing, Turbo and Recorder replay light the corresponding keys, then fade back over approximately half a second (15 rendered frames, frame rate/load dependent). Fn + F2 selects this reactive white explicitly. Lock indicators retain priority over key trails.
 

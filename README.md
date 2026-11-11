@@ -16,11 +16,15 @@ Per-key OpenRGB lighting, useful Fn shortcuts and game helpers for the **Designe
 
 ![Firmware features](docs/assets/features.png)
 
-## Studio 0.9.0 — preview
+## Studio 0.10.0 — preview
 
-RedBlade+ Studio is a portable Windows x64 application for Full 0.9.0. Edit four onboard profiles with 109 per-key colors, 24 effect colors and ten built-in module switches; English/French and AZERTY/QWERTY legends are available. Fn focus darkens unrelated keys while Fn is held. Recorder slots remain temporary; the existing Turbo and Recorder functions are retained. Studio offers guided flashing of bundled Full and Core images. Core does not expose the Full configuration API. See [Studio](app/README.md) and the [configuration protocol](docs/CONFIG_PROTOCOL.md).
+RedBlade+ Studio is a portable Windows x64 editor for the active profile on Full firmware 0.10.0: 109 key colors, 24 effect colors and optional module switches. It offers English/French, AZERTY/QWERTY legends, a zoomable shortcut guide, six host-driven RGB effects, and explicit host, saved colors, lights off and stop-helper controls. The four-profile wire format remains compatible; the interface edits the active profile. Core does not expose the Full configuration API. See [Studio](app/README.md).
 
-**0.9.0 is a preview, with physical validation pending.** [Download Studio and both firmware editions](https://github.com/Gaerisson/redblade-aurora-openrgb/releases/tag/v0.9.0). The last keyboard-validated Full version is 0.8.1. Back up VIA and custom settings before flashing; a full-image flash can erase onboard profiles.
+[Download Studio 0.10 and both firmware editions](https://github.com/Gaerisson/redblade-aurora-openrgb/releases/tag/v0.10.0). Full 0.10 has been programmed and identified on the preparation keyboard; VIA/macros were restored with complete readback, and onboard profile saving passed. Typing, numpad and Aurora were confirmed by the owner. An initial immediate-reconnect timeout exposed a Studio bug; bounded read-only reconnection is now covered by regression tests. Power-cycle persistence and physical input latency have not been measured. Back up VIA and custom settings before flashing.
+
+Full 0.10 adds optional Caps Word (Fn + Caps, AZERTY/QWERTY) and a configurable automatic timeout for generated helpers; both are off by default. Studio uses WebView2 Runtime on Windows and pauses Aurora while its software effects are active, restoring it afterward.
+
+Studio can check and download official GitHub updates automatically and restart after 30 seconds of inactivity when there are no unsaved changes or active jobs. Firmware installation always requires the guided flow and physical Fn + Esc; it never flashes at startup.
 
 ![Studio keyboard editor](docs/assets/studio-keyboard.png)
 

@@ -32,6 +32,7 @@ void eeconfig_update_user(uint32_t v) { eeprom_user = v; ++eeprom_writes; }
 uint8_t get_mods(void) { return mods; }
 uint8_t get_weak_mods(void) { return weak_mods; }
 uint8_t has_anykey(void) { for(unsigned i=4;i<=0xA4;++i) if(key_down[i]) return 1; return 0; }
+void add_weak_mods(uint8_t m) { weak_mods |= m; }
 void del_mods(uint8_t m) { mods &= ~m; }
 void del_weak_mods(uint8_t m) { weak_mods &= ~m; }
 void send_keyboard_report(void) { ++keyboard_reports; }

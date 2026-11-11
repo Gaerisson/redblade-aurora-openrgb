@@ -1,6 +1,6 @@
 # Performance checks
 
-**0.9.0 status:** The native reference measures 0.9.0 on the PC; the HID comparison is historical. No 0.9.0 physical validation has been performed.
+**0.10.0 status:** The native reference below measures the 0.10.0 build on the PC; the HID comparison is historical. No 0.10.0 physical latency measurement has been performed.
 
 [Project](../README.md) · [Shortcuts](SHORTCUTS.md) · [Audit](AUDIT.md)
 
@@ -50,9 +50,9 @@ For a physical comparison, use a controlled actuator/electrical trigger and USB 
 
 The implementation bounds work: eight base LEDs per RGB task iteration, bounded status overlays, including the persistent Fn status, at most nine incoming colors per packet, and at most one Turbo edge per housekeeping pass. Standard QMK report I/O still depends on USB scheduling. Turbo's 5–250 presses/clicks per second targets may run slower under load; missed pulses are not queued.
 
-## 0.9.0 host regression run
+## 0.10.0 host regression run
 
-A native run on the preparation PC measured 2,880 ns per 109-LED Direct frame and 3,860 ns for the onboard palette; Fn focus measured 2,420 ns without and 3,920 ns with an onboard palette. The immediately preceding 0.8.1 host baseline measured 2,740 ns for Direct. These are averaged host CPU times, include fixture overhead and have 1 ms clock resolution; they are not microcontroller execution times or physical key latency. The scenarios and checksum are recorded in [performance-reference.json](performance-reference.json). No 0.9.0 hardware measurements were performed.
+A native run on the preparation PC measured 2,880 ns per 109-LED Direct frame and 3,200 ns for the onboard palette; Fn focus measured 2,140 ns without and 2,720 ns with an onboard palette. The immediately preceding 0.8.1 host baseline measured 2,740 ns for Direct. These are averaged host CPU times, include fixture overhead and have 1 ms clock resolution; they are not microcontroller execution times or physical key latency. The scenarios and checksum are recorded in [performance-reference.json](performance-reference.json). No 0.10.0 hardware measurements were performed.
 
 ## Build the native benchmark yourself
 

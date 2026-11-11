@@ -8,6 +8,9 @@ import hashlib
 import json
 from pathlib import Path
 import subprocess
+import shutil
+import re
+import xml.etree.ElementTree as ET
 import zipfile
 from check_release import ROOT, validate as validate_full
 from check_core_release import validate as validate_core
@@ -42,7 +45,10 @@ def package(exe, sonix_source, libusb_source, helper_dir, output):
     if subprocess.run([str(exe), '--self-test'], check=False).returncode:
         raise ValueError('Studio self-test failed')
     output.mkdir(parents=True, exist_ok=True)
-    tag = full['release']
+    version = ET.parse(ROOT / 'app/RedBladePlus.Studio.csproj').findtext('./PropertyGroup/Version')
+    if version is None or not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', version):
+        raise ValueError('Invalid Studio version in project file')
+    tag = 'v' + version
     commit = subprocess.check_output(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'], text=True).strip()
     target = output / f'redblade-plus-studio-{tag}-windows-x64.zip'
     with zipfile.ZipFile(target, 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as z:
@@ -67,9 +73,15 @@ def package(exe, sonix_source, libusb_source, helper_dir, output):
                    'SonixFlasherC 3.1.0 tag commit e6ba5db11f703f89fd29a5bc0e56ed1ae42604c3: https://github.com/SonixQMK/SonixFlasherC/releases/tag/3.1.0\n'
                    'libusb 1.0.30: https://github.com/libusb/libusb/releases/tag/v1.0.30\n'
                    'Rebuild Studio from redblade-plus/app with -p:HelperDirectory=<source bundle>/third-party/helpers. See app/THIRD-PARTY-NOTICES.md.\n')
-    sums = output / 'studio-SHA256SUMS'
-    sums.write_text(''.join(f'{sha(p)}  {p.name}\n' for p in (target, source)), encoding='utf-8')
-    return {'assets': [str(target), str(source), str(sums)], 'commit': commit}
+    release_assets = [output / 'RedBladePlus-Studio.exe']
+    shutil.copy2(exe, release_assets[0])
+    for name in ('redblade-fs-aurora-via.bin', 'redblade-fs-openrgb-core.bin', 'manifest.json', 'manifest-core.json'):
+        destination = output / name
+        shutil.copy2(ROOT / 'dist' / name, destination)
+        release_assets.append(destination)
+    sums = output / 'SHA256SUMS'
+    sums.write_text(''.join(f'{sha(p)}  {p.name}\n' for p in (*release_assets, target, source)), encoding='utf-8')
+    return {'assets': [str(p) for p in (*release_assets, target, source, sums)], 'commit': commit, 'studio_version': version, 'firmware_release': full['release']}
 
 
 if __name__ == '__main__':

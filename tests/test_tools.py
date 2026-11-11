@@ -32,12 +32,22 @@ class ToolTests(unittest.TestCase):
         kb.close.assert_called_once()
 
     def test_installer_accepts_full_at_its_own_minimum_version(self):
-        info=bytearray(32);info[:6]=bytes([0xFE,0x81,1,0,7,0]);info[24:]=b'RDBLFS01'
+        info=bytearray(32);info[:6]=bytes([0xFE,0x81,1,0,10,0]);info[24:]=b'RDBLFS01'
         kb=MagicMock();kb.request.return_value=bytes(info)
         with patch.object(sys,'argv',['install-fn-layer.py','--edition','full','--apply','--backup','unused-private.json']), \
              patch.object(installer,'Keyboard',return_value=kb),patch.object(installer,'apply') as install:
             self.assertEqual(installer.main(),0)
         install.assert_called_once()
+        kb.close.assert_called_once()
+
+    def test_installer_rejects_new_full_map_on_old_firmware(self):
+        info=bytearray(32);info[:6]=bytes([0xFE,0x81,1,0,9,0]);info[24:]=b'RDBLFS01'
+        kb=MagicMock();kb.request.return_value=bytes(info)
+        with patch.object(sys,'argv',['install-fn-layer.py','--edition','full','--apply','--backup','unused-private.json']), \
+             patch.object(installer,'Keyboard',return_value=kb),patch.object(installer,'apply') as install:
+            with self.assertRaisesRegex(RuntimeError,r'RedBlade\+ 0\.10\.0 or newer'):
+                installer.main()
+        install.assert_not_called()
         kb.close.assert_called_once()
 
     def test_either_manifest_update_order_preserves_both_binary_checksums(self):
@@ -76,11 +86,12 @@ class ToolTests(unittest.TestCase):
         self.assertEqual(keys[(0,0)],0x7E53)
         self.assertEqual(keys[(0,17)],1)
         self.assertEqual(keys[(2,3)],1)
+        self.assertEqual(keys[(3,0)],1)
         self.assertEqual(keys[(2,12)],0x1234)
         for e in core['clear_bindings']:self.assertEqual(keys[(e['row'],e['col'])],1)
 
     def test_installer_refuses_full_map_on_core_firmware(self):
-        info=bytearray(32);info[:6]=bytes([0xFE,0x81,1,0,8,0]);info[19]=128;info[24:]=b'RDBLFS01'
+        info=bytearray(32);info[:6]=bytes([0xFE,0x81,1,0,10,0]);info[19]=128;info[24:]=b'RDBLFS01'
         kb=MagicMock();kb.request.return_value=bytes(info)
         with patch.object(sys,'argv',['install-fn-layer.py','--apply','--backup','unused-private.json']),patch.object(installer,'Keyboard',return_value=kb):
             with self.assertRaisesRegex(RuntimeError,'edition'):installer.main()
@@ -101,7 +112,7 @@ class ToolTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):device.via(8,0x40)
 
     def test_public_fn_map_matches_actual_firmware(self):
-        self.assertEqual(len(check()['bindings']),33)
+        self.assertEqual(len(check()['bindings']),34)
 
     def test_timing_statistics_and_units(self):
         result=benchmark.summarize([1,2,3,4,5])

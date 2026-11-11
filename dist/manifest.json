@@ -8,9 +8,9 @@
   "qmk_commit": "62973ee48a976c6f7cc6d4f7b198bd48a2fdfe60",
   "toolchain": "arm-none-eabi-gcc (crosstool-NG 1.27.0.82_7f9d704 - qmk/qmk_toolchains @ a55a2b0) 15.2.0",
   "binary_bytes": 65536,
-  "sha256": "2db627b4889b28992a20cadfad3382e876da3d956fa1c7c1de5ecbed0f0e2caf",
-  "ram_bytes_including_reserved_stacks": 8088,
-  "ram_remaining_bytes": 104,
+  "sha256": "201a23022a7dc17c86e10fedf24b5dbed1c5e1466eb5870b68b75ea04d15a420",
+  "ram_bytes_including_reserved_stacks": 8104,
+  "ram_remaining_bytes": 88,
   "keyboard_usb_poll_interval_ms": 1,
   "shared_timer_clock_hz": 720896,
   "rgb_process_leds_per_task": 8,
@@ -18,8 +18,20 @@
   "via_layers": 3,
   "protocol_host_tests": "passed",
   "hardware_latency_measured": false,
-  "release": "v0.9.0",
-  "hardware_validation": null,
+  "release": "v0.10.0",
+  "hardware_validation": {
+    "date": "2026-11-11",
+    "device": "preparation keyboard, Redblade FS ISO",
+    "firmware_identified": "Full 0.10.0",
+    "programming_and_checksum_verified": true,
+    "initial_guided_reconnect": "timed out before VIA restore; subsequent separate identify succeeded",
+    "via_and_macros_restored_and_readback": true,
+    "onboard_configuration_saved_and_readback": true,
+    "typing_numpad_and_aurora_user_confirmed": true,
+    "power_cycle_persistence": null,
+    "new_optional_features_user_tested": null,
+    "reconnect_retry_fix": "host regression tests only; no second physical flash"
+  },
   "previous_version_hardware_validation": {
     "release": "v0.8.1",
     "validation": {
@@ -74,7 +86,7 @@
   },
   "usb_state_policy": "off_unless_configured",
   "project": "RedBlade+",
-  "fn_bindings": 33,
+  "fn_bindings": 34,
   "controls_host_tests": "passed",
   "python_tool_tests": 14,
   "audit": "docs/AUDIT.md",
@@ -85,7 +97,7 @@
     "includes": [
       "four profile palettes (109 HSV colors each)",
       "24 effect colors per profile",
-      "ten module switches per profile",
+      "twelve module switches per profile",
       "master/mode/timeout/reactive life/default rates",
       "active profile"
     ],
@@ -129,7 +141,7 @@
   "bootloader_shortcut": "Fn+Esc held for 2000 ms; Shift optional; short press stops helpers/unlocks",
   "native_benchmark": {
     "physical_key_latency_measured": false,
-    "sha256": "b78aa9152232063ac41eb595753f54f920c6ff3fdb05d1b9cf57f0fa6e93b838",
+    "sha256": "30283e39c0b6f38af36d7f253d51ee6521f00139e52a1fe343d18e7956fe3f58",
     "file": "redblade-plus-benchmark-windows.exe"
   },
   "fn_rgb_status": {
@@ -259,7 +271,7 @@
     "payload_bytes": 1696,
     "per_key_hsv_colors": 109,
     "effect_hsv_colors": 24,
-    "module_bits": 10,
+    "module_bits": 12,
     "bank_addresses": [
       "0xE780",
       "0xEF80"
@@ -272,7 +284,7 @@
   },
   "fn_focus": {
     "default_enabled": true,
-    "shortcut_positions": 33,
+    "shortcut_positions": 34,
     "fn_led": 102,
     "unassigned_keys": "off while Fn held",
     "host_buffer": "retained; restored on release",

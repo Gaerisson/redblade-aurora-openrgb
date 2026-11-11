@@ -59,13 +59,15 @@ static bool redblade_store_payload_byte_valid(uint16_t offset, uint8_t value) {
     if (offset < 32) return !value;
     const uint16_t field = (offset - 32) % REDBLADE_STORE_PROFILE_SIZE;
     switch (field) {
-        case 1: return !(value & 0xFC);
+        case 1: return !(value & 0xF0);
         case 3: return value < 4;
         case 4: return value >= 1 && value <= 60;
         case 5: return (value >= 5 && value <= 100 && value % 5 == 0) || (value >= 125 && value <= 250 && value % 25 == 0);
         case 6: return value <= 9;
         case 7: return value >= 1 && value <= 15;
-        default: return ((field >= 8 && field <= 15) || field == 415) ? !value : true;
+        case 8: return !value || (value >= 5 && value <= 120);
+        case 9: return value <= 1;
+        default: return ((field >= 10 && field <= 15) || field == 415) ? !value : true;
     }
 }
 static bool redblade_store_header_valid(const uint8_t *p) {

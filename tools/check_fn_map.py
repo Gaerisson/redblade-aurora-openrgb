@@ -14,7 +14,7 @@ def keymap_layers(root=ROOT):
 
 def check(root=ROOT):
     doc = json.loads((root/'fn-shortcuts.json').read_text(encoding='utf-8'))
-    assert doc['layer'] == 1 and doc['minimum_firmware'] == [0, 7, 0]
+    assert doc['layer'] == 1 and doc['minimum_firmware'] == [0, 10, 0]
     layers = keymap_layers(root)
     assert len(layers[0]) == len(layers[1]) == 109
     positions = [tuple(led['matrix']) for led in json.loads((root/'led-map.json').read_text(encoding='utf-8'))]
@@ -33,6 +33,7 @@ def check(root=ROOT):
         assert codes[binding['symbol']] == binding['code']
         actual[pos] = binding['symbol']
     assert expected == actual, 'Fn mapping differs from compiled keymap'
+    assert actual[(3,0)] == 'RB_CAPS_WORD'
     assert actual[(0,17)] == 'RB_REC_ARM' and actual[(0,18)] == 'RB_PLAY'
     assert [actual[(1,col)] for col in (1,2,3)] == ['RB_REC_1','RB_REC_2','RB_REC_3']
     removed={(3,13),(4,15),(5,15)}

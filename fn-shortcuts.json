@@ -1,7 +1,7 @@
 {
   "minimum_firmware": [
     0,
-    7,
+    10,
     0
   ],
   "layer": 1,
@@ -194,6 +194,13 @@
       "key": "Numpad +",
       "symbol": "RB_TURBO_FASTER",
       "code": 32347
+    },
+    {
+      "row": 3,
+      "col": 0,
+      "key": "CAPS",
+      "symbol": "RB_CAPS_WORD",
+      "code": 32353
     },
     {
       "row": 3,

@@ -2,6 +2,9 @@
 
 [English](SHORTCUTS.md) · **Français** · [Projet](../README.fr.md) · [Installation](INSTALL.fr.md)
 
+**Full 0.10 en aperçu :** Fn + Verr. Maj active ou désactive Caps Word (AZERTY ou QWERTY), désactivé par défaut. Le délai de sécurité optionnel arrête les fonctions automatiques et la lecture Recorder après 5 à 120 secondes (30 par défaut), sans interrompre la capture ni effacer les séquences. Il est désactivé par défaut.
+
+
 Firmware **0.8.1**, Red Blade Full Size ISO. Fn est entre Windows droite et Ctrl droit. **1/2/3 désigne la rangée de chiffres au-dessus des lettres** ; **−/+ désigne le pavé numérique**.
 
 ![Raccourcis classés par fonction](assets/shortcuts.fr.png)
@@ -96,7 +99,7 @@ Fn + Pause arrête aussi la lecture multimédia. Relâcher Fn/Maj avant la touch
 
 ## Touches dynamiques et couleurs
 
-Full 0.9 ajoute le **focus Fn** : maintenir Fn éteint les touches sans raccourci Fn fourni. Les raccourcis des modules désactivés dans Studio sont aussi masqués. Relâcher Fn rétablit les couleurs du logiciel ou du profil local. Studio permet de désactiver ce focus et d’enregistrer quatre profils avec 109 couleurs par touche et 24 couleurs d’effets. Les couleurs ci-dessous sont celles d’usine. Un raccourci Fn déplacé dans VIA ne déplace pas automatiquement son indicateur lumineux.
+Full 0.9 ajoute le **focus Fn** : maintenir Fn éteint les touches sans raccourci Fn fourni. Les raccourcis des modules désactivés dans Studio sont aussi masqués. Relâcher Fn rétablit les couleurs du logiciel ou du profil local. Studio permet de désactiver ce focus et d’modifier le profil actif avec 109 couleurs par touche et 24 couleurs d’effets. Les couleurs ci-dessous sont celles d’usine. Un raccourci Fn déplacé dans VIA ne déplace pas automatiquement son indicateur lumineux.
 
 Le **profil hôte par défaut donne priorité à Aurora/OpenRGB**. Après **5 secondes sans RGB**, il passe au **blanc avec traînées rouges** : chaque frappe physique, Turbo ou lettre rejouée s’allume, puis revient au blanc en environ une demi-seconde (15 images, durée dépendante de la charge). Fn + F2 choisit ce blanc réactif explicitement. Les indicateurs de verrouillage restent prioritaires.
 
