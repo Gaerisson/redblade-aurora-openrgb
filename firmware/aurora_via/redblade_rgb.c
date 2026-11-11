@@ -28,7 +28,7 @@ static uint8_t typing_ttl[(RGB_MATRIX_LED_COUNT + 1) / 2], typing_count;
 static uint8_t wave_source, wave_ttl;
 #include "typing_positions.inc"
 static void typing_clear(void) {
-    wave_ttl = 0;
+    wave_ttl = 0; boot_blend = 0;
     if (!typing_count) return;
     memset(typing_ttl, 0, sizeof(typing_ttl)); typing_count = 0;
 }
@@ -38,8 +38,10 @@ bool redblade_rgb_key_lit(uint8_t index) {
 void redblade_rgb_key_flash(uint8_t index) {
     if (index >= RGB_MATRIX_LED_COUNT || !redblade_config_feature(RB_MODULE_REACTIVE) || !redblade_rgb_fallback_active() || !rgb_matrix_get_val()) return;
     if (redblade_config_byte(10, 0)) {
+        boot_blend = 0; // Only the latest wave is retriggered.
         wave_source = index; wave_ttl = redblade_config_byte(7, 15) + 1; return;
     }
+    if (!typing_count) boot_blend = 0; // Keep other keys aging during continuous typing.
     const uint8_t shift = (index & 1) * 4;
     if (!((typing_ttl[index / 2] >> shift) & 15)) ++typing_count;
     typing_ttl[index / 2] = (typing_ttl[index / 2] & ~(15 << shift)) | (redblade_config_byte(7,15) << shift);
@@ -56,18 +58,26 @@ static hsv_t typing_color(uint8_t index, uint8_t white) {
         if (!wave_ttl) return base;
         const int16_t dx=(int16_t)g_led_config.point[index].x-g_led_config.point[wave_source].x;
         const int16_t dy=(int16_t)g_led_config.point[index].y-g_led_config.point[wave_source].y;
-        const uint16_t distance=(dx<0?-dx:dx)+(style==1 ? (dy<0?-dy:dy) : 0);
+        const uint16_t ax=dx<0?-dx:dx, ay=dy<0?-dy:dy;
+        const uint16_t distance=style==1 ? ax+ay : style==3 ? (ax>ay ? ax : ay) : style==4 ? 0 : ax;
         const uint8_t width=redblade_config_byte(11,0) ? redblade_config_byte(11,0) : 16;
-        const uint16_t radius=(duration-wave_ttl)*16U;
-        const uint16_t gap=distance>radius ? distance-radius : radius-distance;
-        if (gap>=width) return base;
-        strength=(uint16_t)wave_ttl*(width-gap); divisor=(uint16_t)duration*width;
+        if (style==3 && ax>=width && ay>=width) return base;
+        const uint16_t gap=distance>boot_position ? distance-boot_position : boot_position-distance;
+        if (style==4) { strength=boot_brightness; divisor=255; }
+        else {
+            if (gap>=width) return base;
+            strength=(uint16_t)boot_brightness*(width-gap); divisor=255U*width;
+        }
     } else {
         const uint8_t shift=(index & 1)*4, ttl=(typing_ttl[index/2]>>shift)&15;
         if (!ttl) return base;
-        typing_ttl[index/2]-=1<<shift;
-        if (ttl==1) --typing_count;
-        strength=ttl; divisor=duration;
+        if (!boot_blend) {
+            typing_ttl[index/2]-=1<<shift;
+            if (ttl==1) --typing_count;
+        }
+        const uint8_t rate=redblade_config_byte(12,0) ? redblade_config_byte(12,0) : 1;
+        const uint8_t subframe=boot_blend ? boot_blend-1 : rate-1;
+        strength=(uint16_t)ttl*rate-subframe; divisor=(uint16_t)duration*rate;
     }
     hsv_t peak=redblade_config_effect(RB_COLOR_REACTIVE,(hsv_t){0,255,rgb_matrix_get_val()});
     if (peak.v>rgb_matrix_get_val()) peak.v=rgb_matrix_get_val();
@@ -265,7 +275,25 @@ void redblade_rgb_begin_frame(void) {
     }
     render_kind = render_target;
     if ((render_kind != RENDER_WHITE && render_kind != RENDER_LOCAL_WHITE) || !brightness || !redblade_config_feature(RB_MODULE_REACTIVE)) typing_clear();
-    else if (wave_ttl) --wave_ttl;
+    else {
+        const uint8_t rate=redblade_config_byte(12,0);
+        if (wave_ttl && (wave_ttl > redblade_config_byte(7,15) || !boot_blend)) --wave_ttl;
+        const uint8_t step=rate ? rate : 1;
+        if (++boot_blend >= step) boot_blend=0;
+        if (wave_ttl) {
+            // Reuse boot-only fields; compute smooth geometry once per frame, not per LED.
+            const uint8_t total=redblade_config_byte(7,15)*step;
+            const uint8_t remaining=wave_ttl*step-(boot_blend ? boot_blend-1 : step-1);
+            const uint8_t elapsed=total-remaining;
+            boot_position=(uint16_t)elapsed*16/step;
+            if (redblade_config_byte(10,0)==4 && total>2) {
+                const uint16_t phase=(uint16_t)elapsed*4;
+                const uint8_t fraction=phase%total;
+                const uint8_t triangle=((phase/total)&1) ? total-fraction : fraction;
+                boot_brightness=(uint32_t)triangle*remaining*255/((uint16_t)total*total);
+            } else boot_brightness=(uint16_t)remaining*255/total;
+        }
+    }
 }
 
 static hsv_t target_color(uint8_t index, uint8_t kind) {

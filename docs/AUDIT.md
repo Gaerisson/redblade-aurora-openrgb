@@ -1,5 +1,8 @@
 # RedBlade+ 0.8.1 — code review and validation
 
+**0.12 verification:** Extended reactions reuse the existing packed TTL and boot-only fields; no additional SRAM is allocated. Full retains 88 usable SRAM bytes and uses 46,740 program bytes; Core retains 544. Tests cover continuous typing expiration, retrigger, extended styles, modifier overlay priorities and incompatible downgrades across all profiles. Studio adds 8-second bounded PC reactions, three presets and a virtual interactive Fn reference. No scan/PWM clock or GPIO current setting changes. See [brightness audit](RGB_BRIGHTNESS.md). Hardware acceptance for 0.12 is recorded in release notes separately from these build and host checks.
+
+
 
 **0.11 source verification:** Color Lab, transient Raw Input effects and autonomous reaction styles compile and pass host and real WebView2 interaction tests. The consolidated Sol 6.1 review identified inspector focus loss and preview/runtime divergence; both were corrected and regression-tested. Full uses 46,100 program bytes with 88 bytes usable SRAM; Core has 544 bytes. Full 0.11 programming/checksum, fresh-handle recovery identification, VIA/macros and four-profile readback passed on the preparation keyboard. The owner confirmed saved ripple/color, typing, numpad and software reactive typing. The malformed immediate-reply fix was exercised during recovery and is regression-tested; no second physical flash was performed. See release notes and hardware-validation.json; power-cycle, sustained-load and physical latency measurements remain untested.
 

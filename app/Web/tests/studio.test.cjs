@@ -100,3 +100,5 @@ test('visual effect palette follows primary colors when empty and rejects invali
  assert.equal(visualPalette('#abcdef', '#112233', '#445566'),null);
  assert.equal(visualPalette('#abcdef, invalid', '#112233', '#445566'),null);
 });
+
+test('extended reaction duration chooses valid bounded firmware fields',()=>{const {reactionPair}=require('../app.js');assert.deepEqual(reactionPair(3960),{trailFrames:15,reactiveRate:8});assert.deepEqual(reactionPair(1980),{trailFrames:15,reactiveRate:4});assert.deepEqual(reactionPair(8000,false),{trailFrames:15,reactiveRate:0});});

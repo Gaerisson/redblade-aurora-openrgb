@@ -1,6 +1,6 @@
 # Performance checks
 
-**0.11.0 status:** The bundled native reference measures 0.11 code on the preparation PC. Physical keyboard latency and sustained hardware effect load have not been measured. HID comparisons below are historical.
+**0.12.0 status:** The bundled native reference measures 0.12 code on the preparation PC. Physical keyboard latency and sustained hardware effect load have not been measured. HID comparisons below are historical.
 
 [Project](../README.md) · [Shortcuts](SHORTCUTS.md) · [Audit](AUDIT.md)
 

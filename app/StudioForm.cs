@@ -7,7 +7,7 @@ namespace RedBladePlus.Studio;
 
 internal sealed partial class StudioForm:Form
 {
-    readonly bool preview;bool previewMap;readonly WebView2 web=new(){Dock=DockStyle.Fill,DefaultBackgroundColor=Color.FromArgb(14,15,19)};
+    readonly bool preview;bool previewMap,previewFn;readonly WebView2 web=new(){Dock=DockStyle.Fill,DefaultBackgroundColor=Color.FromArgb(14,15,19)};
     readonly TaskCompletionSource<bool> ready=new(TaskCreationOptions.RunContinuationsAsynchronously);
     readonly SemaphoreSlim operationGate=new(1,1);bool cancelPreparation;
     bool Transitioning=>operationGate.CurrentCount==0;
@@ -80,7 +80,7 @@ internal sealed partial class StudioForm:Form
             if(!preview)MessageBox.Show(this,T("Install or repair Microsoft Edge WebView2 Runtime, then restart Studio.\n", "Installez ou réparez Microsoft Edge WebView2 Runtime, puis relancez Studio.\n")+error.Message,Text);
         }
     }
-    static readonly Dictionary<string,(string Resource,string Mime)> Resources=new(StringComparer.Ordinal){["index.html"]=("web.index.html","text/html"),["styles.css"]=("web.styles.css","text/css"),["app.js"]=("web.app.js","text/javascript"),["map-viewer.js"]=("web.map-viewer.js","text/javascript"),["brand.png"]=("brand.png","image/png"),["shortcuts.png"]=("shortcuts.png","image/png"),["shortcuts.fr.png"]=("shortcuts.fr.png","image/png"),["app.ico"]=("app.ico","image/x-icon"),["layout.json"]=("layout.json","application/json")};
+    static readonly Dictionary<string,(string Resource,string Mime)> Resources=new(StringComparer.Ordinal){["index.html"]=("web.index.html","text/html"),["styles.css"]=("web.styles.css","text/css"),["app.js"]=("web.app.js","text/javascript"),["map-viewer.js"]=("web.map-viewer.js","text/javascript"),["fn-guide.js"]=("web.fn-guide.js","text/javascript"),["brand.png"]=("brand.png","image/png"),["shortcuts.png"]=("shortcuts.png","image/png"),["shortcuts.fr.png"]=("shortcuts.fr.png","image/png"),["app.ico"]=("app.ico","image/x-icon"),["layout.json"]=("layout.json","application/json")};
     static void ServeResource(CoreWebView2Environment environment,CoreWebView2WebResourceRequestedEventArgs e)
     {
         var uri=new Uri(e.Request.Uri);string name=uri.AbsolutePath.TrimStart('/');
@@ -94,9 +94,9 @@ internal sealed partial class StudioForm:Form
     {
         app=new{version=UpdateSession.CurrentVersion.ToString(),language=french?"fr":"en",dirty,busy=Transitioning||busy&&!effectActive||updates?.Installing==true,preview,error=lastError},keyboard=new{status=connection,firmware},
         firmware=new{bundledVersion=BundledVersion.ToString(),latestVersion=updates?.Firmware.GetValueOrDefault("full")?.Version.ToString(),recommendedSource=updates?.Firmware.GetValueOrDefault("full")?.Version>=BundledVersion?"latest":"bundled",edition="full"},
-        capabilities=new{studio=connection=="connected",extendedOptions=preview||installedVersion==null||installedVersion>=new Version(0,10,0),reactiveStyles=preview||installedVersion==null||installedVersion>=new Version(0,11,0),softwareEffects=!preview},
+        capabilities=new{studio=connection=="connected",extendedOptions=preview||installedVersion==null||installedVersion>=new Version(0,10,0),reactiveStyles=preview||installedVersion==null||installedVersion>=new Version(0,11,0),extendedReaction=preview||installedVersion==null||installedVersion>=new Version(0,12,0),softwareEffects=!preview},
         editor=new{history.CanUndo,history.CanRedo},
-        profile=new{Current.Modules,Current.Master,Current.DefaultMode,Current.TimeoutSeconds,Current.TurboRate,Current.RecorderSpeed,Current.TrailFrames,Current.CapsWordLayout,Current.ReactiveStyle,Current.ReactiveWidth,safetyTimeoutSeconds=Current.SafetyTimeoutSeconds==0?30:Current.SafetyTimeoutSeconds,keys=Current.Keys,effects=Current.Effects},
+        profile=new{Current.Modules,Current.Master,Current.DefaultMode,Current.TimeoutSeconds,Current.TurboRate,Current.RecorderSpeed,Current.TrailFrames,Current.CapsWordLayout,Current.ReactiveStyle,Current.ReactiveWidth,Current.ReactiveRate,Current.HighlightMode,safetyTimeoutSeconds=Current.SafetyTimeoutSeconds==0?30:Current.SafetyTimeoutSeconds,keys=Current.Keys,effects=Current.Effects},
         layout=KeyboardLayout.Load(),updates=new{status=updates?.Status??"",availableVersion=updates?.Check?.SoftwareNewer==true?updates.Check.Offer?.Version.ToString():null,softwareReady=updates?.Software!=null,preferences=updates?.Preferences??new UpdatePreferences()},
         job,softwareEffect=new{active=effectActive,settings=effect,effect.Preset,effect.Color1,effect.Color2,effect.Speed,effect.Brightness}
     };

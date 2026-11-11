@@ -67,9 +67,11 @@ static bool redblade_store_payload_byte_valid(uint16_t offset, uint8_t value) {
         case 7: return value >= 1 && value <= 15;
         case 8: return !value || (value >= 5 && value <= 120);
         case 9: return value <= 1;
-        case 10: return value <= 2;
+        case 10: return value <= 4;
         case 11: return !value || (value >= 4 && value <= 64);
-        default: return ((field >= 12 && field <= 15) || field == 415) ? !value : true;
+        case 12: return value <= 8;
+        case 13: return value <= 2;
+        default: return ((field >= 14 && field <= 15) || field == 415) ? !value : true;
     }
 }
 static bool redblade_store_header_valid(const uint8_t *p) {

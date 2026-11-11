@@ -130,6 +130,37 @@ int main(void) {
     redblade_rgb_profile(RB_PROFILE_WHITE);redblade_rgb_begin_frame();assert(redblade_rgb_color(62).s==0);
     redblade_rgb_key_flash(1);redblade_rgb_suspend();redblade_rgb_wake();
     now+=REDBLADE_BOOT_ANIMATION_MS;redblade_rgb_begin_frame();assert(redblade_rgb_color(1).s==0);
+    // Rate eight holds each of four fade levels for eight rendered frames.
+    payload[base+10]=0;payload[base+12]=8;save_config(payload);
+    redblade_rgb_key_flash(1);
+    for(unsigned frame=0;frame<32;++frame) {
+        redblade_rgb_begin_frame();assert(redblade_rgb_color(1).s>0);
+    }
+    redblade_rgb_begin_frame();assert(redblade_rgb_color(1).s==0);
+    // Cross waves cover both axes; pulse covers the whole board.
+    payload[base+12]=0;payload[base+10]=3;save_config(payload);
+    redblade_rgb_key_flash(1);redblade_rgb_begin_frame();redblade_rgb_begin_frame();
+    assert(redblade_rgb_color(2).s>0 && redblade_rgb_color(3).s>0);
+    payload[base+10]=4;save_config(payload);
+    redblade_rgb_key_flash(1);redblade_rgb_begin_frame();redblade_rgb_begin_frame();
+    assert(redblade_rgb_color(1).s>0 && redblade_rgb_color(2).s>0);
+    // Local and host modes use only physical modifiers, with immediate release.
+    mods=1;hsv_t hint;assert(!redblade_controls_indicator(96,false,&hint));mods=0;
+    payload[base+13]=1;save_config(payload);mods=1;
+    assert(redblade_controls_indicator(96,false,&hint) && hint.h==170);
+    assert(redblade_controls_indicator(42,false,&hint) && hint.h==170); // AZERTY A
+    assert(redblade_controls_indicator(96,true,&hint) && hint.v==0); // Fn focus wins.
+    mods=2;assert(redblade_controls_indicator(78,false,&hint) && hint.h==200);
+    mods=4;assert(redblade_controls_indicator(98,false,&hint) && hint.h==32);
+    mods=0;weak_mods=1;assert(!redblade_controls_indicator(96,false,&hint));weak_mods=0;
+    redblade_rgb_profile(RB_PROFILE_HOST);redblade_rgb_begin_frame();mods=1;
+    assert(!redblade_controls_indicator(96,false,&hint));
+    mods=0;payload[base+13]=2;payload[base+9]=1;save_config(payload);redblade_rgb_profile(RB_PROFILE_HOST);mods=1;
+    assert(redblade_controls_indicator(62,false,&hint) && hint.h==170); // QWERTY A
+    assert(!redblade_controls_indicator(42,false,&hint));
+    redblade_rgb_profile(RB_PROFILE_OFF);assert(!redblade_controls_indicator(96,false,&hint));
+    redblade_rgb_profile(RB_PROFILE_WHITE);redblade_rgb_suspend();assert(!redblade_controls_indicator(96,false,&hint));
+    redblade_rgb_wake();mods=0;
     payload[base]&=~8;save_config(payload);redblade_rgb_key_flash(1);redblade_rgb_begin_frame();assert(redblade_rgb_color(1).s==0);
     puts("PASS: Studio schema, full profile read/save, palette/effects, module gating, retained Recorder, journaled F9, reboot and runtime-only preview");
 }

@@ -7,8 +7,8 @@ internal sealed partial class StudioForm
     internal void ShowPreviewPage(string name,bool useFrench)
     {
         if(!preview)throw new InvalidOperationException("Preview mode required.");
-        previewMap=name.Equals("map",StringComparison.OrdinalIgnoreCase);
-        previewPage=name.ToLowerInvariant() switch{"keyboard"=>"keyboard","functions"=>"functions","effects" or "colors"=>"effects","firmware" or "updates" or "guide" or "map"=>"guide",_=>throw new ArgumentException("Unknown preview page.")};french=useFrench;
+        previewMap=name.Equals("map",StringComparison.OrdinalIgnoreCase);previewFn=name.Equals("fn",StringComparison.OrdinalIgnoreCase);
+        previewPage=name.ToLowerInvariant() switch{"keyboard" or "fn"=>"keyboard","functions"=>"functions","effects" or "colors"=>"effects","firmware" or "updates" or "guide" or "map"=>"guide",_=>throw new ArgumentException("Unknown preview page.")};french=useFrench;
     }
     async Task SelectPage(string page)
     {
@@ -24,6 +24,8 @@ internal sealed partial class StudioForm
             await Script("document.getElementById('selectAll').click();document.getElementById('gradientMode').value='linear';document.getElementById('keyColor').value='#dd002b';document.getElementById('keyColor2').value='#773dff';document.getElementById('gradientAngle').value=0;document.getElementById('paint').click()");await Task.Delay(120);
             await Script("document.getElementById('groupSelect').value='gaming';document.getElementById('groupSelect').dispatchEvent(new Event('change'))");
         }
+        if(previewFn)await Script("document.getElementById('fnGuideToggle').click();document.querySelector('.key[data-led=\"21\"]').click();document.getElementById('fnHelpShift').click()");
+        if(previewPage=="functions")await Dispatch(StudioBridge.Parse("{\"id\":\"preview-config\",\"action\":\"patchProfile\",\"args\":{\"reactiveStyle\":3,\"reactiveRate\":4,\"highlightMode\":1}}"));
         if(previewPage=="effects")await Script("document.querySelectorAll('#presets button')[2].click()");
         if(previewMap){await Script("document.getElementById('openShortcutMap').click()");await Task.Delay(100);}
         await Script("window.scrollTo(0,0)");await Task.Delay(80);
@@ -117,12 +119,23 @@ internal sealed partial class StudioForm
         if(Current.Keys[1]!=(dimColor with {V=255}))throw new Exception("Selected intensity did not preserve hue and saturation.");
         await Script("document.getElementById('undo').click()");await Task.Delay(80);
         if(Current.Keys[1]!=dimColor)throw new Exception("Maximum intensity did not participate in undo.");
+        var beforeHelp=ConfigCodec.Encode(config);
+        await Script("document.getElementById('fnGuideToggle').click()");
+        var helpPoint=await Script("(()=>{const r=document.querySelector('.key[data-led=\"21\"]').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()");
+        await Mouse("mouseMoved",helpPoint.GetProperty("x").GetDouble(),helpPoint.GetProperty("y").GetDouble());await Task.Delay(80);
+        string once=(await Script("document.getElementById('fnHelpText').textContent")).GetString()!;
+        await Script("document.getElementById('fnHelpShift').click()");await Task.Delay(60);
+        if((await Script("document.getElementById('fnHelpPanel').hidden")).GetBoolean()||(await Script("document.getElementById('fnHelpText').textContent")).GetString()==once)throw new Exception("Fn explorer did not explain the Shift alternative: "+once+" -> "+(await Script("JSON.stringify({text:document.getElementById('fnHelpText').textContent,keys:document.getElementById('fnHelpKeys').textContent,shift:document.getElementById('fnHelpShift').checked})")).GetString());
+        if(!ConfigCodec.Encode(config).SequenceEqual(beforeHelp))throw new Exception("Fn explorer changed keyboard settings.");
+        await Script("document.getElementById('fnHelpClose').click()");
         await SelectPage("functions");await Task.Delay(80);await Script("document.querySelector('#advancedOptions input[type=checkbox]').click()");await Task.Delay(100);
         if((Current.Modules&1024)==0)throw new Exception("Optional module action failed to reach firmware configuration.");
-        await Script("(()=>{const panel=document.getElementById('typingReaction');const color=panel.querySelector('input[type=color]');color.value='#26ffba';color.dispatchEvent(new Event('change'));const style=panel.querySelector('select');style.value='1';style.dispatchEvent(new Event('change'));const duration=panel.querySelector('input[type=range]');duration.value=6;duration.dispatchEvent(new Event('change'))})()");await Task.Delay(140);
-        if(Current.ReactiveStyle!=1||Current.TrailFrames!=6||Current.Effects[1]!=Hsv.FromColor(Color.FromArgb(38,255,186)))throw new Exception("Typing reaction controls did not reach persistent configuration.");
+        await Script("(()=>{const panel=document.getElementById('typingReaction');const color=panel.querySelector('input[type=color]');color.value='#26ffba';color.dispatchEvent(new Event('change'));const style=panel.querySelector('select');style.value='4';style.dispatchEvent(new Event('change'));const duration=panel.querySelector('input[type=range]');duration.value=1980;duration.dispatchEvent(new Event('change'))})()");await Task.Delay(140);
+        if(Current.ReactiveStyle!=4||Current.TrailFrames!=15||Current.ReactiveRate!=4||Current.Effects[1]!=Hsv.FromColor(Color.FromArgb(38,255,186)))throw new Exception("Typing reaction controls did not reach persistent configuration.");
         await Dispatch(StudioBridge.Parse("""{"id":"effect-contract","action":"updateEffect","args":{"preset":"reactive","color1":"#ff0000","color2":"#0000ff","speed":55,"brightness":200,"angle":90,"scale":125,"reverse":true,"palette":["#ff0000","#00ff00","#0000ff"],"targetLeds":[0,108],"background":"#202020","reactiveEnabled":true,"reactiveStyle":"ripple","reactiveColor":"#00ff99","reactiveDurationMs":1200,"reactiveWidth":3,"reactiveOpacity":80}}"""));
         if(effect.Angle!=90||effect.Palette.Length!=3||effect.TargetLeds?.Length!=2||effect.ReactiveDurationMs!=1200||!effect.ReactiveEnabled)throw new Exception("Advanced effect arguments did not reach the native model.");
+        await Script("(()=>{const select=document.querySelector('#modifierHighlights select');select.value='1';select.dispatchEvent(new Event('change'))})()");await Task.Delay(100);
+        if(Current.HighlightMode!=1)throw new Exception("Modifier highlight settings did not reach persistent configuration.");
         var savedMaster=Current.Master;
         var pending=new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var preparation=PerformHardware(async()=>{await pending.Task;return null;});

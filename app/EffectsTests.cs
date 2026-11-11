@@ -62,7 +62,28 @@ internal static class EffectsTests
         Check(KeyboardScanCodes.ToLed(0x45,false,true)==15 && KeyboardScanCodes.ToLed(0x56,false,false)==79, "E1 pause and ISO key");
         var reactive = advanced with { Preset="reactive", ReactiveStyle="key", TargetLeds=null };
         Check(EffectRenderer.Render(reactive,800,geometry,new[]{new KeyActivity(0,100)}).All(x=>x==0), "expired activity disappears");
-        long now=100; using(var activity=new KeyboardActivity(()=>now)) { for(int i=0;i<40;i++)activity.Add(i,now); Check(activity.Events.Count==32 && activity.Events[0].Led==8,"activity bounded"); now=2200; Check(activity.Events.Count==0,"activity expires"); activity.SetEnabled(false); Check(activity.Events.Count==0,"disable clears activity"); }
+        long now=100; using(var activity=new KeyboardActivity(()=>now)) { for(int i=0;i<40;i++)activity.Add(i,now); Check(activity.Events.Count==32 && activity.Events[0].Led==8,"activity bounded"); now=8099; Check(activity.Events.Count==32,"activity retained for almost eight seconds"); now=8100; Check(activity.Events.Count==0,"activity expires at eight seconds"); activity.SetEnabled(false); Check(activity.Events.Count==0,"disable clears activity"); }
+        (reactive with { ReactiveDurationMs=8000 }).Validate();
+        bool durationRejected=false; try { (reactive with { ReactiveDurationMs=8001 }).Validate(); } catch(ArgumentException) { durationRejected=true; } Check(durationRejected,"duration above eight seconds rejected");
+        var pulse=reactive with { ReactiveStyle="pulse", ReactiveDurationMs=8000, TargetLeds=new[]{0} };
+        var pulseFirst=EffectRenderer.Render(pulse,1000,geometry,new[]{new KeyActivity(0,0)});
+        var pulseMiddle=EffectRenderer.Render(pulse,4000,geometry,new[]{new KeyActivity(0,0)});
+        var pulseSecond=EffectRenderer.Render(pulse,5000,geometry,new[]{new KeyActivity(0,0)});
+        Check(pulseFirst[0]>0 && pulseSecond[0]>0 && pulseMiddle[0]==0 && pulseFirst.Skip(3).All(x=>x==0),"pulse produces two source-only pulses within selected LEDs");
+        var source=geometry.Single(k=>k.Led==0);
+        var crossKey=geometry.First(k=>k.Led!=0 && Math.Min(Math.Abs(k.X-source.X),Math.Abs(k.Y-source.Y))<.01);
+        var cross=reactive with { ReactiveStyle="cross", ReactiveDurationMs=8000, ReactiveWidth=1, TargetLeds=new[]{crossKey.Led} };
+        var crossFrame=EffectRenderer.Render(cross,0,geometry,new[]{new KeyActivity(0,0)});
+        Check(crossFrame[crossKey.Led*3]>0 && crossFrame[0]==0,"cross ring reaches aligned selected key only");
+        foreach(var preset in new[]{"aurora","comet","embers"})
+        {
+            var settings=validSettings with { Preset=preset, Angle=37, Scale=175, Reverse=true, Palette=new[]{"#FF0000","#00FF00","#0000FF"}, TargetLeds=new[]{0,1} };
+            var rendered=EffectRenderer.Render(settings,1234,geometry);
+            Check(rendered.SequenceEqual(EffectRenderer.Render(settings,1234,geometry)),preset+" deterministic");
+            Check(rendered.Skip(6).All(x=>x==0),preset+" respects selected LEDs");
+            Check(EffectRenderer.Render(settings with { Brightness=0 },1234,geometry).All(x=>x==0),preset+" respects zero brightness");
+            Check(EffectRenderer.Render(settings with { Brightness=100 },1234,geometry).All(x=>x<=100),preset+" brightness bounded");
+        }
         var ripple=reactive with { ReactiveStyle="ripple", ReactiveDurationMs=1000, ReactiveWidth=1 };
         var waveFrame=EffectRenderer.Render(ripple,100,geometry,new[]{new KeyActivity(0,0)});
         Check(waveFrame[3]>0 && waveFrame[0]==0, "ripple moves with age and distance");

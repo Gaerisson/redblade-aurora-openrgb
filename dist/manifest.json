@@ -8,7 +8,7 @@
   "qmk_commit": "62973ee48a976c6f7cc6d4f7b198bd48a2fdfe60",
   "toolchain": "arm-none-eabi-gcc (crosstool-NG 1.27.0.82_7f9d704 - qmk/qmk_toolchains @ a55a2b0) 15.2.0",
   "binary_bytes": 65536,
-  "sha256": "b862ab5473f378b87d8f52383de9d91bf5d238f13aad96c7e4fb39ef71267078",
+  "sha256": "79c107dc44020b57240cf8ee73e3170a0422e7b11dbbdd53f60c616e3933aadd",
   "ram_bytes_including_reserved_stacks": 8104,
   "ram_remaining_bytes": 88,
   "keyboard_usb_poll_interval_ms": 1,
@@ -18,7 +18,7 @@
   "via_layers": 3,
   "protocol_host_tests": "passed",
   "hardware_latency_measured": false,
-  "release": "v0.11.0",
+  "release": "v0.12.0",
   "hardware_validation": null,
   "rgb_data_timeout_ms": 5000,
   "boot_animation_ms": 2000,
@@ -95,7 +95,7 @@
   "bootloader_shortcut": "Fn+Esc held for 2000 ms; Shift optional; short press stops helpers/unlocks",
   "native_benchmark": {
     "physical_key_latency_measured": false,
-    "sha256": "a92da7db560cbcecfc7babb74838bc958eccc5777310227cffb7f0dd2f3b3286",
+    "sha256": "f30de8c973bfe21cc25b766800b5c4fa019180fd970eba80cc9b2f803b4e5669",
     "file": "redblade-plus-benchmark-windows.exe"
   },
   "fn_rgb_status": {
@@ -297,5 +297,20 @@
       "new_optional_features_user_tested": null,
       "reconnect_retry_fix": "host regression tests only; no second physical flash"
     }
-  }
+  },
+  "reactive_extensions": {
+    "maximum_nominal_ms": 3960,
+    "profile_rate_offset": 12,
+    "modifier_highlight_mode_offset": 13,
+    "styles": [
+      "key_fade",
+      "ripple",
+      "horizontal_wave",
+      "cross_wave",
+      "global_double_pulse"
+    ],
+    "new_ram_bytes": 0
+  },
+  "brightness_audit": "docs/RGB_BRIGHTNESS.md",
+  "prior_full_0_11_hardware_report": "https://github.com/Gaerisson/redblade-aurora-openrgb/releases/download/v0.11.0/hardware-validation.json"
 }

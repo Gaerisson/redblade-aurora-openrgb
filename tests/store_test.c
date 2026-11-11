@@ -98,15 +98,15 @@ static void crc_and_configuration_fail_closed(void) {
     ++tests;
 }
 static void reactive_schema_bounds(void) {
-    const uint8_t styles[] = {0, 1, 2}, widths[] = {0, 4, 64};
-    for (unsigned i = 0; i < 3; ++i) {
-        old(); replacement[42] = styles[i]; replacement[43] = widths[i];
+    const uint8_t styles[] = {0, 1, 2, 3, 4}, widths[] = {0, 4, 64, 16, 16};
+    for (unsigned i = 0; i < 5; ++i) {
+        old(); replacement[42] = styles[i]; replacement[43] = widths[i]; replacement[44] = i*2; replacement[45] = i%3;
         install(replacement, 41); assert(redblade_store_generation() == 42);
         redblade_store_init(); assert(redblade_store_generation() == 42);
     }
-    const unsigned offsets[] = {42, 43, 43, 44, 447};
-    const uint8_t invalid[] = {3, 3, 65, 1, 1};
-    for (unsigned i = 0; i < 5; ++i) {
+    const unsigned offsets[] = {42, 43, 43, 44, 45, 46, 47, 447};
+    const uint8_t invalid[] = {5, 3, 65, 9, 3, 1, 1, 1};
+    for (unsigned i = 0; i < 8; ++i) {
         old(); replacement[offsets[i]] = invalid[i]; install(replacement, 41);
         assert(phase() == 4 && store_reply[5] == 7 && redblade_store_generation() == 41);
     }

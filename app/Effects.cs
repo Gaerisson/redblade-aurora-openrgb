@@ -25,11 +25,11 @@ internal sealed record EffectSettings([property: JsonRequired] string Preset, [p
     static bool Color(string? value) => value != null && Regex.IsMatch(value, "^#[0-9a-fA-F]{6}$");
     internal void Validate()
     {
-        if (Preset is not ("solid" or "breathing" or "wave" or "gradient" or "sweep" or "rain" or "spectrum" or "twinkle" or "reactive")) throw new ArgumentException("Unknown effect preset.");
-        if (Speed is < 1 or > 100 || Brightness is < 0 or > 255 || Angle is < 0 or > 359 || Scale is < 25 or > 400 || ReactiveDurationMs is < 100 or > 2000 || ReactiveWidth is < 1 or > 8 || ReactiveOpacity is < 0 or > 100) throw new ArgumentException("Effect parameter out of range.");
+        if (Preset is not ("solid" or "breathing" or "wave" or "gradient" or "sweep" or "rain" or "spectrum" or "twinkle" or "aurora" or "comet" or "embers" or "reactive")) throw new ArgumentException("Unknown effect preset.");
+        if (Speed is < 1 or > 100 || Brightness is < 0 or > 255 || Angle is < 0 or > 359 || Scale is < 25 or > 400 || ReactiveDurationMs is < 100 or > 8000 || ReactiveWidth is < 1 or > 8 || ReactiveOpacity is < 0 or > 100) throw new ArgumentException("Effect parameter out of range.");
         if (!Color(Color1) || !Color(Color2) || !Color(Background) || !Color(ReactiveColor) || Palette == null || (Palette.Length != 0 && Palette.Length is not (>= 2 and <= 8)) || Palette.Any(x => !Color(x))) throw new ArgumentException("Invalid effect color or palette.");
         if (TargetLeds != null && (TargetLeds.Length is < 1 or > 109 || TargetLeds.Any(i => i is < 0 or > 108) || TargetLeds.Distinct().Count() != TargetLeds.Length)) throw new ArgumentException("Invalid target LEDs.");
-        if (ReactiveStyle is not ("key" or "ripple" or "row")) throw new ArgumentException("Unknown reactive style.");
+        if (ReactiveStyle is not ("key" or "ripple" or "row" or "cross" or "pulse")) throw new ArgumentException("Unknown reactive style.");
     }
 }
 internal static class EffectRenderer
@@ -61,6 +61,9 @@ internal static class EffectRenderer
                 case "rain": double drop=((phase*.65 + ((k.Column*37%101)/101.0))%1+1)%1; light=Math.Exp(-Math.Pow((y-drop)*9,2)); mix=(k.Column*17%101)/100.0; break;
                 case "spectrum": mix=((pos-phase)%1+1)%1; break;
                 case "twinkle": double seed=(k.Led*7919%101)/101.0; light=Math.Pow(Math.Max(0,Math.Sin(2*Math.PI*(phase+seed))),6); mix=seed; break;
+                case "aurora": double v=Math.Sin(2*Math.PI*(y*scale+phase)); mix=(1+Math.Sin(2*Math.PI*(pos-phase)+v*.7))/2; light=.65+.35*(1+v)/2; break;
+                case "comet": double u=((phase-pos)%1+1)%1; light=Math.Exp(-u*8); mix=1-u; break;
+                case "embers": double emberSeed=(k.Led*7919%101)/101.0; light=.25+.75*Math.Pow(Math.Max(0,Math.Sin(2*Math.PI*(phase+emberSeed+pos*.2))),4); mix=emberSeed; break;
                 case "reactive": light=0; break;
             }
             double overlay=0;
@@ -69,8 +72,10 @@ internal static class EffectRenderer
                 {
                     var e=events[i]; long age=timeMs-e.TimestampMs; if(age<0 || age>=settings.ReactiveDurationMs || e.Led is <0 or >108) continue;
                     var source=positionsByLed![e.Led];
-                    double d=settings.ReactiveStyle=="row" ? Math.Abs(k.Y-source.Y) : Math.Sqrt(Math.Pow(k.X-source.X,2)+Math.Pow(k.Y-source.Y,2));
-                    double intensity=settings.ReactiveStyle=="key" ? (k.Led==e.Led?1:0) : Math.Max(0,1-Math.Abs(d-age/(double)settings.ReactiveDurationMs*22)/settings.ReactiveWidth);
+                    double dx=Math.Abs(k.X-source.X), dy=Math.Abs(k.Y-source.Y);
+                    double d=settings.ReactiveStyle=="row" ? dy : settings.ReactiveStyle=="cross" ? Math.Min(dx,dy) : Math.Sqrt(Math.Pow(k.X-source.X,2)+Math.Pow(k.Y-source.Y,2));
+                    double progress=age/(double)settings.ReactiveDurationMs;
+                    double intensity=settings.ReactiveStyle=="key" ? (k.Led==e.Led?1:0) : settings.ReactiveStyle=="pulse" ? (k.Led==e.Led?Math.Pow(Math.Sin(2*Math.PI*progress),2):0) : Math.Max(0,1-Math.Abs(d-progress*22)/settings.ReactiveWidth);
                     overlay=Math.Max(overlay,intensity*(1-age/(double)settings.ReactiveDurationMs)*settings.ReactiveOpacity/100.0);
                 }
             for(int c=0;c<3;c++)

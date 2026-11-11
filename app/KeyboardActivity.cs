@@ -34,7 +34,7 @@ internal sealed class KeyboardActivity : IDisposable
     readonly Func<long> now; readonly object gate=new(); readonly KeyActivity[] recent=new KeyActivity[32]; int count;
     readonly List<KeyActivity> snapshot=new(32); Thread? thread; InputWindow? window; Exception? startupError; volatile bool stopping; readonly ManualResetEventSlim ready=new(false);
     internal KeyboardActivity(Func<long> now) => this.now=now;
-    internal IReadOnlyList<KeyActivity> Events { get { lock(gate) { snapshot.Clear(); long t=now(); for(int i=0;i<count;i++) if(t-recent[i].TimestampMs>=0 && t-recent[i].TimestampMs<2000) snapshot.Add(recent[i]); return snapshot; } } }
+    internal IReadOnlyList<KeyActivity> Events { get { lock(gate) { snapshot.Clear(); long t=now(); for(int i=0;i<count;i++) if(t-recent[i].TimestampMs>=0 && t-recent[i].TimestampMs<8000) snapshot.Add(recent[i]); return snapshot; } } }
     internal void Add(int led,long timestamp) { if(led is <0 or >108)return; lock(gate) { if(count==recent.Length){Array.Copy(recent,1,recent,0,--count);} recent[count++]=new(led,timestamp); } }
     internal void SetEnabled(bool enabled)
     {

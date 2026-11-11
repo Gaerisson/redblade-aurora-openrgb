@@ -16,21 +16,23 @@ Contrôle OpenRGB touche par touche, raccourcis Fn et fonctions de jeu pour le *
 
 ![Fonctions du firmware](docs/assets/features.fr.svg)
 
-## Studio 0.11.1 — aperçu Color Lab
+## Studio 0.12.0 — aperçu Color Lab
 
-Cliquez sur la carte des raccourcis pour un lecteur agrandi avec zoom à la molette et déplacement par glissement. **Intensité maximale** éclaircit les couleurs autonomes sélectionnées en conservant leur teinte et les touches éteintes, avec annulation possible. Cette mise à jour logicielle conserve les deux firmwares en 0.11.0 ; aucun flash n’est nécessaire.
+Full 0.12 ajoute une réaction à la frappe jusqu’à environ 4 secondes, une onde en croix, une double impulsion et des repères Ctrl/Maj/Alt optionnels. Studio propose 12 effets PC avec réactions jusqu’à 8 secondes et un explorateur Fn interactif avec variantes Maj. Les couleurs, VIA et le format à quatre profils restent compatibles. Les nouvelles options autonomes nécessitent l’installation guidée Full 0.12. [Audit de luminosité](docs/RGB_BRIGHTNESS.md) : aucun gain caché identifié ; une modification du multiplexage exige des mesures matérielles.
+
+Cliquez sur la carte des raccourcis pour un lecteur agrandi avec zoom à la molette et déplacement par glissement. **Intensité maximale** éclaircit les couleurs autonomes sélectionnées en conservant leur teinte et les touches éteintes, avec annulation possible. La précédente mise à jour Studio 0.11.1 ne nécessitait pas de flash ; les nouvelles options autonomes de cette version exigent Full 0.12.
 
 RedBlade+ Studio est une application Windows x64 portable qui modifie le profil actif Full. Color Lab sélectionne les 109 touches par clic, glissement, cadre ou groupe ; applique une couleur unie ou un dégradé linéaire ou radial ; et propose un historique borné. À la connexion, choisissez de conserver les modifications locales ou de charger le profil du clavier. Le format à quatre profils reste compatible ; Core ne possède pas l’API de configuration Full. Le français, l’anglais et les légendes AZERTY/QWERTY restent disponibles. Voir [Studio](app/README.md).
 
 Neuf effets PC prennent en charge palettes, zones et superposition réactive via OpenRGB. Les frappes réactives sont filtrées sur le clavier Red Blade et conservées temporairement en mémoire, sans journal de codes de touches ou de frappes. Full 0.11 ajoute trois styles réactifs autonomes ; chaque nouvelle frappe relance l’unique onde. Les vérifications de compilation et l’acceptation physique sont consignées séparément dans l’[audit](docs/AUDIT.md) et les notes de version.
 
-[Télécharger Studio 0.11.1 et les deux firmwares](https://github.com/Gaerisson/redblade-aurora-openrgb/releases/tag/v0.11.1). Full 0.11 a été programmé et identifié sur le clavier de préparation. Après récupération d’une réponse d’identité immédiate malformée, VIA, les macros et les quatre profils d’origine ont été restaurés et relus intégralement. Le propriétaire a confirmé la saisie, le pavé, l’onde et sa couleur sauvegardées, ainsi que la frappe réactive logicielle. La correction de reconnexion en lecture seule est couverte par des tests ; aucun second flash physique n’a été effectué. Consultez le rapport de validation de la release. La persistance après coupure USB et la latence physique ne sont pas mesurées. Sauvegardez VIA et vos réglages avant tout flash.
+[Télécharger Studio 0.12.0 et les deux firmwares](https://github.com/Gaerisson/redblade-aurora-openrgb/releases/tag/v0.12.0). Full 0.11 a été programmé et identifié sur le clavier de préparation. Après récupération d’une réponse d’identité immédiate malformée, VIA, les macros et les quatre profils d’origine ont été restaurés et relus intégralement. Le propriétaire a confirmé la saisie, le pavé, l’onde et sa couleur sauvegardées, ainsi que la frappe réactive logicielle. La correction de reconnexion en lecture seule est couverte par des tests ; aucun second flash physique n’a été effectué. Consultez le rapport de validation de la release. La persistance après coupure USB et la latence physique ne sont pas mesurées. Sauvegardez VIA et vos réglages avant tout flash.
 
 Full 0.10 ajoute Caps Word (Fn + Verr. Maj, AZERTY/QWERTY) et un délai de sécurité pour les fonctions automatiques, tous deux désactivés par défaut. Studio utilise WebView2 Runtime sous Windows et suspend Aurora pendant ses effets logiciels avant de le rétablir.
 
 Studio peut rechercher et télécharger automatiquement les mises à jour GitHub officielles, puis redémarrer après 30 secondes d’inactivité en l’absence de modifications non enregistrées et d’opération active. L’installation du firmware reste guidée et exige Fn + Échap physiquement ; aucun flash ne démarre au lancement.
 
-![Éditeur de clavier Studio 0.11.1](docs/assets/studio-keyboard.fr.png)
+![Éditeur de clavier Studio 0.12.0](docs/assets/studio-keyboard.fr.png)
 
 *Interface réelle Color Lab, capturée en aperçu avec accès matériel désactivé.*
 

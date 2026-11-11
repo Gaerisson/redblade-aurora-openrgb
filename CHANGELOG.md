@@ -2,6 +2,16 @@
 
 All new release notes are written in English. Version 0.x is experimental; hardware validation is recorded separately from build and host-test results.
 
+## 0.12.0 preview — Reactive lighting and contextual helpers
+
+- Full adds reaction timing up to approximately 4 seconds, cross waves and a global double pulse. Smooth geometry is computed once per frame; existing packed trail storage and boot-only fields are reused. Continuous typing does not freeze older trails.
+- Optional Ctrl/Shift/Alt highlights reveal useful factory-position shortcuts. Choose off, autonomous lighting only, or explicit overlays over host RGB. Fn, automation, Off and USB suspension retain their priorities; the shortcut layout follows AZERTY/QWERTY configuration.
+- Studio adds Aurora, Comet and Embers presets, cross/pulse overlays and PC reaction durations up to 8 seconds with at most 32 transient input events. Native and preview formulas match.
+- Interactive Fn explorer explains hovered/clicked factory bindings and Shift alternatives, including disabled modules. It sends no keyboard commands and does not claim to monitor physical Fn.
+- Configuration remains schema1/1696 bytes with four profiles. Bytes12/13 store the new options; legacy defaults remain zero and restoration refuses incompatible settings in any profile.
+- The brightness audit identifies no hidden software gain, while leaving multiplexing optimization as an unmeasured hardware engineering question. No PWM/drive-current/scan-clock change is included.
+- Build and host tests are separate from on-device acceptance; see release notes for the final validation scope.
+
 ## 0.11.1 preview — Studio shortcut viewer and color intensity
 
 - Click the shortcut map to open a large, accessible reader. Zoom with the wheel or buttons (10–600%), drag to pan, use Fit / Fit width / 100%, and press Escape to close. The image initially fills the available width; both languages are supported.

@@ -1,0 +1,35 @@
+'use strict';
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const guide = require('../fn-guide.js');
+const root = path.resolve(__dirname, '../../..');
+const fixture = JSON.parse(fs.readFileSync(path.join(root, 'fn-shortcuts.json'), 'utf8'));
+const geometry = JSON.parse(fs.readFileSync(path.join(root, 'led-map.json'), 'utf8'));
+const expected = fixture.bindings.map(b => geometry.findIndex(p => p.matrix[0] === b.row && p.matrix[1] === b.col)).sort((a,b) => a-b);
+assert.equal(expected.length, 34);
+assert.equal(new Set(guide.leds).size, 34);
+assert.deepEqual(guide.leds, expected, 'factory Fn bindings match the firmware fixture');
+for (const led of expected) for (const lang of ['en','fr']) for (const shift of [false,true]) {
+    const value = guide.helpFor(led, shift, lang, {modules:4095});
+    assert.ok(value && value.keys && value.description && value.group && value.enabled);
+    assert.deepEqual(value, guide.helpFor(led, shift, lang, {modules:4095}));
+}
+for (const led of [74,91,102,105]) assert.equal(guide.helpFor(led, false, 'en'), null);
+assert.match(guide.helpFor(21, true, 'en').description, /loop/i);
+assert.match(guide.helpFor(21, true, 'fr').description, /boucle/i);
+assert.match(guide.helpFor(45, true, 'en').description, /backward/i);
+assert.match(guide.helpFor(97, true, 'fr').description, /explicitement/i);
+assert.match(guide.helpFor(17, true, 'en').description, /stop/i);
+assert.match(guide.helpFor(18, true, 'fr').description, /luminosité/i);
+assert.match(guide.helpFor(0, false, 'en').description, /2 seconds/);
+assert.match(guide.helpFor(8, false, 'en').description, /preserved/);
+assert.match(guide.helpFor(9, false, 'en').description, /lighting settings only/);
+const disabled = guide.helpFor(21, false, 'fr', {modules:0});
+assert.equal(disabled.enabled, false);
+assert.match(disabled.description, /désactivé/);
+assert.equal(guide.helpFor(40, false, 'en', {modules:128}).enabled, true);
+assert.equal(guide.helpFor(40, false, 'en', {modules:0}).enabled, false);
+assert.equal(guide.helpFor(61, false, 'en').enabled, false);
+assert.equal(guide.helpFor(61, false, 'en', {modules:1024}).enabled, true);
+console.log('Fn guide tests passed');

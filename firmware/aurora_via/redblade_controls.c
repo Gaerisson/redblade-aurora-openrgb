@@ -387,6 +387,27 @@ bool redblade_controls_indicator(uint8_t index, bool fn_active, hsv_t *color) {
     if (hints && (index == RB_LED_R || index == RB_LED_MINUS || index == RB_LED_PLUS)) {
         *color = (hsv_t){recorder_rate_context && index != RB_LED_R ? 200 : turbo_rate <= 25 ? 85 : turbo_rate <= 50 ? 43 : 0,255,80}; return true;
     }
+    // Factory positions and regular modifier state; no dynamic keymap scan in the LED loop.
+    // Highlight colors reuse palette slots: host 21 and selection 17.
+    const uint8_t highlight=redblade_config_byte(13,0);
+    if (!fn_active && highlight && (highlight==2 || redblade_rgb_fallback_active())) {
+        const uint8_t held=get_mods();
+        const bool ctrl=(held & 0x11)!=0, shift=(held & 0x22)!=0, alt=(held & 0x44)!=0;
+        const bool ctrl_key=((held & 0x01) && index==96) || ((held & 0x10) && index==103);
+        const bool shift_key=((held & 0x02) && index==78) || ((held & 0x20) && index==90);
+        const bool alt_key=((held & 0x04) && index==98) || ((held & 0x40) && index==100);
+        const uint8_t a=redblade_config_byte(9,0) ? 62 : 42;
+        const uint8_t z=redblade_config_byte(9,0) ? 80 : 43;
+        if (ctrl_key || (ctrl && (index==82 || index==83 || index==81 || index==z || index==a || index==63 || index==65))) {
+            *color=redblade_config_effect(RB_COLOR_HOST_HINT,(hsv_t){170,255,80}); return true;
+        }
+        if (shift_key || (shift && ((index>=21 && index<=30) || (index>=42 && index<=53) || (index>=62 && index<=73) || (index>=80 && index<=89)))) {
+            *color=(hsv_t){200,255,80}; return true;
+        }
+        if (alt_key || (alt && (index==41 || index==4))) {
+            *color=redblade_config_effect_scaled(RB_COLOR_SELECTION,(hsv_t){32,255,80},128); return true;
+        }
+    }
     if (redblade_rgb_fallback_active()) {
         const led_t locks = host_keyboard_led_state();
         if (index == RB_LED_CAPS || (REDBLADE_CAPS_SHOW_SHIFT && (index == RB_LED_LSHIFT || index == RB_LED_RSHIFT))) {
