@@ -20,6 +20,15 @@ internal static class KeyboardEditing
         foreach(var c in colors)next.Profiles[next.Active].Keys[c.Led]=Hsv.FromColor(ColorTranslator.FromHtml(c.Color));
         return next;
     }
+    internal static StudioConfig WithMaximumIntensity(StudioConfig source,IReadOnlyList<int> leds)
+    {
+        if(leds is null||leds.Count is <1 or >109||leds.Any(i=>i is <0 or >108)||leds.Distinct().Count()!=leds.Count)
+            throw new InvalidDataException("Select between 1 and 109 unique keys.");
+        var next=Clone(source);var keys=next.Profiles[next.Active].Keys;
+        // Black is an intentional off color. Preserve it and every exact hue/saturation.
+        foreach(int led in leds)if(keys[led].V!=0)keys[led]=keys[led] with {V=255};
+        return next;
+    }
 }
 internal sealed class EditHistory
 {

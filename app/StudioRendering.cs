@@ -7,7 +7,8 @@ internal sealed partial class StudioForm
     internal void ShowPreviewPage(string name,bool useFrench)
     {
         if(!preview)throw new InvalidOperationException("Preview mode required.");
-        previewPage=name.ToLowerInvariant() switch{"keyboard"=>"keyboard","functions"=>"functions","effects" or "colors"=>"effects","firmware" or "updates" or "guide"=>"guide",_=>throw new ArgumentException("Unknown preview page.")};french=useFrench;
+        previewMap=name.Equals("map",StringComparison.OrdinalIgnoreCase);
+        previewPage=name.ToLowerInvariant() switch{"keyboard"=>"keyboard","functions"=>"functions","effects" or "colors"=>"effects","firmware" or "updates" or "guide" or "map"=>"guide",_=>throw new ArgumentException("Unknown preview page.")};french=useFrench;
     }
     async Task SelectPage(string page)
     {
@@ -24,7 +25,8 @@ internal sealed partial class StudioForm
             await Script("document.getElementById('groupSelect').value='gaming';document.getElementById('groupSelect').dispatchEvent(new Event('change'))");
         }
         if(previewPage=="effects")await Script("document.querySelectorAll('#presets button')[2].click()");
-        await Task.Delay(80);
+        if(previewMap){await Script("document.getElementById('openShortcutMap').click()");await Task.Delay(100);}
+        await Script("window.scrollTo(0,0)");await Task.Delay(80);
         using var output=File.Create(Path.GetFullPath(path));await web.CoreWebView2.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png,output);
     }
     async Task<JsonElement> Script(string script)=>JsonDocument.Parse(await web.CoreWebView2.ExecuteScriptAsync(script)).RootElement.Clone();
@@ -60,6 +62,22 @@ internal sealed partial class StudioForm
             if((await Script("window.__mapReloads")).GetInt32()!=0||(await Script("document.getElementById('shortcutImage').style.width")).GetString()!=zoomed.GetString())throw new Exception("State refresh reloaded the map or reset zoom.");
             await Script("document.getElementById('zoomOut').click();document.getElementById('language').click()");await Task.Delay(80);
         }
+        await Script("document.getElementById('openShortcutMap').click()");await Task.Delay(100);
+        if(!(await Script("document.getElementById('shortcutViewer').open&&document.activeElement.classList.contains('map-viewport')")).GetBoolean())throw new Exception("Clicking the shortcut map did not open the focused viewer.");
+        await Script("document.querySelector('[data-map=actual]').click()");
+        var viewerPoint=await Script("(()=>{const r=document.querySelector('.map-viewport').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()");
+        double vx=viewerPoint.GetProperty("x").GetDouble(),vy=viewerPoint.GetProperty("y").GetDouble();
+        await web.CoreWebView2.CallDevToolsProtocolMethodAsync("Input.dispatchMouseEvent",JsonSerializer.Serialize(new{type="mouseWheel",x=vx,y=vy,deltaX=0,deltaY=-300}));await Task.Delay(80);
+        if((await Script("parseInt(document.querySelector('#shortcutViewer output').textContent)")).GetInt32()<=100)throw new Exception("Mouse wheel did not zoom the shortcut map.");
+        string priorPan=(await Script("document.querySelector('.map-viewport img').style.transform")).GetString()!;
+        await Drag(vx,vy,vx-140,vy-100);
+        if((await Script("document.querySelector('.map-viewport img').style.transform")).GetString()==priorPan)throw new Exception("Mouse dragging did not pan the enlarged map.");
+        SendState();await Task.Delay(60);
+        if(!(await Script("document.getElementById('shortcutViewer').open")).GetBoolean())throw new Exception("State refresh closed the map viewer.");
+        await web.CoreWebView2.CallDevToolsProtocolMethodAsync("Input.dispatchKeyEvent","{\"type\":\"keyDown\",\"key\":\"Escape\",\"code\":\"Escape\",\"windowsVirtualKeyCode\":27}");
+        await web.CoreWebView2.CallDevToolsProtocolMethodAsync("Input.dispatchKeyEvent","{\"type\":\"keyUp\",\"key\":\"Escape\",\"code\":\"Escape\",\"windowsVirtualKeyCode\":27}");await Task.Delay(60);
+        if((await Script("document.getElementById('shortcutViewer').open")).GetBoolean())throw new Exception("Escape did not close the shortcut viewer.");
+        await Script("document.getElementById('expandMap').click();document.querySelector('[data-map=fit]').click();document.querySelector('[data-map=close]').click()");
         await SelectPage("keyboard");
         if((await Script("document.querySelectorAll('#keyboardCanvas .key').length")).GetInt32()!=109)throw new Exception("Web UI did not render all 109 keys.");
         for(int cycle=0;cycle<10;cycle++)
@@ -94,6 +112,11 @@ internal sealed partial class StudioForm
         if((await Script("document.getElementById('keyColor').value")).GetString()!="#30bfff")throw new Exception("Inspector erased a swatch choice on focus change.");
         await Script("document.getElementById('paint').click()");await Task.Delay(100);
         if(Current.Keys[1]!=Hsv.FromColor(Color.FromArgb(48,191,255)))throw new Exception("Palette swatch was not applied to the selected key.");
+        await Script("document.getElementById('keyColor').value='#103020';document.getElementById('paint').click()");await Task.Delay(100);
+        var dimColor=Current.Keys[1];await Script("document.getElementById('maximizeIntensity').click()");await Task.Delay(100);
+        if(Current.Keys[1]!=(dimColor with {V=255}))throw new Exception("Selected intensity did not preserve hue and saturation.");
+        await Script("document.getElementById('undo').click()");await Task.Delay(80);
+        if(Current.Keys[1]!=dimColor)throw new Exception("Maximum intensity did not participate in undo.");
         await SelectPage("functions");await Task.Delay(80);await Script("document.querySelector('#advancedOptions input[type=checkbox]').click()");await Task.Delay(100);
         if((Current.Modules&1024)==0)throw new Exception("Optional module action failed to reach firmware configuration.");
         await Script("(()=>{const panel=document.getElementById('typingReaction');const color=panel.querySelector('input[type=color]');color.value='#26ffba';color.dispatchEvent(new Event('change'));const style=panel.querySelector('select');style.value='1';style.dispatchEvent(new Event('change'));const duration=panel.querySelector('input[type=range]');duration.value=6;duration.dispatchEvent(new Event('change'))})()");await Task.Delay(140);

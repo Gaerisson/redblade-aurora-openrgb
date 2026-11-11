@@ -15,6 +15,9 @@ internal sealed partial class StudioForm
             case "setKeys":
                 EnsureIdle();StudioBridge.Fields(a,"leds","color");string selectedColor=StudioBridge.Text(a,"color",7);
                 AcceptEdit(KeyboardEditing.WithColors(config,a.GetProperty("leds").EnumerateArray().Select(v=>new KeyColorChange(v.GetInt32(),selectedColor)).ToArray()));return null;
+            case "maximizeKeyIntensity":
+                EnsureIdle();StudioBridge.Fields(a,"leds");
+                AcceptEdit(KeyboardEditing.WithMaximumIntensity(config,a.GetProperty("leds").EnumerateArray().Select(v=>v.GetInt32()).ToArray()));return null;
             case "setKeyColors":
                 EnsureIdle();StudioBridge.Fields(a,"colors");var rows=a.GetProperty("colors");
                 if(rows.ValueKind!=JsonValueKind.Array||rows.GetArrayLength() is <1 or >109)throw new InvalidDataException("Invalid color batch.");

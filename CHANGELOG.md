@@ -2,6 +2,13 @@
 
 All new release notes are written in English. Version 0.x is experimental; hardware validation is recorded separately from build and host-test results.
 
+## 0.11.1 preview — Studio shortcut viewer and color intensity
+
+- Click the shortcut map to open a large, accessible reader. Zoom with the wheel or buttons (10–600%), drag to pan, use Fit / Fit width / 100%, and press Escape to close. The image initially fills the available width; both languages are supported.
+- Maximize selected colors raises non-black selected keys to HSV value 255 while preserving exact hue/saturation, intentional off keys, other profiles and the global brightness setting. Undo/redo is supported; Apply saves the change. Aurora/OpenRGB keeps control of its own stream colors.
+- Clarified brightness: the 100% master is a multiplier, not an extra gain. Default local colors use value 64; saved custom colors already support 255. No PWM, electrical limit, firmware, or input-timing change is included. Full/Core BINs remain exactly 0.11.0; no flash is needed for this Studio update.
+- Applying settings pauses RGB applications and writes onboard settings before restoring them. Lighting transitions during that operation do not demonstrate a sustainable brightness boost; the multiplexed driver is not overclocked.
+
 ## 0.11.0 preview — Color Lab and reactive lighting
 
 - Color Lab adds drag and marquee selection, selection groups, solid and linear/radial fills, a palette, bounded 24-step undo/redo and the option to retain active-profile edits when connecting.

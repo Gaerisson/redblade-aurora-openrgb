@@ -7,7 +7,7 @@ namespace RedBladePlus.Studio;
 
 internal sealed partial class StudioForm:Form
 {
-    readonly bool preview;readonly WebView2 web=new(){Dock=DockStyle.Fill,DefaultBackgroundColor=Color.FromArgb(14,15,19)};
+    readonly bool preview;bool previewMap;readonly WebView2 web=new(){Dock=DockStyle.Fill,DefaultBackgroundColor=Color.FromArgb(14,15,19)};
     readonly TaskCompletionSource<bool> ready=new(TaskCreationOptions.RunContinuationsAsynchronously);
     readonly SemaphoreSlim operationGate=new(1,1);bool cancelPreparation;
     bool Transitioning=>operationGate.CurrentCount==0;
@@ -80,7 +80,7 @@ internal sealed partial class StudioForm:Form
             if(!preview)MessageBox.Show(this,T("Install or repair Microsoft Edge WebView2 Runtime, then restart Studio.\n", "Installez ou réparez Microsoft Edge WebView2 Runtime, puis relancez Studio.\n")+error.Message,Text);
         }
     }
-    static readonly Dictionary<string,(string Resource,string Mime)> Resources=new(StringComparer.Ordinal){["index.html"]=("web.index.html","text/html"),["styles.css"]=("web.styles.css","text/css"),["app.js"]=("web.app.js","text/javascript"),["brand.png"]=("brand.png","image/png"),["shortcuts.png"]=("shortcuts.png","image/png"),["shortcuts.fr.png"]=("shortcuts.fr.png","image/png"),["app.ico"]=("app.ico","image/x-icon"),["layout.json"]=("layout.json","application/json")};
+    static readonly Dictionary<string,(string Resource,string Mime)> Resources=new(StringComparer.Ordinal){["index.html"]=("web.index.html","text/html"),["styles.css"]=("web.styles.css","text/css"),["app.js"]=("web.app.js","text/javascript"),["map-viewer.js"]=("web.map-viewer.js","text/javascript"),["brand.png"]=("brand.png","image/png"),["shortcuts.png"]=("shortcuts.png","image/png"),["shortcuts.fr.png"]=("shortcuts.fr.png","image/png"),["app.ico"]=("app.ico","image/x-icon"),["layout.json"]=("layout.json","application/json")};
     static void ServeResource(CoreWebView2Environment environment,CoreWebView2WebResourceRequestedEventArgs e)
     {
         var uri=new Uri(e.Request.Uri);string name=uri.AbsolutePath.TrimStart('/');

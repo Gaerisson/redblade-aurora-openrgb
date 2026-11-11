@@ -15,6 +15,15 @@ internal static class EditorTests
             bool rejected=false;try{KeyboardEditing.WithColors(original,invalid);}catch(InvalidDataException){rejected=true;}
             Check(rejected&&ProfileFile.Save(original).SequenceEqual(before),"invalid batch is rejected atomically");
         }
+        var dim=StudioConfig.Default();dim.Profiles[0].Keys[0]=new Hsv(45,123,16);dim.Profiles[0].Keys[1]=new Hsv(12,200,0);
+        var intense=KeyboardEditing.WithMaximumIntensity(dim,new[]{0,1});
+        Check(intense.Profiles[0].Keys[0]==new Hsv(45,123,255)&&intense.Profiles[0].Keys[1]==dim.Profiles[0].Keys[1],"maximize preserves hue/saturation and intentional off colors");
+        Check(dim.Profiles[0].Keys[0].V==16&&intense.Profiles[1].Keys.SequenceEqual(dim.Profiles[1].Keys)&&intense.Profiles[0].Master==dim.Profiles[0].Master,"maximize does not mutate source, other profiles or global master");
+        foreach(var leds in new[]{Array.Empty<int>(),new[]{0,109},new[]{0,0}})
+        {
+            bool rejected=false;try{KeyboardEditing.WithMaximumIntensity(dim,leds);}catch(InvalidDataException){rejected=true;}
+            Check(rejected&&dim.Profiles[0].Keys[0].V==16,"maximize rejects invalid selection atomically");
+        }
         var history=new EditHistory(3);history.Record(original);var undo=history.Undo(painted);
         Check(undo!=null&&ProfileFile.Save(undo).SequenceEqual(before)&&history.CanRedo&&!history.CanUndo,"undo restores the whole edit");
         var redo=history.Redo(undo!);Check(redo!=null&&ProfileFile.Save(redo).SequenceEqual(ProfileFile.Save(painted)),"redo restores a batch");
