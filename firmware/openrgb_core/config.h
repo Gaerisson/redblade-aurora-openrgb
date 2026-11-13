@@ -17,7 +17,7 @@
 #define DYNAMIC_KEYMAP_LAYER_COUNT 3
 #define REDBLADE_VERSION_MAJOR 0
 #define REDBLADE_VERSION_MINOR 12
-#define REDBLADE_VERSION_PATCH 0
+#define REDBLADE_VERSION_PATCH 1
 
 // No native effect event buffers in the Core edition.
 #undef ENABLE_RGB_MATRIX_BAND_PINWHEEL_SAT

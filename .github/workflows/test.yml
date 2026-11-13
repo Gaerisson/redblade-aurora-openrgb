@@ -17,9 +17,9 @@ jobs:
       - name: Test firmware and controls with sanitizers
         run: |
           set -e
-          for suite in protocol controls rendering recorder speed_typing turbo_helpers keymap_hooks configuration custom_colors options reactive_extended; do
+          for suite in protocol controls rendering recorder speed_typing turbo_helpers keymap_hooks usb_lighting configuration custom_colors options reactive_extended; do
             cc -std=c11 -Wall -Wextra -Werror -O1 -g -DUSE_CIE1931_CURVE -fsanitize=address,undefined \
-              -I tests/stubs -I tests -I tests/upstream -I firmware/aurora_via \
+              -I tests/stubs -I tests -I tests/upstream -I firmware/common -I firmware/aurora_via \
               tests/${suite}_test.c tests/qmk_fixture.c tests/store_flash_fixture.c tests/upstream/color.c tests/upstream/led_tables.c \
               firmware/aurora_via/redblade_rgb.c firmware/aurora_via/redblade_controls.c firmware/aurora_via/redblade_recorder.c firmware/aurora_via/redblade_config.c firmware/aurora_via/redblade_store.c -o /tmp/${suite}-test
             /tmp/${suite}-test
@@ -35,9 +35,9 @@ jobs:
       - name: Test standalone OpenRGB Core with sanitizers
         run: |
           set -e
-          for suite in core core_keymap_hooks; do
+          for suite in core core_keymap_hooks core_usb_lighting; do
             cc -std=c11 -Wall -Wextra -Werror -O1 -g -fsanitize=address,undefined \
-              -include firmware/openrgb_core/config.h -I tests/stubs -I tests -I firmware/openrgb_core \
+              -include firmware/openrgb_core/config.h -I tests/stubs -I tests -I firmware/common -I firmware/openrgb_core \
               tests/${suite}_test.c tests/qmk_fixture.c firmware/openrgb_core/redblade_core.c -o /tmp/${suite}-test
             /tmp/${suite}-test
           done

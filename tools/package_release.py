@@ -43,6 +43,9 @@ def package(qmk, destination, native):
     for source in (ROOT/'firmware/aurora_via').iterdir():
         if source.is_file() and source.read_bytes().replace(b'\r\n',b'\n')!=(keymap/source.name).read_bytes().replace(b'\r\n',b'\n'):
             raise RuntimeError(f'QMK keymap source differs: {source.name}')
+    common=ROOT/'firmware/common/redblade_usb_watchdog.h'
+    if common.read_bytes().replace(b'\r\n',b'\n')!=(keymap/common.name).read_bytes().replace(b'\r\n',b'\n'):
+        raise RuntimeError(f'QMK keymap source differs: {common.name}')
     if not native.is_file(): raise RuntimeError('Build the Windows native benchmark first')
     if hashlib.sha256(native.read_bytes()).hexdigest()!=manifest['native_benchmark']['sha256']:
         raise RuntimeError('Native benchmark differs from its manifest digest')
@@ -60,6 +63,7 @@ def package(qmk, destination, native):
                     archive.writestr(entry.filename,source.read(entry.filename))
         sources=list(tracked_sources(qmk,qmk))
         sources.extend((keymap/source.name,(keymap/source.name).relative_to(qmk)) for source in (ROOT/'firmware/aurora_via').iterdir() if source.is_file())
+        sources.append((keymap/common.name,(keymap/common.name).relative_to(qmk)))
         for path,relative in sources:
             if path.name=='.git' or path.name.endswith(('.pyc','.o','.elf','.bin','.hex','.log')): continue
             archive.write(path,'qmk_firmware/'+relative.as_posix());count+=1

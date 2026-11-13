@@ -13,9 +13,11 @@ def package(qmk,destination):
  selected=list((ROOT/'firmware/openrgb_core').iterdir())
  for source in selected:
   if source.is_file():assert source.read_bytes().replace(b'\r\n',b'\n')==(keymap/source.name).read_bytes().replace(b'\r\n',b'\n')
+ common=ROOT/'firmware/common/redblade_usb_watchdog.h'
+ assert common.read_bytes().replace(b'\r\n',b'\n')==(keymap/common.name).read_bytes().replace(b'\r\n',b'\n'),'QMK common watchdog differs'
  destination.mkdir(parents=True,exist_ok=True);target=destination/f'redblade-openrgb-core-{m["release"]}-complete-source.zip'
  commit=subprocess.check_output(['git','-C',str(ROOT),'rev-parse','HEAD'],text=True).strip()
- sources=list(tracked_sources(qmk,qmk))+[(keymap/s.name,(keymap/s.name).relative_to(qmk)) for s in selected if s.is_file()]
+ sources=list(tracked_sources(qmk,qmk))+[(keymap/s.name,(keymap/s.name).relative_to(qmk)) for s in selected if s.is_file()]+[(keymap/common.name,(keymap/common.name).relative_to(qmk))]
  with zipfile.ZipFile(target,'w',zipfile.ZIP_DEFLATED,compresslevel=6) as z:
   for path,relative in sources:
    if path.name=='.git' or path.name.endswith(('.pyc','.o','.elf','.bin','.hex','.log')):continue

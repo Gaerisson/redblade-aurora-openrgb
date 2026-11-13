@@ -1,6 +1,9 @@
 #include "qmk_fixture.h"
 #include <assert.h>
 #include "host.h"
+#include "usb_device_state.h"
+uint16_t usb_frame_number;
+uint8_t usb_configure_state=USB_DEVICE_STATE_CONFIGURED;
 uint8_t mouse_buttons;
 unsigned mouse_downs,mouse_reports;
 unsigned mouse_moves;
@@ -26,6 +29,14 @@ led_t host_locks;
 rgb_t rendered[109];
 rgb_t hardwareRGBcommitted[109];
 unsigned rgb_fast_commits;
+unsigned rgb_full_flushes;
+void rgb_matrix_set_color_all(uint8_t r,uint8_t g,uint8_t b) {
+    for(unsigned i=0;i<109;++i) rendered[i]=(rgb_t){.r=r,.g=g,.b=b};
+}
+void rgb_matrix_update_pwm_buffers(void) {
+    for(unsigned i=0;i<109;++i) hardwareRGBcommitted[i]=rendered[i];
+    ++rgb_full_flushes;
+}
 void sn32f2xx_commit_color(int index) { assert(index>=0 && index<109);hardwareRGBcommitted[index]=rendered[index];++rgb_fast_commits; }
 led_t host_keyboard_led_state(void) { return host_locks; }
 void rgb_matrix_set_color(int i,uint8_t r,uint8_t g,uint8_t b) { assert(i>=0 && i<109); rendered[i]=(rgb_t){.r=r,.g=g,.b=b}; }

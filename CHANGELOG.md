@@ -2,6 +2,11 @@
 
 All new release notes are written in English. Version 0.x is experimental; hardware validation is recorded separately from build and host-test results.
 
+## 0.13.1 — USB shutdown lighting
+
+- Full 0.13.1 and Core 0.12.1 monitor the hardware USB SOF frame counter without adding interrupts. A counter frozen for 250 ms triggers suspension even if the configured state is stale; suspension explicitly flushes black to all 109 LEDs.
+- The RGB timeout and Full fallback profile remain independent, so closing Aurora alone retains the configured fallback. A host or hub that continues real SOFs after Windows shuts down cannot be distinguished from an active host. Physical shutdown and wake have not yet been tested. Studio 0.13.1 bundles both updated editions.
+
 ## 0.13.0 — Turbo indicators, middle-click and optional Anti-AFK
 
 - Fn and the Turbo target follow each generated press and release in Direct and standard lighting modes. A dedicated update commits only their six LED bytes after the HID report; the general RGB frame interval remains 33 ms. At high rates the LEDs can appear steady.

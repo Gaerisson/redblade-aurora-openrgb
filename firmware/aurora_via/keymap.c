@@ -21,8 +21,23 @@
 #include "redblade_store.h"
 #include "usb_device_state.h"
 #include "color.h"
+#include "redblade_usb_watchdog.h"
 
 static bool rgb_ready;
+static redblade_usb_watchdog_t usb_lighting;
+
+static void usb_lighting_set(bool active) {
+    if (active == usb_lighting.active) return;
+    usb_lighting.active = active;
+    if (active) redblade_rgb_wake();
+    else {
+        redblade_controls_suspend();
+        redblade_rgb_suspend();
+        gpio_write_pin_high(LED_FN_PIN);
+    }
+    rgb_matrix_set_suspend_state(!active);
+    if (!active) redblade_usb_blank();
+}
 
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -72,35 +87,38 @@ void keyboard_post_init_user(void) {
     redblade_store_init();
     redblade_controls_init();
     const bool active = usb_device_state_get_configure_state() == USB_DEVICE_STATE_CONFIGURED;
+    redblade_usb_watchdog_init(&usb_lighting, active, timer_read32());
     redblade_rgb_init(active);
     rgb_ready = true;
     rgb_matrix_set_suspend_state(!active);
+    if (!active) redblade_usb_blank();
 }
 
 void notify_usb_device_state_change_user(struct usb_device_state state) {
     if (!rgb_ready) return;
-    const bool active = state.configure_state == USB_DEVICE_STATE_CONFIGURED;
-    if (active) redblade_rgb_wake();
-    else {
-        redblade_controls_suspend();
-        if (state.configure_state != USB_DEVICE_STATE_SUSPEND) redblade_recorder_init();
-        redblade_rgb_suspend();
-    }
-    rgb_matrix_set_suspend_state(!active);
+    const bool configured = state.configure_state == USB_DEVICE_STATE_CONFIGURED;
+    const bool active = redblade_usb_watchdog_poll(&usb_lighting, configured, timer_read32());
+    usb_lighting_set(active);
+    if (!configured && state.configure_state != USB_DEVICE_STATE_SUSPEND) redblade_recorder_init();
 }
 
 void suspend_power_down_user(void) {
-    redblade_controls_suspend();
-    redblade_rgb_suspend();
+    usb_lighting_set(false);
     gpio_write_pin_high(LED_FN_PIN);
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    // A powered keyboard may still be scanned after the host stops SOFs.
+    // Keep normal QMK key releases working, but do not re-arm local helpers
+    // or light the dedicated Windows indicator while the bus is inactive.
+    if (!usb_lighting.active) return true;
     return redblade_controls_process(keycode, record);
 }
 
 void housekeeping_task_user(void) {
-    redblade_controls_task(layer_state_is(1));
+    const bool configured = usb_device_state_get_configure_state() == USB_DEVICE_STATE_CONFIGURED;
+    usb_lighting_set(redblade_usb_watchdog_poll(&usb_lighting, configured, timer_read32()));
+    if (usb_lighting.active) redblade_controls_task(layer_state_is(1));
     redblade_store_task();
 }
 
@@ -110,7 +128,9 @@ bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
 }
 
 void suspend_wakeup_init_user(void) {
-    redblade_rgb_wake();
+    // SOF progress, not a key press or a host LED notification, re-enables RGB.
+    const bool configured = usb_device_state_get_configure_state() == USB_DEVICE_STATE_CONFIGURED;
+    usb_lighting_set(redblade_usb_watchdog_poll(&usb_lighting, configured, timer_read32()));
 }
 
 layer_state_t layer_state_set_user(layer_state_t state) {

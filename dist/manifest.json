@@ -8,9 +8,9 @@
   "qmk_commit": "62973ee48a976c6f7cc6d4f7b198bd48a2fdfe60",
   "toolchain": "arm-none-eabi-gcc (crosstool-NG 1.27.0.82_7f9d704 - qmk/qmk_toolchains @ a55a2b0) 15.2.0",
   "binary_bytes": 65536,
-  "sha256": "f3d9c59aa99acc5b07437ae6a20ad0156f85c49e52bcbfed86f795d19069af47",
-  "ram_bytes_including_reserved_stacks": 8112,
-  "ram_remaining_bytes": 80,
+  "sha256": "6db9665a21c473bd808cd433b29aafbdb6257826f1a7e4d8559ea376b9f001f1",
+  "ram_bytes_including_reserved_stacks": 8120,
+  "ram_remaining_bytes": 72,
   "keyboard_usb_poll_interval_ms": 1,
   "shared_timer_clock_hz": 720896,
   "rgb_process_leds_per_task": 8,
@@ -18,7 +18,7 @@
   "via_layers": 3,
   "protocol_host_tests": "passed",
   "hardware_latency_measured": false,
-  "release": "v0.13.0",
+  "release": "v0.13.1",
   "hardware_validation": null,
   "rgb_data_timeout_ms": 5000,
   "boot_animation_ms": 2000,
@@ -115,7 +115,7 @@
   "bootloader_shortcut": "Fn+Esc held for 2000 ms; Shift optional; short press stops helpers/unlocks",
   "native_benchmark": {
     "physical_key_latency_measured": false,
-    "sha256": "d62f2d02c98d81cb8ef38a9611eb23307d0ad7ea7d426e7fac9b8691fb642e23",
+    "sha256": "a3bb00eb8eb5ad06400182aa35aa002b635be5c41bc3ffd1affb6e99a38dff4f",
     "file": "redblade-plus-benchmark-windows.exe"
   },
   "fn_rgb_status": {
@@ -332,5 +332,15 @@
     "new_ram_bytes": 0
   },
   "brightness_audit": "docs/RGB_BRIGHTNESS.md",
-  "prior_full_0_11_hardware_report": "https://github.com/Gaerisson/redblade-aurora-openrgb/releases/download/v0.11.0/hardware-validation.json"
+  "prior_full_0_11_hardware_report": "https://github.com/Gaerisson/redblade-aurora-openrgb/releases/download/v0.11.0/hardware-validation.json",
+  "usb_bus_watchdog": {
+    "source": "hardware SOF frame counter (SN32 USB_FRMNO)",
+    "idle_timeout_ms": 250,
+    "inactive_action": "stop local helpers, clear and flush all 109 RGB LEDs, dedicated indicator off",
+    "rgb_timeout_independent": true,
+    "adds_interrupts": false,
+    "requires_host_software": false,
+    "limitation": "Windows shutdown is not detectable if host or hub continues real SOF frames",
+    "physical_shutdown_wake_tested": false
+  }
 }

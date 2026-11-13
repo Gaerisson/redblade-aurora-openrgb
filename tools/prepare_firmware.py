@@ -49,6 +49,7 @@ def prepare(qmk, edition='full'):
     for source in (root/'firmware'/keymap).iterdir():
         if source.is_file():
             shutil.copy2(source, target/source.name)
+    shutil.copy2(root/'firmware/common/redblade_usb_watchdog.h', target/'redblade_usb_watchdog.h')
     driver = qmk / 'drivers/led/sn32f2xx.c'
     text = driver.read_text(encoding='utf-8')
     original = subprocess.check_output(['git','-C',str(qmk),'show','HEAD:drivers/led/sn32f2xx.c']).decode('utf-8')

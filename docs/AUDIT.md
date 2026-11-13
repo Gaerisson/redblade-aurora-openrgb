@@ -92,7 +92,7 @@ reproduced by a failing test before the passing implementation.
 
 Approximately 48 simple presses are shared across all three Recorder slots; holds/pauses/modifiers consume variable space. One recording lasts at most 30 seconds. Basic physical keyboard/modifier edges are supported, not text capture, mouse input or arbitrary QMK macros. Host language/lock state and application focus still apply. Ordinary physical input cancels playback; it does not pause/resume it.
 
-USB state does not reveal Windows shutdown when the host leaves the bus genuinely configured and active. Sleep/wake, actual PC shutdown and power-cycle behavior still need target-host checks. Game Mode is not a filter for every arbitrary VIA/advanced action. All RGB status respects Off/brightness zero/USB suspension, while keyboard stops continue to work.
+A hardware SOF frame-counter watchdog detects 250 ms without frames even if the configured state is stale; suspension explicitly flushes black to all 109 LEDs. The independent RGB timeout preserves Full fallback when Aurora alone closes. Windows shutdown remains undetectable if the host or hub continues real SOFs. Sleep/wake, actual PC shutdown and power-cycle behavior still need target-host checks. Game Mode is not a filter for every arbitrary VIA/advanced action. All RGB status respects Off/brightness zero/USB suspension, while keyboard stops continue to work.
 
 ## Previous 0.8.0 device result
 
@@ -123,3 +123,5 @@ Fn release keeps it on, unlock clears it, and it remains usable with RGB Off.
 Typing/Aurora were also confirmed after service restoration. VIA base/third
 layers and macros were preserved; VIA 13/VialRGB 1/109 positions/Fn map verified.
 Core remains build/host-tested only. Exact scope is recorded in the manifests.
+
+The shutdown watchdog reads the existing SN32F248B USB_FRMNO register through ChibiOS. The [Sonix datasheet, section 13.9.11](https://www.sonix.com.tw/webapi/fl219873/SN32F248B_V2.4_EN.pdf) specifies that hardware updates its 11-bit frame number on received SOF packets. It adds no SOF interrupt or host-side service. Full/Core actual-hook tests cover frozen frames with stale CONFIGURED state, explicit all-pixel black flush, continued frames without RGB, profile retention, counter wraps, helper release and inactive shortcut gating.

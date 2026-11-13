@@ -24,11 +24,21 @@
   "host_tests": "passed",
   "hardware_validation": null,
   "physical_key_latency_measured": false,
-  "release": "v0.12.0",
-  "sha256": "b1561f66c52fd120d3313ee2534671d6e5e23fc91d27919c41412e558d8db248",
+  "release": "v0.12.1",
+  "sha256": "f7b4615d64c98b371efed564cb47a87eb9ce574e64e69d579640e126e04145a3",
   "binary_bytes": 65536,
-  "ram_bytes_including_reserved_stacks": 7648,
-  "ram_remaining_bytes": 544,
+  "ram_bytes_including_reserved_stacks": 7664,
+  "ram_remaining_bytes": 528,
   "dedicated_windows_indicator": "off; Core has no added Windows-lock feature",
-  "ram_measurement": "__heap_end__ minus aligned __heap_base__; includes all reserved stacks and alignment"
+  "ram_measurement": "__heap_end__ minus aligned __heap_base__; includes all reserved stacks and alignment",
+  "usb_bus_watchdog": {
+    "source": "hardware SOF frame counter (SN32 USB_FRMNO)",
+    "idle_timeout_ms": 250,
+    "inactive_action": "stop local helpers, clear and flush all 109 RGB LEDs, dedicated indicator off",
+    "rgb_timeout_independent": true,
+    "adds_interrupts": false,
+    "requires_host_software": false,
+    "limitation": "Windows shutdown is not detectable if host or hub continues real SOF frames",
+    "physical_shutdown_wake_tested": false
+  }
 }
