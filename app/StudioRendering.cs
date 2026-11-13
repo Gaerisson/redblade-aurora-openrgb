@@ -52,6 +52,14 @@ internal sealed partial class StudioForm
     {
         if(!preview)throw new InvalidOperationException("UI tests require hardware-disabled mode.");
         await ready.Task.WaitAsync(TimeSpan.FromSeconds(45));await Task.Delay(300);
+        await SelectPage("functions");
+        if(!(await Script("!!document.querySelector('#modifierHighlights input[type=checkbox]') && !!document.querySelector('#modifierHighlights input[type=range]')")).GetBoolean())throw new Exception("Modifier dimming controls missing.");
+        await Script("document.querySelector('#modifierHighlights input[type=checkbox]').click()");await Task.Delay(150);
+        if(config.Profiles[config.Active].HighlightDimPercent!=70||config.Profiles[config.Active].HighlightMode!=0)throw new Exception("Dimming toggle must set 70 without changing highlight mode.");
+        await Script("document.querySelector('#modifierHighlights input[type=range]').value='35';document.querySelector('#modifierHighlights input[type=range]').dispatchEvent(new Event('change'))");await Task.Delay(150);
+        if(config.Profiles[config.Active].HighlightDimPercent!=35)throw new Exception("Dimming slider did not update the profile.");
+        await Script("document.querySelector('#modifierHighlights input[type=checkbox]').click()");await Task.Delay(150);
+        if(config.Profiles[config.Active].HighlightDimPercent!=0)throw new Exception("Dimming toggle did not disable dimming.");
         await SelectPage("guide");
         for(int language=0;language<2;language++)
         {

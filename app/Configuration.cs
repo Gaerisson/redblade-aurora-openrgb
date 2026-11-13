@@ -37,6 +37,7 @@ public sealed class OnboardProfile
     public byte ReactiveWidth { get; set; }
     public byte ReactiveRate { get; set; }
     public byte HighlightMode { get; set; }
+    public byte HighlightDimPercent { get; set; }
     [JsonRequired] public Hsv[] Keys { get; set; } = Enumerable.Repeat(new Hsv(0,0,64),109).ToArray();
     [JsonRequired] public Hsv[] Effects { get; set; } = Defaults.EffectColors.ToArray();
 }
@@ -65,7 +66,7 @@ internal static class ConfigCodec
     {
         if(config.Schema!=1 || config.Board!="RDBLFS01" || config.Active is <0 or >3 || config.Profiles?.Length!=4) throw new InvalidDataException("Expected schema 1, Redblade FS and four profiles.");
         foreach(var p in config.Profiles)
-            if(p is null || p.Name is null || p.Name.Length is <1 or >64 || p.Name.Any(char.IsControl) || p.Modules>4095 || p.DefaultMode>3 || p.TimeoutSeconds is <1 or >60 || !Defaults.TurboRates.Contains(p.TurboRate) || p.RecorderSpeed>9 || p.TrailFrames is <1 or >15 || (p.SafetyTimeoutSeconds!=0&&p.SafetyTimeoutSeconds is <5 or >120) || p.CapsWordLayout>1 || p.ReactiveStyle>4 || p.ReactiveRate>8 || p.HighlightMode>2 || (p.ReactiveWidth!=0&&p.ReactiveWidth is <4 or >64) || p.Keys?.Length!=109 || p.Effects?.Length!=24)
+            if(p is null || p.Name is null || p.Name.Length is <1 or >64 || p.Name.Any(char.IsControl) || p.Modules>4095 || p.DefaultMode>3 || p.TimeoutSeconds is <1 or >60 || !Defaults.TurboRates.Contains(p.TurboRate) || p.RecorderSpeed>9 || p.TrailFrames is <1 or >15 || (p.SafetyTimeoutSeconds!=0&&p.SafetyTimeoutSeconds is <5 or >120) || p.CapsWordLayout>1 || p.ReactiveStyle>4 || p.ReactiveRate>8 || p.HighlightMode>2 || p.HighlightDimPercent>100 || (p.ReactiveWidth!=0&&p.ReactiveWidth is <4 or >64) || p.Keys?.Length!=109 || p.Effects?.Length!=24)
                 throw new InvalidDataException("Invalid profile fields or palette dimensions.");
     }
     internal static byte[] Encode(StudioConfig config)
@@ -73,7 +74,7 @@ internal static class ConfigCodec
         Validate(config); var bytes=new byte[Length]; bytes[0]=(byte)config.Active;
         for(int n=0;n<4;n++)
         {
-            int b=32+n*416; var p=config.Profiles[n]; Wire.Put16(bytes,b,p.Modules); bytes[b+2]=p.Master; bytes[b+3]=p.DefaultMode; bytes[b+4]=p.TimeoutSeconds; bytes[b+5]=p.TurboRate; bytes[b+6]=p.RecorderSpeed; bytes[b+7]=p.TrailFrames;bytes[b+8]=p.SafetyTimeoutSeconds;bytes[b+9]=p.CapsWordLayout;bytes[b+10]=p.ReactiveStyle;bytes[b+11]=p.ReactiveWidth;bytes[b+12]=p.ReactiveRate;bytes[b+13]=p.HighlightMode;
+            int b=32+n*416; var p=config.Profiles[n]; Wire.Put16(bytes,b,p.Modules); bytes[b+2]=p.Master; bytes[b+3]=p.DefaultMode; bytes[b+4]=p.TimeoutSeconds; bytes[b+5]=p.TurboRate; bytes[b+6]=p.RecorderSpeed; bytes[b+7]=p.TrailFrames;bytes[b+8]=p.SafetyTimeoutSeconds;bytes[b+9]=p.CapsWordLayout;bytes[b+10]=p.ReactiveStyle;bytes[b+11]=p.ReactiveWidth;bytes[b+12]=p.ReactiveRate;bytes[b+13]=p.HighlightMode;bytes[b+14]=p.HighlightDimPercent;
             foreach(var (colors,offset) in new[]{(p.Keys,16),(p.Effects,343)}) for(int i=0;i<colors.Length;i++) { bytes[b+offset+i*3]=colors[i].H;bytes[b+offset+i*3+1]=colors[i].S;bytes[b+offset+i*3+2]=colors[i].V; }
         }
         return bytes;
@@ -84,8 +85,8 @@ internal static class ConfigCodec
         var config=StudioConfig.Default(); config.Active=bytes[0];
         for(int n=0;n<4;n++)
         {
-            int b=32+n*416; if(bytes.AsSpan(b+14,2).ContainsAnyExcept((byte)0)||bytes[b+415]!=0) throw new InvalidDataException("Nonzero reserved profile bytes.");
-            var p=config.Profiles[n];p.Modules=Wire.U16(bytes,b);p.Master=bytes[b+2];p.DefaultMode=bytes[b+3];p.TimeoutSeconds=bytes[b+4];p.TurboRate=bytes[b+5];p.RecorderSpeed=bytes[b+6];p.TrailFrames=bytes[b+7];p.SafetyTimeoutSeconds=bytes[b+8];p.CapsWordLayout=bytes[b+9];p.ReactiveStyle=bytes[b+10];p.ReactiveWidth=bytes[b+11];p.ReactiveRate=bytes[b+12];p.HighlightMode=bytes[b+13];
+            int b=32+n*416; if(bytes[b+15]!=0||bytes[b+415]!=0) throw new InvalidDataException("Nonzero reserved profile bytes.");
+            var p=config.Profiles[n];p.Modules=Wire.U16(bytes,b);p.Master=bytes[b+2];p.DefaultMode=bytes[b+3];p.TimeoutSeconds=bytes[b+4];p.TurboRate=bytes[b+5];p.RecorderSpeed=bytes[b+6];p.TrailFrames=bytes[b+7];p.SafetyTimeoutSeconds=bytes[b+8];p.CapsWordLayout=bytes[b+9];p.ReactiveStyle=bytes[b+10];p.ReactiveWidth=bytes[b+11];p.ReactiveRate=bytes[b+12];p.HighlightMode=bytes[b+13];p.HighlightDimPercent=bytes[b+14];
             for(int i=0;i<109;i++) p.Keys[i]=new(bytes[b+16+i*3],bytes[b+17+i*3],bytes[b+18+i*3]);
             for(int i=0;i<24;i++) p.Effects[i]=new(bytes[b+343+i*3],bytes[b+344+i*3],bytes[b+345+i*3]);
         }

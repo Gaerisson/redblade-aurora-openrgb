@@ -105,7 +105,7 @@ static void reactive_schema_bounds(void) {
         redblade_store_init(); assert(redblade_store_generation() == 42);
     }
     const unsigned offsets[] = {42, 43, 43, 44, 45, 46, 47, 447};
-    const uint8_t invalid[] = {5, 3, 65, 9, 3, 1, 1, 1};
+    const uint8_t invalid[] = {5, 3, 65, 9, 3, 101, 1, 1};
     for (unsigned i = 0; i < 8; ++i) {
         old(); replacement[offsets[i]] = invalid[i]; install(replacement, 41);
         assert(phase() == 4 && store_reply[5] == 7 && redblade_store_generation() == 41);

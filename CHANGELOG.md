@@ -2,6 +2,14 @@
 
 All new release notes are written in English. Version 0.x is experimental; hardware validation is recorded separately from build and host-test results.
 
+## 0.14.0 - Modifier spotlight
+
+- Optional background dimming makes physical Ctrl, Shift and Alt shortcut highlights stand out. Studio offers a toggle and a 0-100% amount; enabling selects 70%. Zero disables it and existing profiles keep zero until edited.
+- Dimming follows the existing local-only / also-over-host highlight mode. Modifier combinations preserve the union of useful AZERTY/QWERTY keys. Fn guidance, RGB Off, USB sleep, Turbo phases, Recorder, Windows lock and active lock indicators retain priority.
+- The final output copy is dimmed while raw render colors stay intact: repeated static/native frames do not compound the attenuation, and releasing modifiers restores background brightness. No new RGB framebuffer, interrupt or polling/scan timer change is introduced.
+- Profile byte 14 stores the percentage without changing the 1696-byte schema or four-profile layout. Studio rejects nonzero values when saving/restoring to firmware older than Full 0.14, including hidden profiles. Old JSON defaults to zero. Core 0.12.1 and its BIN remain unchanged.
+- Full and Studio are 0.14.0. Build/host/UI checks and resource guards are separate from physical acceptance of this option, which remains pending.
+
 ## 0.13.1 — USB shutdown lighting
 
 - Full 0.13.1 and Core 0.12.1 monitor the hardware USB SOF frame counter without adding interrupts. A counter frozen for 250 ms triggers suspension even if the configured state is stale; suspension explicitly flushes black to all 109 LEDs.

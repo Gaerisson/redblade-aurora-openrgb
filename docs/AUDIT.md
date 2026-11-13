@@ -125,3 +125,7 @@ layers and macros were preserved; VIA 13/VialRGB 1/109 positions/Fn map verified
 Core remains build/host-tested only. Exact scope is recorded in the manifests.
 
 The shutdown watchdog reads the existing SN32F248B USB_FRMNO register through ChibiOS. The [Sonix datasheet, section 13.9.11](https://www.sonix.com.tw/webapi/fl219873/SN32F248B_V2.4_EN.pdf) specifies that hardware updates its 11-bit frame number on received SOF packets. It adds no SOF interrupt or host-side service. Full/Core actual-hook tests cover frozen frames with stale CONFIGURED state, explicit all-pixel black flush, continued frames without RGB, profile retention, counter wraps, helper release and inactive shortcut gating.
+
+## Full 0.14 modifier dimming
+
+Profile byte 14 accepts 0-100 (0 disabled); bytes 15 and 415 remain reserved. The SN32 flush copies raw render colors to its existing active buffer before a guarded Full-only dimming callback. Two cached bytes track the regular modifier mask and dim amount at the ordinary rendering boundary. A changed mask/amount marks the existing driver buffer dirty so native static output restores on release. No extra RGB buffer, scan-ISR work, USB polling or PWM clock change is introduced. Turbo direct pixel commits remain exempt. Tests cover literal channel output, noncompounding repeated flushes, left/right/combined modifiers, AZERTY/QWERTY, host/local/Off/Fn/suspend gates, priority indicators, old JSON and all-profile compatibility checks. Physical acceptance and MCU execution time for this option remain unmeasured.

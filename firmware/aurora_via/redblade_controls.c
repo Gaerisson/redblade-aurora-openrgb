@@ -14,6 +14,15 @@ _Static_assert(RB_CAPS_WORD == 0x7E61 && RB_ANTI_AFK == 0x7E62, "Movement helper
 static bool game_mode, boot_armed, feedback_active;
 static bool recorder_rate_context;
 static bool caps_word, caps_weak;
+static uint8_t modifier_dim, modifier_held;
+void sn32f2xx_request_flush(void);
+static void modifier_dim_set(uint8_t dim, uint8_t held) {
+    if (modifier_dim == dim && modifier_held == held) return;
+    modifier_dim = dim; modifier_held = held;
+    // Native static effects may not redraw. Restore from the raw buffer on
+    // release too; do not multiply previously dimmed output a second time.
+    sn32f2xx_request_flush();
+}
 static uint32_t turbo_started_at, forward_started_at, playback_started_at;
 static uint32_t boot_started_at, feedback_started_at;
 static keypos_t boot_key;
@@ -192,6 +201,7 @@ void redblade_controls_apply_config(void) {
     recorder_rate_context=!any_turbo_enabled() && redblade_config_feature(RB_MODULE_RECORDER);
 }
 void redblade_controls_suspend(void) {
+    modifier_dim_set(0,0);
     boot_armed = feedback_active = game_mode = false; stop_automation(); trigger_held = 0;
     gpio_write_pin(LED_FN_PIN, true);
     redblade_recorder_suspend(); recorder_rate_context = false;
@@ -421,6 +431,36 @@ bool redblade_controls_process(uint16_t keycode, keyrecord_t *record) {
     return false;
 }
 bool redblade_controls_indicators_needed(bool fn_active) { (void)fn_active; return true; }
+static uint8_t modifier_kind(uint8_t index, uint8_t held) {
+    const bool ctrl=(held & 0x11)!=0, shift=(held & 0x22)!=0, alt=(held & 0x44)!=0;
+    const bool ctrl_key=((held & 0x01) && index==96) || ((held & 0x10) && index==103);
+    const bool shift_key=((held & 0x02) && index==78) || ((held & 0x20) && index==90);
+    const bool alt_key=((held & 0x04) && index==98) || ((held & 0x40) && index==100);
+    const uint8_t a=redblade_config_byte(9,0) ? 62 : 42;
+    const uint8_t z=redblade_config_byte(9,0) ? 80 : 43;
+    if (ctrl_key || (ctrl && (index==82 || index==83 || index==81 || index==z || index==a || index==63 || index==65))) return 1;
+    if (shift_key || (shift && ((index>=21 && index<=30) || (index>=42 && index<=53) || (index>=62 && index<=73) || (index>=80 && index<=89)))) return 2;
+    if (alt_key || (alt && (index==41 || index==4))) return 3;
+    return 0;
+}
+
+void redblade_controls_dim_frame(uint8_t *pixels) {
+    if (!modifier_dim || !redblade_rgb_output_active()) return;
+    const uint8_t scale=100-modifier_dim;
+    const led_t locks=host_keyboard_led_state();
+    const bool fallback=redblade_rgb_fallback_active();
+    for (uint8_t i=0;i<RGB_MATRIX_LED_COUNT;++i) {
+        hsv_t cue;
+        if (i==RB_LED_FN || (turbo_key && i==turbo_led) || modifier_kind(i,modifier_held)) continue;
+        if ((caps_word && i==RB_LED_CAPS) || (game_mode && (i==RB_LED_LGUI || i==RB_LED_RGUI))) continue;
+        if ((redblade_auto_w() && i==RB_LED_W) || (redblade_anti_afk() && i==49)) continue;
+        if ((selecting && i>=17 && i<=19) || (feedback_active && i==16)) continue;
+        if (redblade_config_feature(RB_MODULE_RECORDER) && redblade_recorder_indicator(i,false,&cue)) continue;
+        if (fallback && ((locks.caps_lock && i==RB_LED_CAPS) || (locks.num_lock && i==RB_LED_NUM) || (locks.scroll_lock && i==RB_LED_SCROLL))) continue;
+        for (uint8_t channel=0;channel<3;++channel) pixels[3*i+channel]=(uint16_t)pixels[3*i+channel]*scale/100;
+    }
+}
+
 bool redblade_controls_indicator(uint8_t index, bool fn_active, hsv_t *color) {
     const bool off_fn = fn_active && redblade_rgb_off_fn_available();
     if (!off_fn && !redblade_rgb_output_active()) return false;
@@ -457,20 +497,14 @@ bool redblade_controls_indicator(uint8_t index, bool fn_active, hsv_t *color) {
     // Highlight colors reuse palette slots: host 21 and selection 17.
     const uint8_t highlight=redblade_config_byte(13,0);
     if (!fn_active && highlight && (highlight==2 || redblade_rgb_fallback_active())) {
-        const uint8_t held=get_mods();
-        const bool ctrl=(held & 0x11)!=0, shift=(held & 0x22)!=0, alt=(held & 0x44)!=0;
-        const bool ctrl_key=((held & 0x01) && index==96) || ((held & 0x10) && index==103);
-        const bool shift_key=((held & 0x02) && index==78) || ((held & 0x20) && index==90);
-        const bool alt_key=((held & 0x04) && index==98) || ((held & 0x40) && index==100);
-        const uint8_t a=redblade_config_byte(9,0) ? 62 : 42;
-        const uint8_t z=redblade_config_byte(9,0) ? 80 : 43;
-        if (ctrl_key || (ctrl && (index==82 || index==83 || index==81 || index==z || index==a || index==63 || index==65))) {
+        const uint8_t kind=modifier_kind(index,get_mods());
+        if (kind==1) {
             *color=redblade_config_effect(RB_COLOR_HOST_HINT,(hsv_t){170,255,80}); return true;
         }
-        if (shift_key || (shift && ((index>=21 && index<=30) || (index>=42 && index<=53) || (index>=62 && index<=73) || (index>=80 && index<=89)))) {
+        if (kind==2) {
             *color=(hsv_t){200,255,80}; return true;
         }
-        if (alt_key || (alt && (index==41 || index==4))) {
+        if (kind==3) {
             *color=redblade_config_effect_scaled(RB_COLOR_SELECTION,(hsv_t){32,255,80},128); return true;
         }
     }
@@ -528,7 +562,13 @@ bool redblade_controls_indicator(uint8_t index, bool fn_active, hsv_t *color) {
 void redblade_controls_render(uint8_t led_min, uint8_t led_max, bool fn_active) {
     // Standard effects read the current output state too; edge commits keep
     // the two Turbo pixels current between these general RGB frames.
-    if (led_min==0) redblade_controls_begin_frame();
+    if (led_min==0) {
+        redblade_controls_begin_frame();
+        const uint8_t highlight=redblade_config_byte(13,0), held=get_mods() & 0x77;
+        const bool eligible=!fn_active && redblade_rgb_output_active() && held && highlight && (highlight==2 || redblade_rgb_fallback_active());
+        const uint8_t dim=eligible ? redblade_config_byte(14,0) : 0;
+        modifier_dim_set(dim,dim ? held : 0);
+    }
     if (!redblade_rgb_output_active() && !(fn_active && redblade_rgb_off_fn_available())) return;
     for (uint8_t i = led_min; i < led_max; ++i) {
         hsv_t color;

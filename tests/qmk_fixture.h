@@ -7,6 +7,8 @@ extern led_t host_locks;
 extern rgb_t rendered[109];
 extern rgb_t hardwareRGBcommitted[109];
 extern unsigned rgb_fast_commits;
+void rgb_matrix_set_color_all(uint8_t r,uint8_t g,uint8_t b);
+void rgb_matrix_update_pwm_buffers(void);
 extern uint32_t now, eeprom_user;
 extern unsigned responses, eeprom_writes, keyboard_reports, bootloader_calls, key_down_calls, key_up_calls;
 extern uint8_t mouse_buttons;

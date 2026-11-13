@@ -2,6 +2,9 @@
 #include <assert.h>
 #include "host.h"
 #include "usb_device_state.h"
+#ifdef REDBLADE_MODIFIER_DIM
+#include "redblade_controls.h"
+#endif
 uint16_t usb_frame_number;
 uint8_t usb_configure_state=USB_DEVICE_STATE_CONFIGURED;
 uint8_t mouse_buttons;
@@ -30,16 +33,29 @@ rgb_t rendered[109];
 rgb_t hardwareRGBcommitted[109];
 unsigned rgb_fast_commits;
 unsigned rgb_full_flushes;
+static bool rgb_flush_required=true;
+void sn32f2xx_request_flush(void) { rgb_flush_required=true; }
 void rgb_matrix_set_color_all(uint8_t r,uint8_t g,uint8_t b) {
-    for(unsigned i=0;i<109;++i) rendered[i]=(rgb_t){.r=r,.g=g,.b=b};
+    for(unsigned i=0;i<109;++i) rgb_matrix_set_color(i,r,g,b);
 }
 void rgb_matrix_update_pwm_buffers(void) {
-    for(unsigned i=0;i<109;++i) hardwareRGBcommitted[i]=rendered[i];
+    if (rgb_flush_required) {
+        for(unsigned i=0;i<109;++i) hardwareRGBcommitted[i]=rendered[i];
+#ifdef REDBLADE_MODIFIER_DIM
+        _Static_assert(sizeof(rgb_t)==3,"Packed fixture RGB");
+        redblade_controls_dim_frame((uint8_t *)hardwareRGBcommitted);
+#endif
+        rgb_flush_required=false;
+    }
     ++rgb_full_flushes;
 }
 void sn32f2xx_commit_color(int index) { assert(index>=0 && index<109);hardwareRGBcommitted[index]=rendered[index];++rgb_fast_commits; }
 led_t host_keyboard_led_state(void) { return host_locks; }
-void rgb_matrix_set_color(int i,uint8_t r,uint8_t g,uint8_t b) { assert(i>=0 && i<109); rendered[i]=(rgb_t){.r=r,.g=g,.b=b}; }
+void rgb_matrix_set_color(int i,uint8_t r,uint8_t g,uint8_t b) {
+    assert(i>=0 && i<109);
+    if(rendered[i].r!=r || rendered[i].g!=g || rendered[i].b!=b) rgb_flush_required=true;
+    rendered[i]=(rgb_t){.r=r,.g=g,.b=b};
+}
 bool is_key_pressed(uint8_t key) { return key_down[key]; }
 uint16_t dynamic_keymap_get_keycode(uint8_t layer, uint8_t row, uint8_t col) { (void)layer; assert(row<6 && col<21); return base_keymap[row][col]; }
 uint32_t now, eeprom_user = UINT32_MAX;

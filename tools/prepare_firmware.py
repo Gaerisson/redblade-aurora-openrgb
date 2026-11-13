@@ -22,12 +22,30 @@ void sn32f2xx_commit_color(int index) {
 '''
 
 
-def patched_driver(original, fast=True):
+def patched_driver(original, fast=True, dim=True):
     line = next((line for line in original.splitlines() if 'static const uint32_t freq ' in line and BASE_TIMER in line), None)
     if line is None:
         raise SystemExit('Unexpected pinned Sonix driver; refusing an unverified patch')
     clock = '#ifndef SN32F2XX_PWM_CLOCK_FREQUENCY\n#    define SN32F2XX_PWM_CLOCK_FREQUENCY ' + BASE_TIMER + '\n#endif\nstatic const uint32_t freq = SN32F2XX_PWM_CLOCK_FREQUENCY;'
-    return original.replace(line, clock, 1) + (FAST_COMMIT if fast else '')
+    result=original.replace(line, clock, 1) + (FAST_COMMIT if fast else '')
+    if dim:
+        anchor='void sn32f2xx_flush(void) {'
+        copy='        memcpy(led_state, led_state_buf, sizeof(RGB) * SN32F2XX_LED_COUNT);'
+        if result.count(anchor)!=1 or result.count(copy)!=1:
+            raise SystemExit('Unexpected pinned Sonix flush; refusing an unverified patch')
+        declarations='''#ifdef REDBLADE_MODIFIER_DIM
+_Static_assert(sizeof(RGB) == 3, "Modifier dimming needs packed RGB pixels");
+void redblade_controls_dim_frame(uint8_t *pixels);
+void sn32f2xx_request_flush(void) { led_state_buf_update_required = true; }
+#endif
+'''
+        result=result.replace(anchor,declarations+'\n'+anchor,1)
+        result=result.replace(copy,copy+'''
+#ifdef REDBLADE_MODIFIER_DIM
+        // Transform the active copy only. Keep raw colors for the next flush.
+        redblade_controls_dim_frame((uint8_t *)led_state);
+#endif''',1)
+    return result
 
 
 def prepare(qmk, edition='full'):
@@ -54,7 +72,7 @@ def prepare(qmk, edition='full'):
     text = driver.read_text(encoding='utf-8')
     original = subprocess.check_output(['git','-C',str(qmk),'show','HEAD:drivers/led/sn32f2xx.c']).decode('utf-8')
     expected = patched_driver(original)
-    if text not in (original, patched_driver(original, fast=False), expected):
+    if text not in (original, patched_driver(original, fast=False, dim=False), patched_driver(original, dim=False), expected):
         raise SystemExit('Unexpected local Sonix driver changes; refusing to overwrite them')
     if text != expected:
         driver.write_text(expected, encoding='utf-8')
