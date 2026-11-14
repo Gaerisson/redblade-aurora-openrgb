@@ -30,6 +30,8 @@ jobs:
             -I tests/stubs -I tests -I firmware/aurora_via tests/store_test.c tests/store_flash_fixture.c \
             tests/store_callbacks_stub.c firmware/aurora_via/redblade_store.c -o /tmp/store-test
           /tmp/store-test
+      - name: Test production Sonix flush visibility with a simulated PWM interrupt
+        run: python3 tools/test_sn32_flush.py --sanitize
       - name: Check Python utilities
         run: python3 -m py_compile tools/*.py
       - name: Test standalone OpenRGB Core with sanitizers

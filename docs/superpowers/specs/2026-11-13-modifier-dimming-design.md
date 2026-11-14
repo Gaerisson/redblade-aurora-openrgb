@@ -13,8 +13,9 @@ means zero. Nonzero values require Full 0.14.0; reject downgrade/save to older
 firmware across all profiles rather than stripping settings. Studio 0.14.0
 includes Full 0.14.0 and unchanged Core 0.12.1.
 
-Approach: dim the existing active SN32 output buffer after copying the raw
-render buffer at flush. This handles Direct/Aurora and native effects without
+Approach (corrected in 0.14.1): scale source channels before copying them to the
+existing live SN32 output buffer at flush. The PWM interrupt must never see a
+new full-bright background frame awaiting attenuation. This handles Direct/Aurora and native effects without
 repeatedly dimming stored colors or allocating another RGB buffer. Cache two
 bytes of modifier/dim state at the ordinary render boundary and request a flush
 when they change. No scan/PWM/USB timer or interrupt changes. The alternative of
@@ -28,3 +29,8 @@ range, persistence, old JSON, all-profile downgrade and actual UI controls.
 Build both editions, keep at least 64 usable SRAM bytes, review, then publish
 the normal stable release with BINs, Studio and matching sources. Physical
 acceptance is reported separately; no automatic flashing is part of this task.
+
+The 0.14.1 regression harness compiles the actual patched production flush
+from the verified pinned driver fixture and samples its live buffer at the
+old memcpy boundary, simulating a PWM interrupt. It fails on the 0.14.0 order
+and checks local/host repeated flushes, raw preservation and modifier release.

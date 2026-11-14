@@ -3,7 +3,7 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans for root work; isolated Studio work may be delegated under the user's AGENTS instructions.
 
 **Goal:** Configurable background dimming while physical Ctrl/Shift/Alt highlights are active.
-**Architecture:** Preserve raw RGB; dim the existing active SN32 buffer on flush, with cached mode/modifier eligibility and preserved priority cues. Keep profile wire dimensions.
+**Architecture:** Preserve raw RGB; scale channels before publication to the existing active SN32 buffer on flush, with cached mode/modifier eligibility and preserved priority cues. Keep profile wire dimensions.
 **Tech Stack:** SonixQMK C, .NET 10 WinForms/WebView2, JavaScript.
 **Spec:** `docs/superpowers/specs/2026-11-13-modifier-dimming-design.md`.
 
@@ -38,5 +38,12 @@
 ## Task 3: Delivery
 
 - [x] Update version/docs/manifests; perform one consolidated review and correct significant findings.
-- [ ] Commit/push, run final CI, build/package exact sources and Studio; verify public checksums/downloads and publish stable Latest.
-- [ ] Report physical acceptance pending and that the keyboard was not reflashed automatically.
+- [x] Commit/push, run final CI, build/package exact sources and Studio; verify public checksums/downloads and publish stable Latest 0.14.0.
+- [x] Report physical acceptance pending and that the keyboard was not reflashed automatically.
+
+## 0.14.1 correction
+
+- [x] Reproduce the bright intermediate frame with a simulated PWM interrupt in the real patched flush, in both local and host modes.
+- [x] Scale from the raw source before writing each live output channel; preserve priorities and accept only known canonical driver versions when upgrading.
+- [x] Run regression suites, build Full/Core and verify resources; retain the published Core BIN byte-for-byte after checking the rebuild's only differences are VIA build-day constants. Consolidated review passed.
+- [ ] Publish stable Full/Studio 0.14.1 with BINs and matching sources; report physical confirmation separately.

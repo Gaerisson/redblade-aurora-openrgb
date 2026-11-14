@@ -8,7 +8,7 @@
   "qmk_commit": "62973ee48a976c6f7cc6d4f7b198bd48a2fdfe60",
   "toolchain": "arm-none-eabi-gcc (crosstool-NG 1.27.0.82_7f9d704 - qmk/qmk_toolchains @ a55a2b0) 15.2.0",
   "binary_bytes": 65536,
-  "sha256": "11d4df5b3397dbcc77a874960b24275e8113801fda7dc7b9a652bb76cdb82453",
+  "sha256": "9d1bb1664708c42c69ebb6a772c5684da5d93f3c6987a29d2e09b04856013a85",
   "ram_bytes_including_reserved_stacks": 8120,
   "ram_remaining_bytes": 72,
   "keyboard_usb_poll_interval_ms": 1,
@@ -18,7 +18,7 @@
   "via_layers": 3,
   "protocol_host_tests": "passed",
   "hardware_latency_measured": false,
-  "release": "v0.14.0",
+  "release": "v0.14.1",
   "hardware_validation": null,
   "rgb_data_timeout_ms": 5000,
   "boot_animation_ms": 2000,
@@ -115,7 +115,7 @@
   "bootloader_shortcut": "Fn+Esc held for 2000 ms; Shift optional; short press stops helpers/unlocks",
   "native_benchmark": {
     "physical_key_latency_measured": false,
-    "sha256": "6cc3810aaecc571e24ed68113286b6a717204975eaac384c23100aa652d6ebe6",
+    "sha256": "c23128b546794c01cdecf2d0aaa981692c8aab18210565cd49387908957f2e89",
     "file": "redblade-plus-benchmark-windows.exe"
   },
   "fn_rgb_status": {
@@ -357,8 +357,9 @@
       "Alt"
     ],
     "eligibility": "existing modifier-highlight mode: local only or also over host RGB",
-    "output": "existing active RGB copy only; raw render colors retained",
+    "output": "scale source channels before publishing to existing live PWM buffer; raw render colors retained",
     "extra_rgb_framebuffer": false,
-    "physical_validation": null
+    "physical_validation": null,
+    "interrupt_visibility_regression_test": "production-patched Sonix flush sampled at raw memcpy boundary in local and host modes"
   }
 }

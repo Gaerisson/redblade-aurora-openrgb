@@ -7,6 +7,7 @@
 #include "dynamic_keymap.h"
 #include "report.h"
 #include "host.h"
+#include <string.h>
 
 _Static_assert(RB_GAME == 0x7E40 && RB_BOOT == 0x7E53, "VIA custom keycode ABI changed");
 _Static_assert(RB_TURBO_RATE == 0x7E58 && RB_TURBO_FASTER == 0x7E5B, "Game helper keycode ABI changed");
@@ -444,20 +445,28 @@ static uint8_t modifier_kind(uint8_t index, uint8_t held) {
     return 0;
 }
 
-void redblade_controls_dim_frame(uint8_t *pixels) {
-    if (!modifier_dim || !redblade_rgb_output_active()) return;
+void redblade_controls_copy_frame(uint8_t *dst, const uint8_t *src) {
+    if (!modifier_dim || !redblade_rgb_output_active()) {
+        memcpy(dst,src,3*RGB_MATRIX_LED_COUNT);
+        return;
+    }
     const uint8_t scale=100-modifier_dim;
     const led_t locks=host_keyboard_led_state();
     const bool fallback=redblade_rgb_fallback_active();
     for (uint8_t i=0;i<RGB_MATRIX_LED_COUNT;++i) {
         hsv_t cue;
-        if (i==RB_LED_FN || (turbo_key && i==turbo_led) || modifier_kind(i,modifier_held)) continue;
-        if ((caps_word && i==RB_LED_CAPS) || (game_mode && (i==RB_LED_LGUI || i==RB_LED_RGUI))) continue;
-        if ((redblade_auto_w() && i==RB_LED_W) || (redblade_anti_afk() && i==49)) continue;
-        if ((selecting && i>=17 && i<=19) || (feedback_active && i==16)) continue;
-        if (redblade_config_feature(RB_MODULE_RECORDER) && redblade_recorder_indicator(i,false,&cue)) continue;
-        if (fallback && ((locks.caps_lock && i==RB_LED_CAPS) || (locks.num_lock && i==RB_LED_NUM) || (locks.scroll_lock && i==RB_LED_SCROLL))) continue;
-        for (uint8_t channel=0;channel<3;++channel) pixels[3*i+channel]=(uint16_t)pixels[3*i+channel]*scale/100;
+        const bool protected=i==RB_LED_FN || (turbo_key && i==turbo_led) || modifier_kind(i,modifier_held)
+            || (caps_word && i==RB_LED_CAPS) || (game_mode && (i==RB_LED_LGUI || i==RB_LED_RGUI))
+            || (redblade_auto_w() && i==RB_LED_W) || (redblade_anti_afk() && i==49)
+            || (selecting && i>=17 && i<=19) || (feedback_active && i==16)
+            || (redblade_config_feature(RB_MODULE_RECORDER) && redblade_recorder_indicator(i,false,&cue))
+            || (fallback && ((locks.caps_lock && i==RB_LED_CAPS) || (locks.num_lock && i==RB_LED_NUM) || (locks.scroll_lock && i==RB_LED_SCROLL)));
+        // The PWM ISR reads dst throughout this copy. Scale before publishing
+        // each channel; never expose a raw bright frame and dim it afterwards.
+        for (uint8_t channel=0;channel<3;++channel) {
+            const uint8_t raw=src[3*i+channel];
+            dst[3*i+channel]=protected ? raw : (uint16_t)raw*scale/100;
+        }
     }
 }
 

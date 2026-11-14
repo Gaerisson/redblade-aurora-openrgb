@@ -34,4 +34,4 @@ bool redblade_controls_indicators_needed(bool fn_active);
 bool redblade_controls_indicator(uint8_t index, bool fn_active, hsv_t *color);
 void redblade_controls_render(uint8_t led_min, uint8_t led_max, bool fn_active);
 // Final output only; the driver retains the undimmed render buffer.
-void redblade_controls_dim_frame(uint8_t *pixels);
+void redblade_controls_copy_frame(uint8_t *dst, const uint8_t *src);

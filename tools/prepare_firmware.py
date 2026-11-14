@@ -22,7 +22,7 @@ void sn32f2xx_commit_color(int index) {
 '''
 
 
-def patched_driver(original, fast=True, dim=True):
+def patched_driver(original, fast=True, dim=True, legacy_dim=False):
     line = next((line for line in original.splitlines() if 'static const uint32_t freq ' in line and BASE_TIMER in line), None)
     if line is None:
         raise SystemExit('Unexpected pinned Sonix driver; refusing an unverified patch')
@@ -35,15 +35,27 @@ def patched_driver(original, fast=True, dim=True):
             raise SystemExit('Unexpected pinned Sonix flush; refusing an unverified patch')
         declarations='''#ifdef REDBLADE_MODIFIER_DIM
 _Static_assert(sizeof(RGB) == 3, "Modifier dimming needs packed RGB pixels");
-void redblade_controls_dim_frame(uint8_t *pixels);
+void redblade_controls_copy_frame(uint8_t *dst, const uint8_t *src);
 void sn32f2xx_request_flush(void) { led_state_buf_update_required = true; }
 #endif
 '''
         result=result.replace(anchor,declarations+'\n'+anchor,1)
-        result=result.replace(copy,copy+'''
+        if legacy_dim:
+            # Recognize the exact published 0.14.0 patch when upgrading a local
+            # tree. Unknown driver edits must still be refused.
+            result=result.replace('void redblade_controls_copy_frame(uint8_t *dst, const uint8_t *src);',
+                                  'void redblade_controls_dim_frame(uint8_t *pixels);')
+            result=result.replace(copy,copy+'''
 #ifdef REDBLADE_MODIFIER_DIM
         // Transform the active copy only. Keep raw colors for the next flush.
         redblade_controls_dim_frame((uint8_t *)led_state);
+#endif''',1)
+        else:
+            result=result.replace(copy,'''#ifdef REDBLADE_MODIFIER_DIM
+        // Publish already-scaled channels: PWM may read led_state mid-copy.
+        redblade_controls_copy_frame((uint8_t *)led_state, (const uint8_t *)led_state_buf);
+#else
+'''+copy+'''
 #endif''',1)
     return result
 
@@ -72,7 +84,10 @@ def prepare(qmk, edition='full'):
     text = driver.read_text(encoding='utf-8')
     original = subprocess.check_output(['git','-C',str(qmk),'show','HEAD:drivers/led/sn32f2xx.c']).decode('utf-8')
     expected = patched_driver(original)
-    if text not in (original, patched_driver(original, fast=False, dim=False), patched_driver(original, dim=False), expected):
+    fixture=root/'tests/upstream/sn32f2xx.c'
+    if fixture.read_text(encoding='utf-8') != original:
+        raise SystemExit('Sonix interrupt-test fixture differs from the pinned upstream driver')
+    if text not in (original, patched_driver(original, fast=False, dim=False), patched_driver(original, dim=False), patched_driver(original, legacy_dim=True), expected):
         raise SystemExit('Unexpected local Sonix driver changes; refusing to overwrite them')
     if text != expected:
         driver.write_text(expected, encoding='utf-8')

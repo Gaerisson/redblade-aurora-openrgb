@@ -40,10 +40,11 @@ void rgb_matrix_set_color_all(uint8_t r,uint8_t g,uint8_t b) {
 }
 void rgb_matrix_update_pwm_buffers(void) {
     if (rgb_flush_required) {
-        for(unsigned i=0;i<109;++i) hardwareRGBcommitted[i]=rendered[i];
 #ifdef REDBLADE_MODIFIER_DIM
         _Static_assert(sizeof(rgb_t)==3,"Packed fixture RGB");
-        redblade_controls_dim_frame((uint8_t *)hardwareRGBcommitted);
+        redblade_controls_copy_frame((uint8_t *)hardwareRGBcommitted,(const uint8_t *)rendered);
+#else
+        for(unsigned i=0;i<109;++i) hardwareRGBcommitted[i]=rendered[i];
 #endif
         rgb_flush_required=false;
     }

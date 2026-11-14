@@ -2,6 +2,13 @@
 
 All new release notes are written in English. Version 0.x is experimental; hardware validation is recorded separately from build and host-test results.
 
+## 0.14.1 - Stable modifier dimming
+
+- Fix whole-keyboard flickering while Ctrl, Shift or Alt dims the background, with both Aurora and autonomous lighting. The old flush briefly copied a bright frame into the live PWM buffer before dimming it. Each background channel is now scaled before it reaches that buffer.
+- Preserve raw colors, useful-key highlights, helper/status priorities and release restoration. No extra RGB framebuffer, interrupt masking, input hook or USB/scan/PWM timer change is introduced.
+- Add a regression test that executes the actual production-patched Sonix flush with a simulated PWM interrupt at the former bright-frame publication point. The test fails on 0.14.0 and covers local and host modes.
+- Full and Studio are 0.14.1; Studio bundles the corrected BIN. Profile settings and Core 0.12.1 remain unchanged. On-device confirmation of this correction is pending.
+
 ## 0.14.0 - Modifier spotlight
 
 - Optional background dimming makes physical Ctrl, Shift and Alt shortcut highlights stand out. Studio offers a toggle and a 0-100% amount; enabling selects 70%. Zero disables it and existing profiles keep zero until edited.
