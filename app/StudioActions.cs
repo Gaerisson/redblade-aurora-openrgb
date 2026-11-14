@@ -88,6 +88,7 @@ internal sealed partial class StudioForm
     {
         if(preview)throw new InvalidOperationException("Hardware disabled in preview.");
         if(connection!="connected"||!generation.HasValue)throw new InvalidOperationException(T("Connect the keyboard and install Full 0.9 or later before applying settings.","Connectez le clavier et installez Full 0.9 ou ultérieur pour appliquer les réglages."));
+        if(installedVersion<new Version(0,15,0)&&config.Profiles.Any(p=>p.HighlightBoost))throw new InvalidOperationException(T("Maximum highlight intensity requires Full 0.15.","Les repères à intensité maximale nécessitent Full 0.15."));
         if(installedVersion<new Version(0,14,0)&&config.Profiles.Any(p=>p.HighlightDimPercent!=0))throw new InvalidOperationException(T("Modifier background dimming requires Full 0.14.","L’atténuation du fond pour les modificateurs nécessite Full 0.14."));
         if(installedVersion<new Version(0,12,0)&&(Current.ReactiveStyle>2||Current.ReactiveRate!=0||Current.HighlightMode!=0))throw new InvalidOperationException(T("Extended reaction and modifier highlights require Full 0.12.","La réaction prolongée et les repères des modificateurs nécessitent Full 0.12."));
         if(installedVersion<new Version(0,11,0)&&(Current.ReactiveStyle!=0||Current.ReactiveWidth!=0))throw new InvalidOperationException(T("Autonomous ripple and wave settings require Full 0.11.","Les ondes et vagues autonomes nécessitent Full 0.11."));
@@ -95,10 +96,11 @@ internal sealed partial class StudioForm
     }
     void Patch(JsonElement a)
     {
-        StudioBridge.Fields(a,"modules","master","defaultMode","timeoutSeconds","turboRate","recorderSpeed","trailFrames","safetyTimeoutSeconds","capsWordLayout","reactiveStyle","reactiveWidth","reactiveRate","highlightMode","highlightDimPercent");
+        StudioBridge.Fields(a,"modules","master","defaultMode","timeoutSeconds","turboRate","recorderSpeed","trailFrames","safetyTimeoutSeconds","capsWordLayout","reactiveStyle","reactiveWidth","reactiveRate","highlightMode","highlightDimPercent","highlightBoost");
         var next=ProfileFile.Load(ProfileFile.Save(config));var p=next.Profiles[next.Active];
         foreach(var property in a.EnumerateObject())
         {
+            if(property.Name=="highlightBoost"){p.HighlightBoost=property.Value.GetBoolean();continue;}
             int value=StudioBridge.Number(a,property.Name,0,4095);
             switch(property.Name){case "modules":p.Modules=(ushort)value;break;case "master":p.Master=checked((byte)value);break;case "defaultMode":p.DefaultMode=checked((byte)value);break;case "timeoutSeconds":p.TimeoutSeconds=checked((byte)value);break;case "turboRate":p.TurboRate=checked((byte)value);break;case "recorderSpeed":p.RecorderSpeed=checked((byte)value);break;case "trailFrames":p.TrailFrames=checked((byte)value);break;case "safetyTimeoutSeconds":p.SafetyTimeoutSeconds=checked((byte)value);break;case "capsWordLayout":p.CapsWordLayout=checked((byte)value);break;case "reactiveStyle":p.ReactiveStyle=checked((byte)value);break;case "reactiveWidth":p.ReactiveWidth=checked((byte)value);break;case "reactiveRate":p.ReactiveRate=checked((byte)value);break;case "highlightMode":p.HighlightMode=checked((byte)value);break;case "highlightDimPercent":p.HighlightDimPercent=checked((byte)value);break;}
         }

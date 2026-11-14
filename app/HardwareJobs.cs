@@ -58,7 +58,7 @@ internal static class FlashVerification
     internal static bool CanRestoreTarget(byte[] payload,Version target)
     {
         if(payload.Length!=ConfigCodec.Length)throw new InvalidDataException("Invalid profile backup size.");
-        for(int i=0;i<4;i++){int b=32+i*416;if(target<new Version(0,14,0)&&payload[b+14]!=0)return false;if(target<new Version(0,12,0)&&(payload[b+10]>2||payload[b+12]!=0||payload[b+13]!=0))return false;if(target<new Version(0,11,0)&&(payload[b+10]!=0||payload[b+11]!=0))return false;if(target<new Version(0,10,0)&&((payload[b+1]&0x0c)!=0||payload[b+8]!=0||payload[b+9]!=0))return false;}
+        for(int i=0;i<4;i++){int b=32+i*416;if(target<new Version(0,15,0)&&payload[b+15]!=0)return false;if(target<new Version(0,14,0)&&payload[b+14]!=0)return false;if(target<new Version(0,12,0)&&(payload[b+10]>2||payload[b+12]!=0||payload[b+13]!=0))return false;if(target<new Version(0,11,0)&&(payload[b+10]!=0||payload[b+11]!=0))return false;if(target<new Version(0,10,0)&&((payload[b+1]&0x0c)!=0||payload[b+8]!=0||payload[b+9]!=0))return false;}
         return true;
     }
     internal static bool SamePort(string original,string[] locations)=>locations.Length==1&&string.Equals(locations[0],original,StringComparison.OrdinalIgnoreCase);
@@ -207,7 +207,7 @@ internal static class HardwareJobs
                     case HardwareOperation.Read:
                         Progress("Reading four onboard profiles…");var read=await protocol.Read(cancel.Token);result.Payload=Convert.ToBase64String(read.Bytes);result.Generation=read.Caps.Generation;Progress("Four profiles read. RGB control is being returned to your applications.");break;
                     case HardwareOperation.Save:
-                        if(!FlashVerification.CanRestoreTarget(Convert.FromBase64String(request.Payload),installed.Version))throw new InvalidDataException("Profile settings require a newer Full firmware; modifier dimming requires Full 0.14.");
+                        if(!FlashVerification.CanRestoreTarget(Convert.FromBase64String(request.Payload),installed.Version))throw new InvalidDataException("Profile settings require a newer Full firmware; modifier dimming requires Full 0.14 and maximum highlight intensity requires Full 0.15.");
                         await SaveWithRecovery(protocol,ConfigCodec.Decode(Convert.FromBase64String(request.Payload)),request.ExpectedGeneration,Progress,cancel.Token);result.Generation=unchecked(request.ExpectedGeneration+1);result.Payload=request.Payload;break;
                     case HardwareOperation.Preview:
                         await Preview(hid,protocol,ConfigCodec.Decode(Convert.FromBase64String(request.Payload)),Progress,cancel.Token);break;

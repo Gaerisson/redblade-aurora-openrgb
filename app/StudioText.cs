@@ -15,6 +15,7 @@ internal static class StudioText
         ["Temporary keyboard control applied."]="Commande temporaire appliquée au clavier.",
         ["Reading four onboard profiles…"]="Lecture des quatre profils enregistrés dans le clavier…",
         ["Four profiles read. RGB control is being returned to your applications."]="Les quatre profils ont été lus. Le contrôle RVB est rendu à vos applications.",
+        ["Profile settings require a newer Full firmware; modifier dimming requires Full 0.14 and maximum highlight intensity requires Full 0.15."]="Les réglages des profils nécessitent une version Full plus récente ; l’atténuation nécessite Full 0.14 et les repères à intensité maximale nécessitent Full 0.15.",
         ["All four profiles saved and verified."]="Les quatre profils ont été enregistrés et vérifiés.",
         ["Invalid effect update ignored; the previous settings remain active."]="Modification d’effet invalide ignorée ; les réglages précédents restent actifs.",
         ["Effect update could not be read; the previous settings remain active."]="Impossible de lire la modification d’effet ; les réglages précédents restent actifs.",

@@ -507,14 +507,20 @@ bool redblade_controls_indicator(uint8_t index, bool fn_active, hsv_t *color) {
     const uint8_t highlight=redblade_config_byte(13,0);
     if (!fn_active && highlight && (highlight==2 || redblade_rgb_fallback_active())) {
         const uint8_t kind=modifier_kind(index,get_mods());
+        const bool boost=kind && redblade_config_byte(15,0);
         if (kind==1) {
-            *color=redblade_config_effect(RB_COLOR_HOST_HINT,(hsv_t){170,255,80}); return true;
+            *color=redblade_config_effect(RB_COLOR_HOST_HINT,(hsv_t){170,255,80});
+        } else if (kind==2) {
+            *color=(hsv_t){200,255,80};
+        } else if (kind==3) {
+            *color=boost ? redblade_config_effect(RB_COLOR_SELECTION,(hsv_t){32,255,128})
+                         : redblade_config_effect_scaled(RB_COLOR_SELECTION,(hsv_t){32,255,80},128);
         }
-        if (kind==2) {
-            *color=(hsv_t){200,255,80}; return true;
-        }
-        if (kind==3) {
-            *color=redblade_config_effect_scaled(RB_COLOR_SELECTION,(hsv_t){32,255,80},128); return true;
+        if (kind) {
+            // Lift only the modifier overlay. Keep black/off colors, hue,
+            // saturation and the existing master/output gates intact.
+            if (color->v && boost) color->v=255;
+            return true;
         }
     }
     if (redblade_rgb_fallback_active()) {

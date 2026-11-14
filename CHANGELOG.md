@@ -2,6 +2,13 @@
 
 All new release notes are written in English. Version 0.x is experimental; hardware validation is recorded separately from build and host-test results.
 
+## 0.15.0 - Maximum modifier highlights
+
+- Studio adds **Maximum highlight intensity** for physical Ctrl, Shift and Alt highlights. Enabled, their non-black colors use value 255 before the existing master/output limits; disabled, the previous palette-dependent levels remain. Fn hints, helper/status cues and general host colors are unaffected. Existing profiles default to disabled.
+- Profile byte 15 stores a strict 0/1 flag without changing the 1696-byte schema. All-profile save/restore guards prevent using it with firmware older than Full 0.15.0. Old JSON remains compatible.
+- Full and Studio are 0.15.0; Studio includes the updated BIN. Core 0.12.1 and its published BIN remain unchanged. Tests cover literal 255 RGB output, master limits, local/host eligibility, dim stability and black/Off/Fn/suspend priorities.
+- Expanded the brightness audit: ordinary RGB channels already support 255, and no additional lower driver cap was found at that level. No electrical overdrive or scan/PWM/current change is included; a general brightness increase beyond an already-maximized profile has not been demonstrated.
+
 ## 0.14.1 - Stable modifier dimming
 
 - Fix whole-keyboard flickering while Ctrl, Shift or Alt dims the background, with both Aurora and autonomous lighting. The old flush briefly copied a bright frame into the live PWM buffer before dimming it. Each background channel is now scaled before it reaches that buffer.
